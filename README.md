@@ -181,6 +181,7 @@ See [`CITATION.cff`](CITATION.cff) for machine-readable citation metadata.
 ## Contributing
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for development setup, Git workflow, versioning, and release instructions.
+See [`CHANGELOG.md`](CHANGELOG.md) for a history of changes between versions.
 
 ## License
 

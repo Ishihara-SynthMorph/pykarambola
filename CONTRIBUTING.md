@@ -12,8 +12,9 @@ It covers everything from setting up your environment to releasing a new version
 3. [Git workflow](#3-git-workflow)
 4. [Issues, milestones, and the project board](#4-issues-milestones-and-the-project-board)
 5. [Version numbers](#5-version-numbers)
-6. [Running the tests](#6-running-the-tests)
-7. [Releasing a new version](#7-releasing-a-new-version)
+6. [Changelog](#6-changelog)
+7. [Running the tests](#7-running-the-tests)
+8. [Releasing a new version](#8-releasing-a-new-version)
 
 ---
 
@@ -230,7 +231,61 @@ publish workflow (see issue #9).
 
 ---
 
-## 6. Running the tests
+## 6. Changelog
+
+[`CHANGELOG.md`](CHANGELOG.md) is the human-readable record of what changed in each version.
+We follow the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
+
+### The rule: update the changelog in the same PR as the code change
+
+Every PR that fixes a bug, adds a feature, or changes behaviour should include a
+one-line entry under `## [Unreleased]` in `CHANGELOG.md`. Do it in the same commit
+as the code — don't leave it for later.
+
+### Entry categories
+
+Use these headings under `## [Unreleased]` (omit any that have no entries):
+
+| Heading | When to use |
+|---------|-------------|
+| `### Added` | New feature or new public API |
+| `### Changed` | Behaviour change to an existing feature |
+| `### Deprecated` | Feature that will be removed in a future version |
+| `### Removed` | Feature removed in this version |
+| `### Fixed` | Bug fix |
+
+### Example
+
+```markdown
+## [Unreleased]
+
+### Fixed
+- `get_ref_vec` no longer raises `ZeroDivisionError` on open/flat surfaces (#42)
+
+### Added
+- `minkowski_tensors` now accepts a `compute=` list to request only specific quantities (#45)
+```
+
+### At release time
+
+When you are ready to release (see [§8](#8-releasing-a-new-version)):
+
+1. Replace `## [Unreleased]` with the new version heading, e.g. `## [0.2.0] - 2026-06-01`
+2. Add a fresh empty `## [Unreleased]` section above it
+3. Update the comparison links at the bottom of the file:
+
+```markdown
+[Unreleased]: https://github.com/Pitt-IshiharaLab/pykarambola/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/Pitt-IshiharaLab/pykarambola/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/Pitt-IshiharaLab/pykarambola/releases/tag/v0.1.0
+```
+
+These links make each version heading in the changelog clickable — they open a GitHub
+diff showing exactly what changed between that version and the previous one.
+
+---
+
+## 7. Running the tests
 
 Run all tests:
 
@@ -278,7 +333,7 @@ def test_get_ref_vec_flat_surface():
 
 ---
 
-## 7. Releasing a new version
+## 8. Releasing a new version
 
 This section will expand when we reach M1. For now the steps are:
 
