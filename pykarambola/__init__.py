@@ -3,6 +3,14 @@ pykarambola - Python implementation of the Karambola package for computing
 Minkowski functionals and tensors on 3D triangulated surfaces.
 """
 
+from importlib.metadata import version, PackageNotFoundError
+
+try:
+    __version__ = version("pykarambola")
+except PackageNotFoundError:
+    # Package is not installed (e.g. running from source without pip install)
+    __version__ = "unknown"
+
 from .triangulation import Triangulation, LABEL_UNASSIGNED, NEIGHBOUR_UNASSIGNED
 from .io_poly import parse_poly_file
 from .io_off import parse_off_file

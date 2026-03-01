@@ -178,6 +178,10 @@ If you use pykarambola in published work, please cite the original karambola pac
 
 See [`CITATION.cff`](CITATION.cff) for machine-readable citation metadata.
 
+## Contributing
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for development setup, Git workflow, versioning, and release instructions.
+
 ## License
 
 See [`LICENSE`](LICENSE).
