@@ -263,6 +263,23 @@ class TestLabelImage:
         # Area (w100) scales by 2^2 = 4
         assert r2[1]['w100'] == pytest.approx(4.0 * r1[1]['w100'], rel=0.01)
 
+    def test_anisotropic_spacing_centroid(self):
+        # With non-isotropic spacing, both centroid methods should still centre a
+        # symmetric box (vectors near zero) and volume should reflect physical size.
+        vol = _voxel_box((20, 20, 20), np.s_[5:15, 5:15, 5:15])
+        spacing = (1.0, 2.0, 3.0)
+        for method in ('centroid_mesh', 'centroid_voxel'):
+            result = minkowski_functionals_from_label_image(vol, spacing=spacing,
+                                                            center=method)
+            for name in ['w010', 'w110', 'w210', 'w310']:
+                np.testing.assert_allclose(
+                    result[1][name], [0, 0, 0], atol=0.5,
+                    err_msg=f"{name} should be near zero with {method} and anisotropic spacing",
+                )
+        # Volume should equal 10*10*10 * sz*sy*sx = 1000 * 6
+        result = minkowski_functionals_from_label_image(vol, spacing=spacing)
+        assert result[1]['w000'] == pytest.approx(6000.0, rel=0.05)
+
     def test_multi_label(self):
         vol = np.zeros((30, 30, 30), dtype=np.int32)
         vol[2:8, 2:8, 2:8] = 1
