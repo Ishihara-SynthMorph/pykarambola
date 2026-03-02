@@ -28,6 +28,17 @@ jobs:
       - name: Run tests
         run: pytest tests/
 
+  ci-success:
+    needs: [test]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check all matrix jobs passed
+        run: |
+          if [ "${{ needs.test.result }}" != "success" ]; then
+            echo "One or more CI jobs failed" && exit 1
+          fi
+
   notify-failure:
     needs: [test]
     runs-on: ubuntu-latest
