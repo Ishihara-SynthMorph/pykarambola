@@ -74,8 +74,20 @@ def minkowski_functionals(verts, faces, labels=None, center=None, compute='stand
     Returns
     -------
     dict or dict[int, dict]
-        When labels is None: dict mapping functional names to values.
-        When labels is provided: dict mapping each label to the above dict.
+        When ``labels`` is ``None``: a **flat** dict mapping functional names
+        to values (e.g. ``result['w000']``).
+
+        When ``labels`` is provided: a **nested** dict keyed by label value
+        (e.g. ``result[0]['w000']``).  This holds even when the labels array
+        contains only a single unique value.
+
+    Notes
+    -----
+    The two return shapes are asymmetric by design: the flat form is a
+    convenience for the common single-body use-case.  Callers that may
+    receive ``labels`` from external code should always handle the nested
+    form.  A future release may deprecate the flat-dict form in favour of
+    always returning ``{label: dict}``; see issue #48.
     """
     verts = np.asarray(verts, dtype=np.float64)
     faces = np.asarray(faces, dtype=np.int64)
@@ -90,6 +102,12 @@ def minkowski_functionals(verts, faces, labels=None, center=None, compute='stand
             raise ValueError(f"Unknown compute preset: {compute!r}")
     else:
         wanted = set(compute)
+        unknown = wanted - _ALL
+        if unknown:
+            raise ValueError(
+                f"Unknown compute names: {sorted(unknown)}. "
+                f"Valid names: {sorted(_ALL)}"
+            )
 
     # Handle explicit center by shifting vertices
     use_centroid = False
@@ -98,6 +116,10 @@ def minkowski_functionals(verts, faces, labels=None, center=None, compute='stand
             use_centroid = True
         else:
             center = np.asarray(center, dtype=np.float64)
+            if center.shape != (3,):
+                raise ValueError(
+                    f"center must be a (3,) array, got shape {center.shape}"
+                )
             verts = verts - center
 
     # Build triangulation
@@ -267,6 +289,13 @@ def minkowski_functionals_from_label_image(
         )
 
     label_image = np.asarray(label_image)
+    if not np.issubdtype(label_image.dtype, np.integer):
+        warnings.warn(
+            f"label_image has dtype {label_image.dtype}; converting to int. "
+            "Pass an integer-dtype array to suppress this warning.",
+            stacklevel=2,
+        )
+        label_image = label_image.astype(int)
     if level is None:
         level = 0.5
     spacing = tuple(float(s) for s in spacing)
