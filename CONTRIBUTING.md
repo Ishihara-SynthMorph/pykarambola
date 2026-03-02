@@ -123,11 +123,11 @@ main  ──●─────────────────────�
    In the PR description, write `Closes #42` — this automatically closes the issue
    when the PR is merged.
 
-4. **CI runs automatically.** GitHub Actions will run the full test suite on Linux,
-   macOS, and Windows across Python 3.9, 3.11, and 3.13. The PR cannot be merged
-   until all checks pass.
+4. **Run the tests locally before pushing** (see [§7](#7-running-the-tests)).
+   GitHub Actions is currently disabled at the enterprise level, so there is no
+   automatic CI. Running `pytest tests/` locally is the substitute.
 
-5. **Merge into main** once the PR is approved and CI is green.
+5. **Merge into main** once the PR is approved and tests pass locally.
 
 ### What goes directly on `main`
 
@@ -168,10 +168,13 @@ The "pykarambola paper" project board at
 is our shared view of progress across all milestones.
 
 **Important:** Milestones and the project board are independent systems in GitHub.
-Assigning a milestone to an issue does *not* add it to the board. We have a GitHub
-Actions workflow (`.github/workflows/add-to-project.yml`) that adds every newly
-opened issue to the board automatically. If you notice an issue missing from the
-board, add it manually via the issue's sidebar.
+Assigning a milestone to an issue does *not* add it to the board.
+
+We have a GitHub Actions workflow (`.github/workflows/add-to-project.yml`) that is
+intended to add every newly opened issue to the board automatically, but **GitHub
+Actions is currently disabled at the enterprise level**, so this workflow does not
+run. Until that changes, **add new issues to the board manually** via the issue's
+sidebar (look for the "Projects" field on the right-hand side).
 
 ---
 
@@ -311,10 +314,15 @@ Show print output (useful for debugging):
 pytest -s tests/test_api.py
 ```
 
-**CI runs the same command** on every push and PR. If it passes locally it should
-pass on CI. If CI fails on a platform you don't have (e.g. Windows), read the
-Actions log: go to the repo → Actions tab → click the failed run → expand the
-failing step.
+**GitHub Actions is currently disabled at the enterprise level**, so there is no
+automatic CI on push or PR. Running the tests locally before pushing is therefore
+a required step in our workflow — treat a local green run as the equivalent of
+passing CI.
+
+The workflows in `.github/workflows/` are kept in the repo so that everything will
+work automatically if Actions is enabled in the future. If you are able to get it
+enabled, the required status check (`ci-success`) can be re-added to branch
+protection and the gate will be enforced automatically.
 
 ### Writing a test for a bug fix
 
