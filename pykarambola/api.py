@@ -228,7 +228,7 @@ def _any_needed(wanted, names):
 
 def minkowski_functionals_from_label_image(
     label_image, level=None, spacing=(1.0, 1.0, 1.0),
-    center='centroid', compute='standard',
+    center='centroid_mesh', compute='standard',
 ):
     """Compute Minkowski functionals for each label in a 3D label image.
 
@@ -241,9 +241,15 @@ def minkowski_functionals_from_label_image(
         binary masks).
     spacing : tuple of float
         ``(sz, sy, sx)`` voxel spacing passed to ``marching_cubes``.
-    center : None, 'centroid', or (3,) array_like
+    center : None, 'centroid_mesh', 'centroid_voxel', or (3,) array_like
         Reference point for position-dependent tensors.
-        ``'centroid'`` (default): use per-label voxel centroid.
+        ``'centroid_mesh'`` (default): centroid of the volume enclosed by the mesh,
+            computed via the divergence theorem (each triangle and the origin form a
+            tetrahedron; the centroid is the volume-weighted mean of tetrahedron
+            centroids). Requires outward-facing normals.
+        ``'centroid_voxel'``: centroid of the set of labelled voxels (mean of
+            voxel-grid coordinates scaled by spacing), consistent with
+            scikit-image ``regionprops`` convention.
         ``None``: use the origin.
         ``(3,)`` array: use an explicit point for all labels.
     compute : str or list of str
@@ -280,7 +286,8 @@ def minkowski_functionals_from_label_image(
         mask = (label_image == lab).astype(np.float64)
 
         try:
-            verts, faces, _, _ = marching_cubes(mask, level=level, spacing=spacing)
+            verts, faces, _, _ = marching_cubes(mask, level=level, spacing=spacing,
+                                               gradient_direction='ascent')
         except Exception as exc:
             warnings.warn(
                 f"marching_cubes failed for label {lab}: {exc}",
@@ -316,8 +323,7 @@ def minkowski_functionals_from_label_image(
                 label_center = np.einsum('i,ij->j', d, v0c + v1c + v2c) / (4.0 * d_sum)
         elif isinstance(center, str) and center == 'centroid_voxel':
             voxel_coords = np.argwhere(label_image == lab)  # (N, 3)
-            centroid = voxel_coords.mean(axis=0) * np.array(spacing)
-            label_center = centroid
+            label_center = voxel_coords.mean(axis=0) * np.array(spacing)
         else:
             label_center = center
 
