@@ -4,6 +4,8 @@ Triangulation data structure for representing 3D triangulated surfaces.
 Uses contiguous NumPy arrays for vectorized computation of Minkowski functionals.
 """
 
+import warnings
+
 import numpy as np
 
 try:
@@ -188,6 +190,14 @@ class Triangulation:
         edge2 = v2 - v0
         cross = np.cross(edge1, edge2)  # (F, 3)
         norms = np.linalg.norm(cross, axis=1)  # (F,)
+        n_degenerate = int(np.sum(norms == 0))
+        if n_degenerate:
+            warnings.warn(
+                f"{n_degenerate} degenerate (zero-area) triangle(s) detected; "
+                "their normals are undefined and dihedral-angle-based quantities "
+                "(w200, w202, w210, w220) may be unreliable.",
+                stacklevel=2,
+            )
         # Avoid division by zero for degenerate triangles
         safe_norms = np.where(norms > 0, norms, 1.0)
         self._normals = cross / safe_norms[:, None]
