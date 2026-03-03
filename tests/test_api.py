@@ -201,6 +201,90 @@ class TestComputeOptions:
         assert 'w102_eigvecs' in result
 
 
+class TestNumericSafety:
+    """Zero-guard fixes: #42 get_ref_vec, #43 angle_sum==0, #49 toroidal w300=0."""
+
+    def test_get_ref_vec_near_zero_scalar_warns_and_returns_zeros(self):
+        """#42: get_ref_vec falls back to origin when scalar denominator is near zero."""
+        import warnings
+        from pykarambola.minkowski import get_ref_vec
+        from pykarambola.results import MinkValResult
+
+        w_scalar = {0: MinkValResult(result=0.0)}
+        w_vector = {0: MinkValResult(result=np.array([1.0, 2.0, 3.0]))}
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            result = get_ref_vec(0, w_scalar, w_vector, denominator_name='w300')
+
+        assert len(w) == 1
+        assert issubclass(w[0].category, UserWarning)
+        assert "near zero" in str(w[0].message).lower()
+        assert "w300" in str(w[0].message)
+        np.testing.assert_array_equal(result, [0.0, 0.0, 0.0])
+
+    def test_get_ref_vec_nonzero_scalar_returns_correct_value(self):
+        """#42: get_ref_vec works normally when the scalar is non-zero."""
+        from pykarambola.minkowski import get_ref_vec
+        from pykarambola.results import MinkValResult
+
+        w_scalar = {0: MinkValResult(result=2.0)}
+        w_vector = {0: MinkValResult(result=np.array([4.0, 6.0, 8.0]))}
+        result = get_ref_vec(0, w_scalar, w_vector)
+        np.testing.assert_array_almost_equal(result, [2.0, 3.0, 4.0])
+
+    @pytest.mark.parametrize("fn_name", [
+        "calculate_w300",
+        "calculate_w310",
+        "calculate_w320",
+    ])
+    def test_zero_angle_sum_no_nan_and_warns(self, fn_name):
+        """#43: w300/w310/w320 handle a vertex with angle_sum<=0 without NaN/crash and emit a warning."""
+        import warnings
+        import pykarambola.minkowski as mink
+        from pykarambola.triangulation import Triangulation
+
+        fn = getattr(mink, fn_name)
+
+        verts, faces = _box_mesh(2.0, 3.0, 4.0)
+        surf = Triangulation.from_arrays(verts, faces)
+        surf._vertex_angle_sums[0] = 0.0  # simulate isolated/degenerate vertex
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            result = fn(surf)
+
+        assert any(issubclass(warning.category, UserWarning) for warning in w)
+
+        from pykarambola.tensor import SymmetricMatrix3
+        for val in result.values():
+            r = val.result
+            arr = r.to_numpy() if isinstance(r, SymmetricMatrix3) else np.atleast_1d(r)
+            assert np.all(np.isfinite(arr.astype(float)))
+
+    def test_w320_centroid_zero_w300_warns_and_falls_back(self):
+        """#49: w320 with center='centroid' and w300==0 (torus) falls back to origin."""
+        import warnings
+        from pykarambola.triangulation import Triangulation
+        from pykarambola.minkowski import calculate_w320
+        from pykarambola.results import MinkValResult
+
+        verts, faces = _box_mesh(2.0, 3.0, 4.0)
+        surf = Triangulation.from_arrays(verts, faces)
+
+        # Simulate w300==0 as occurs for a toroidal surface (Euler characteristic = 0)
+        w300_zero = {0: MinkValResult(result=0.0)}
+        w310_nonzero = {0: MinkValResult(result=np.array([1.0, 0.0, 0.0]))}
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            result = calculate_w320(surf, w300=w300_zero, w310=w310_nonzero)
+
+        assert any(issubclass(warning.category, UserWarning) for warning in w)
+        for i_idx, j_idx in [(0, 0), (1, 0), (1, 1), (2, 0), (2, 1), (2, 2)]:
+            assert np.isfinite(result[0].result[i_idx, j_idx])
+
+
 class TestComputeEigensystems:
 
     @pytest.fixture(autouse=True)

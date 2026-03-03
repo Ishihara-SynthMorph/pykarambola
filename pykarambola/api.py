@@ -338,7 +338,16 @@ def minkowski_functionals_from_label_image(
             v1c = verts[faces[:, 1]]
             v2c = verts[faces[:, 2]]
             d = np.einsum('ij,ij->i', v0c, np.cross(v1c - v0c, v2c - v0c))
-            label_center = np.einsum('i,ij->j', d, v0c + v1c + v2c) / (4.0 * d.sum())
+            d_sum = d.sum()
+            if abs(d_sum) < 1e-12:
+                warnings.warn(
+                    f"Mesh centroid denominator near zero for label {lab}; "
+                    "falling back to origin reference.",
+                    stacklevel=2,
+                )
+                label_center = np.zeros(3)
+            else:
+                label_center = np.einsum('i,ij->j', d, v0c + v1c + v2c) / (4.0 * d_sum)
         elif isinstance(center, str) and center == 'centroid_voxel':
             voxel_coords = np.argwhere(label_image == lab)  # (N, 3)
             label_center = voxel_coords.mean(axis=0) * np.array(spacing)
