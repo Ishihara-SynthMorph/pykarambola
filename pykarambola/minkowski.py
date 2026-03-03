@@ -4,6 +4,8 @@ All Minkowski functional calculations — vectorized with NumPy.
 Each function returns a dict mapping label -> MinkValResult.
 """
 
+import warnings
+
 import numpy as np
 from .triangulation import LABEL_UNASSIGNED, NEIGHBOUR_UNASSIGNED
 from .results import MinkValResult
@@ -37,9 +39,23 @@ def _default_rank4():
     return MinkValResult(result=SymmetricRank4Tensor())
 
 
-def get_ref_vec(label, w_scalar, w_vector):
-    """Compute reference vector (centroid) = w_vector / w_scalar for a label."""
-    return w_vector[label].result / w_scalar[label].result
+def get_ref_vec(label, w_scalar, w_vector, eps=1e-12, denominator_name=None):
+    """Compute reference vector (centroid) = w_vector / w_scalar for a label.
+
+    Falls back to the origin and emits a warning when the scalar denominator
+    is near zero (e.g. open surfaces, flat surfaces, or toroidal shapes where
+    the Euler characteristic is zero).
+    """
+    s = w_scalar[label].result
+    if abs(s) < eps:
+        hint = f" ({denominator_name})" if denominator_name else ""
+        warnings.warn(
+            f"Scalar denominator{hint} near zero for label {label}; "
+            "falling back to origin reference.",
+            stacklevel=3,
+        )
+        return np.zeros(3)
+    return w_vector[label].result / s
 
 
 # ============================================================================
@@ -92,12 +108,26 @@ def calculate_w300(surface):
     # w3_part = (2*pi * angle / angle_sum) - angle
     # Each vertex contributes w3_part / 3.0 to the label of the triangle
 
+    # Guard: vertices with zero angle sum (isolated or fully degenerate triangles)
+    # contribute nothing to the Gaussian curvature integral.
+    if np.any(surface._vertex_angle_sums <= 0):
+        warnings.warn(
+            "Mesh contains vertices with zero or negative angle sum (isolated or "
+            "degenerate triangles); their Gaussian curvature contribution is set to zero.",
+            stacklevel=2,
+        )
+
     per_tri = np.zeros(F, dtype=np.float64)
     for j in range(3):
         vert_idx = surface._faces[:, j]  # (F,)
         angle = surface._vertex_angles[:, j]  # (F,)
         angle_sum = surface._vertex_angle_sums[vert_idx]  # (F,)
-        w3_part = 2.0 * np.pi * (angle / angle_sum) - angle
+        safe_angle_sum = np.where(angle_sum > 0, angle_sum, 1.0)
+        w3_part = np.where(
+            angle_sum > 0,
+            2.0 * np.pi * (angle / safe_angle_sum) - angle,
+            0.0,
+        )
         per_tri += w3_part / 3.0
 
     results = {}
@@ -178,6 +208,13 @@ def calculate_w210(surface):
 
 def calculate_w310(surface):
     """Gaussian curvature-weighted position via angle deficit."""
+    if np.any(surface._vertex_angle_sums <= 0):
+        warnings.warn(
+            "Mesh contains vertices with zero or negative angle sum (isolated or "
+            "degenerate triangles); their contribution is set to zero.",
+            stacklevel=2,
+        )
+
     F = surface.n_triangles()
     result_vals = np.zeros((F, 3), dtype=np.float64)
 
@@ -186,7 +223,12 @@ def calculate_w310(surface):
         angle = surface._vertex_angles[:, j]
         angle_sum = surface._vertex_angle_sums[vert_idx]
         pos = surface._verts[vert_idx]  # (F, 3)
-        w310_part = (2.0 * np.pi * (angle / angle_sum) - angle) / 3.0  # (F,)
+        safe_angle_sum = np.where(angle_sum > 0, angle_sum, 1.0)
+        w310_part = np.where(
+            angle_sum > 0,
+            (2.0 * np.pi * (angle / safe_angle_sum) - angle) / 3.0,
+            0.0,
+        )
         result_vals += w310_part[:, None] * pos
 
     results = {}
@@ -214,7 +256,7 @@ def calculate_w020(surface, w000=None, w010=None):
     ref_vecs = {}
     for lab in label_groups:
         if w000 and len(w000) > 0 and lab in w000:
-            ref_vecs[lab] = get_ref_vec(lab, w000, w010)
+            ref_vecs[lab] = get_ref_vec(lab, w000, w010, denominator_name='w000')
         else:
             ref_vecs[lab] = np.zeros(3)
 
@@ -296,7 +338,7 @@ def calculate_w120(surface, w100=None, w110=None):
     ref_vecs = {}
     for lab in label_groups:
         if w100 and len(w100) > 0 and lab in w100:
-            ref_vecs[lab] = get_ref_vec(lab, w100, w110)
+            ref_vecs[lab] = get_ref_vec(lab, w100, w110, denominator_name='w100')
         else:
             ref_vecs[lab] = np.zeros(3)
 
@@ -329,7 +371,7 @@ def calculate_w220(surface, w200=None, w210=None):
     ref_vecs = {}
     for lab in label_groups:
         if w200 and len(w200) > 0 and lab in w200:
-            ref_vecs[lab] = get_ref_vec(lab, w200, w210)
+            ref_vecs[lab] = get_ref_vec(lab, w200, w210, denominator_name='w200')
         else:
             ref_vecs[lab] = np.zeros(3)
 
@@ -365,13 +407,20 @@ def calculate_w220(surface, w200=None, w210=None):
 
 def calculate_w320(surface, w300=None, w310=None):
     """Gaussian curvature-weighted tensor product via angle deficit."""
+    if np.any(surface._vertex_angle_sums <= 0):
+        warnings.warn(
+            "Mesh contains vertices with zero or negative angle sum (isolated or "
+            "degenerate triangles); their contribution is set to zero.",
+            stacklevel=2,
+        )
+
     results = {}
     label_groups = _group_by_label(surface._labels)
 
     ref_vecs = {}
     for lab in label_groups:
         if w300 and len(w300) > 0 and lab in w300:
-            ref_vecs[lab] = get_ref_vec(lab, w300, w310)
+            ref_vecs[lab] = get_ref_vec(lab, w300, w310, denominator_name='w300')
         else:
             ref_vecs[lab] = np.zeros(3)
 
@@ -384,7 +433,12 @@ def calculate_w320(surface, w300=None, w310=None):
             vert_idx = surface._faces[tri_indices, j]
             angle = surface._vertex_angles[tri_indices, j]
             angle_sum = surface._vertex_angle_sums[vert_idx]
-            angle_part = (2.0 * np.pi * (angle / angle_sum) - angle) / 3.0
+            safe_angle_sum = np.where(angle_sum > 0, angle_sum, 1.0)
+            angle_part = np.where(
+                angle_sum > 0,
+                (2.0 * np.pi * (angle / safe_angle_sum) - angle) / 3.0,
+                0.0,
+            )
             c = surface._verts[vert_idx] - ref_vec
 
             for i_idx, j_idx in _SYM_PAIRS:
