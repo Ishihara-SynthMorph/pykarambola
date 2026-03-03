@@ -237,7 +237,23 @@ class TestComputeEigensystems:
             assert f'{name}_eigvals' in result
             assert f'{name}_eigvecs' in result
 
+    def test_single_rank2_tensor_omits_eigensystem(self):
+        # Requesting a single rank-2 tensor with compute_eigensystems=False
+        # should return the tensor matrix but suppress its eigvals/eigvecs.
+        result = minkowski_functionals(
+            self.verts, self.faces,
+            compute=['w102'],
+            compute_eigensystems=False,
+        )
+        assert 'w102' in result
+        assert result['w102'].shape == (3, 3)
+        assert 'w102_eigvals' not in result
+        assert 'w102_eigvecs' not in result
+
     def test_beta_with_false_raises_value_error(self):
+        # 'beta' is not yet implemented as a functional, but the guard fires
+        # proactively as a forward-compatibility check so that once beta lands
+        # it cannot be requested without eigensystems.
         with pytest.raises(ValueError, match="compute_eigensystems=True"):
             minkowski_functionals(
                 self.verts, self.faces,
@@ -246,6 +262,7 @@ class TestComputeEigensystems:
             )
 
     def test_beta_suffix_with_false_raises_value_error(self):
+        # Same forward-compatibility guard for any *_beta quantity.
         with pytest.raises(ValueError, match="compute_eigensystems=True"):
             minkowski_functionals(
                 self.verts, self.faces,

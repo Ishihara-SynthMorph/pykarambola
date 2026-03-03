@@ -266,9 +266,15 @@ def minkowski_functionals_from_label_image(
         ``None``: use the origin.
         ``(3,)`` array: use an explicit point for all labels.
     compute : str or list of str
-        Passed through to :func:`minkowski_functionals`.
+        Which functionals to compute. ``'standard'`` returns the 14 base
+        functionals; ``'all'`` additionally computes ``w103``, ``w104``,
+        and spherical Minkowski summaries (``msm_ql``, ``msm_wl``); a list
+        of names selects specific quantities.
     compute_eigensystems : bool, optional
-        Passed through to :func:`minkowski_functionals`.
+        If False, eigenvalues and eigenvectors for rank-2 tensors are
+        skipped (``*_eigvals`` / ``*_eigvecs`` keys are omitted from each
+        label's result dict), avoiding six ``np.linalg.eigh`` calls per
+        label. Default is True.
 
     Returns
     -------
