@@ -39,7 +39,7 @@ def _default_rank4():
     return MinkValResult(result=SymmetricRank4Tensor())
 
 
-def get_ref_vec(label, w_scalar, w_vector, eps=1e-12):
+def get_ref_vec(label, w_scalar, w_vector, eps=1e-12, denominator_name=None):
     """Compute reference vector (centroid) = w_vector / w_scalar for a label.
 
     Falls back to the origin and emits a warning when the scalar denominator
@@ -48,8 +48,9 @@ def get_ref_vec(label, w_scalar, w_vector, eps=1e-12):
     """
     s = w_scalar[label].result
     if abs(s) < eps:
+        hint = f" ({denominator_name})" if denominator_name else ""
         warnings.warn(
-            f"Scalar denominator near zero for label {label}; "
+            f"Scalar denominator{hint} near zero for label {label}; "
             "falling back to origin reference.",
             stacklevel=3,
         )
@@ -109,10 +110,10 @@ def calculate_w300(surface):
 
     # Guard: vertices with zero angle sum (isolated or fully degenerate triangles)
     # contribute nothing to the Gaussian curvature integral.
-    if np.any(surface._vertex_angle_sums == 0):
+    if np.any(surface._vertex_angle_sums <= 0):
         warnings.warn(
-            "Mesh contains vertices with zero angle sum (isolated or degenerate "
-            "triangles); their Gaussian curvature contribution is set to zero.",
+            "Mesh contains vertices with zero or negative angle sum (isolated or "
+            "degenerate triangles); their Gaussian curvature contribution is set to zero.",
             stacklevel=2,
         )
 
@@ -207,6 +208,13 @@ def calculate_w210(surface):
 
 def calculate_w310(surface):
     """Gaussian curvature-weighted position via angle deficit."""
+    if np.any(surface._vertex_angle_sums <= 0):
+        warnings.warn(
+            "Mesh contains vertices with zero or negative angle sum (isolated or "
+            "degenerate triangles); their contribution is set to zero.",
+            stacklevel=2,
+        )
+
     F = surface.n_triangles()
     result_vals = np.zeros((F, 3), dtype=np.float64)
 
@@ -248,7 +256,7 @@ def calculate_w020(surface, w000=None, w010=None):
     ref_vecs = {}
     for lab in label_groups:
         if w000 and len(w000) > 0 and lab in w000:
-            ref_vecs[lab] = get_ref_vec(lab, w000, w010)
+            ref_vecs[lab] = get_ref_vec(lab, w000, w010, denominator_name='w000')
         else:
             ref_vecs[lab] = np.zeros(3)
 
@@ -330,7 +338,7 @@ def calculate_w120(surface, w100=None, w110=None):
     ref_vecs = {}
     for lab in label_groups:
         if w100 and len(w100) > 0 and lab in w100:
-            ref_vecs[lab] = get_ref_vec(lab, w100, w110)
+            ref_vecs[lab] = get_ref_vec(lab, w100, w110, denominator_name='w100')
         else:
             ref_vecs[lab] = np.zeros(3)
 
@@ -363,7 +371,7 @@ def calculate_w220(surface, w200=None, w210=None):
     ref_vecs = {}
     for lab in label_groups:
         if w200 and len(w200) > 0 and lab in w200:
-            ref_vecs[lab] = get_ref_vec(lab, w200, w210)
+            ref_vecs[lab] = get_ref_vec(lab, w200, w210, denominator_name='w200')
         else:
             ref_vecs[lab] = np.zeros(3)
 
@@ -399,13 +407,20 @@ def calculate_w220(surface, w200=None, w210=None):
 
 def calculate_w320(surface, w300=None, w310=None):
     """Gaussian curvature-weighted tensor product via angle deficit."""
+    if np.any(surface._vertex_angle_sums <= 0):
+        warnings.warn(
+            "Mesh contains vertices with zero or negative angle sum (isolated or "
+            "degenerate triangles); their contribution is set to zero.",
+            stacklevel=2,
+        )
+
     results = {}
     label_groups = _group_by_label(surface._labels)
 
     ref_vecs = {}
     for lab in label_groups:
         if w300 and len(w300) > 0 and lab in w300:
-            ref_vecs[lab] = get_ref_vec(lab, w300, w310)
+            ref_vecs[lab] = get_ref_vec(lab, w300, w310, denominator_name='w300')
         else:
             ref_vecs[lab] = np.zeros(3)
 

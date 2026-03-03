@@ -52,7 +52,8 @@ def _build_label_dict(raw, wanted, label):
     return None
 
 
-def minkowski_functionals(verts, faces, labels=None, center=None, compute='standard'):
+def minkowski_functionals(verts, faces, labels=None, center=None, compute='standard',
+                          compute_eigensystems=True):
     """Compute Minkowski functionals on a triangulated surface.
 
     Parameters
@@ -70,6 +71,15 @@ def minkowski_functionals(verts, faces, labels=None, center=None, compute='stand
     compute : str or list of str
         'standard' (14 base functionals + eigensystems),
         'all' (adds w103, w104, msm), or list of names.
+    compute_eigensystems : bool, optional
+        Whether to compute eigenvalues and eigenvectors for each rank-2
+        tensor in the output. Default is True. When False, rank-2 tensors
+        (3×3 matrices) are still computed and returned; only the
+        eigendecomposition (``*_eigvals`` / ``*_eigvecs`` keys) is skipped.
+        This avoids six ``np.linalg.eigh`` calls per label, which can
+        dominate runtime for large batch jobs that do not need eigensystems.
+        Raises ``ValueError`` if any beta-derived quantity is requested
+        alongside ``compute_eigensystems=False``.
 
     Returns
     -------
@@ -102,12 +112,28 @@ def minkowski_functionals(verts, faces, labels=None, center=None, compute='stand
             raise ValueError(f"Unknown compute preset: {compute!r}")
     else:
         wanted = set(compute)
-        unknown = wanted - _ALL
+        # Guard: beta (and future *_beta quantities) require eigensystems;
+        # check before the unknown-names gate so the message is actionable.
+        beta_keys = {name for name in wanted if name == 'beta' or name.endswith('_beta')}
+        if beta_keys and not compute_eigensystems:
+            raise ValueError(
+                f"{sorted(beta_keys)} requires eigensystems; "
+                "set compute_eigensystems=True or remove these from compute."
+            )
+        unknown = wanted - _ALL - beta_keys
         if unknown:
             raise ValueError(
                 f"Unknown compute names: {sorted(unknown)}. "
                 f"Valid names: {sorted(_ALL)}"
             )
+
+    # Guard: beta (and future *_beta quantities) require eigensystems
+    beta_keys = {name for name in wanted if name == 'beta' or name.endswith('_beta')}
+    if beta_keys and not compute_eigensystems:
+        raise ValueError(
+            f"{sorted(beta_keys)} requires eigensystems; "
+            "set compute_eigensystems=True or remove these from compute."
+        )
 
     # Handle explicit center by shifting vertices
     use_centroid = False
@@ -198,9 +224,10 @@ def minkowski_functionals(verts, faces, labels=None, center=None, compute='stand
 
     # Eigensystem raw results
     eig_raw = {}
-    for name in _RANK2:
-        if name in wanted and all_raw[name]:
-            eig_raw[name] = calculate_eigensystem(all_raw[name])
+    if compute_eigensystems:
+        for name in _RANK2:
+            if name in wanted and all_raw[name]:
+                eig_raw[name] = calculate_eigensystem(all_raw[name])
 
     # Build per-label output dicts
     per_label = {}
@@ -250,7 +277,7 @@ def _any_needed(wanted, names):
 
 def minkowski_functionals_from_label_image(
     label_image, level=None, spacing=(1.0, 1.0, 1.0),
-    center='centroid', compute='standard',
+    center='centroid_mesh', compute='standard', compute_eigensystems=True
 ):
     """Compute Minkowski functionals for each label in a 3D label image.
 
@@ -263,13 +290,27 @@ def minkowski_functionals_from_label_image(
         binary masks).
     spacing : tuple of float
         ``(sz, sy, sx)`` voxel spacing passed to ``marching_cubes``.
-    center : None, 'centroid', or (3,) array_like
+    center : None, 'centroid_mesh', 'centroid_voxel', or (3,) array_like
         Reference point for position-dependent tensors.
-        ``'centroid'`` (default): use per-label voxel centroid.
+        ``'centroid_mesh'`` (default): centroid of the volume enclosed by the mesh,
+            computed via the divergence theorem (each triangle and the origin form a
+            tetrahedron; the centroid is the volume-weighted mean of tetrahedron
+            centroids). Requires outward-facing normals.
+        ``'centroid_voxel'``: centroid of the set of labelled voxels (mean of
+            voxel-grid coordinates scaled by spacing), consistent with
+            scikit-image ``regionprops`` convention.
         ``None``: use the origin.
         ``(3,)`` array: use an explicit point for all labels.
     compute : str or list of str
-        Passed through to :func:`minkowski_functionals`.
+        Which functionals to compute. ``'standard'`` returns the 14 base
+        functionals; ``'all'`` additionally computes ``w103``, ``w104``,
+        and spherical Minkowski summaries (``msm_ql``, ``msm_wl``); a list
+        of names selects specific quantities.
+    compute_eigensystems : bool, optional
+        If False, eigenvalues and eigenvectors for rank-2 tensors are
+        skipped (``*_eigvals`` / ``*_eigvecs`` keys are omitted from each
+        label's result dict), avoiding six ``np.linalg.eigh`` calls per
+        label. Default is True.
 
     Returns
     -------
@@ -309,7 +350,8 @@ def minkowski_functionals_from_label_image(
         mask = (label_image == lab).astype(np.float64)
 
         try:
-            verts, faces, _, _ = marching_cubes(mask, level=level, spacing=spacing)
+            verts, faces, _, _ = marching_cubes(mask, level=level, spacing=spacing,
+                                               gradient_direction='ascent')
         except Exception as exc:
             warnings.warn(
                 f"marching_cubes failed for label {lab}: {exc}",
@@ -326,15 +368,32 @@ def minkowski_functionals_from_label_image(
             faces = faces[:, ::-1]
 
         # Determine center for this label
-        if isinstance(center, str) and center == 'centroid':
+        if isinstance(center, str) and center == 'centroid_mesh':
+            # Volume-weighted centroid via the divergence theorem.
+            # Runs after the face-flip so normals are guaranteed outward.
+            v0c = verts[faces[:, 0]]
+            v1c = verts[faces[:, 1]]
+            v2c = verts[faces[:, 2]]
+            d = np.einsum('ij,ij->i', v0c, np.cross(v1c - v0c, v2c - v0c))
+            d_sum = d.sum()
+            if abs(d_sum) < 1e-12:
+                warnings.warn(
+                    f"Mesh centroid denominator near zero for label {lab}; "
+                    "falling back to origin reference.",
+                    stacklevel=2,
+                )
+                label_center = np.zeros(3)
+            else:
+                label_center = np.einsum('i,ij->j', d, v0c + v1c + v2c) / (4.0 * d_sum)
+        elif isinstance(center, str) and center == 'centroid_voxel':
             voxel_coords = np.argwhere(label_image == lab)  # (N, 3)
-            centroid = voxel_coords.mean(axis=0) * np.array(spacing)
-            label_center = centroid
+            label_center = voxel_coords.mean(axis=0) * np.array(spacing)
         else:
             label_center = center
 
         results[lab] = minkowski_functionals(
             verts, faces, center=label_center, compute=compute,
+            compute_eigensystems=compute_eigensystems,
         )
 
     return results
