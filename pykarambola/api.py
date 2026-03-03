@@ -52,7 +52,8 @@ def _build_label_dict(raw, wanted, label):
     return None
 
 
-def minkowski_functionals(verts, faces, labels=None, center=None, compute='standard'):
+def minkowski_functionals(verts, faces, labels=None, center=None, compute='standard',
+                          compute_eigensystems=True):
     """Compute Minkowski functionals on a triangulated surface.
 
     Parameters
@@ -70,6 +71,15 @@ def minkowski_functionals(verts, faces, labels=None, center=None, compute='stand
     compute : str or list of str
         'standard' (14 base functionals + eigensystems),
         'all' (adds w103, w104, msm), or list of names.
+    compute_eigensystems : bool, optional
+        Whether to compute eigenvalues and eigenvectors for each rank-2
+        tensor in the output. Default is True. When False, rank-2 tensors
+        (3×3 matrices) are still computed and returned; only the
+        eigendecomposition (``*_eigvals`` / ``*_eigvecs`` keys) is skipped.
+        This avoids six ``np.linalg.eigh`` calls per label, which can
+        dominate runtime for large batch jobs that do not need eigensystems.
+        Raises ``ValueError`` if any beta-derived quantity is requested
+        alongside ``compute_eigensystems=False``.
 
     Returns
     -------
@@ -90,6 +100,14 @@ def minkowski_functionals(verts, faces, labels=None, center=None, compute='stand
             raise ValueError(f"Unknown compute preset: {compute!r}")
     else:
         wanted = set(compute)
+
+    # Guard: beta (and future *_beta quantities) require eigensystems
+    beta_keys = {name for name in wanted if name == 'beta' or name.endswith('_beta')}
+    if beta_keys and not compute_eigensystems:
+        raise ValueError(
+            f"{sorted(beta_keys)} requires eigensystems; "
+            "set compute_eigensystems=True or remove these from compute."
+        )
 
     # Handle explicit center by shifting vertices
     use_centroid = False
@@ -176,9 +194,10 @@ def minkowski_functionals(verts, faces, labels=None, center=None, compute='stand
 
     # Eigensystem raw results
     eig_raw = {}
-    for name in _RANK2:
-        if name in wanted and all_raw[name]:
-            eig_raw[name] = calculate_eigensystem(all_raw[name])
+    if compute_eigensystems:
+        for name in _RANK2:
+            if name in wanted and all_raw[name]:
+                eig_raw[name] = calculate_eigensystem(all_raw[name])
 
     # Build per-label output dicts
     per_label = {}
@@ -228,7 +247,7 @@ def _any_needed(wanted, names):
 
 def minkowski_functionals_from_label_image(
     label_image, level=None, spacing=(1.0, 1.0, 1.0),
-    center='centroid', compute='standard',
+    center='centroid', compute='standard', compute_eigensystems=True,
 ):
     """Compute Minkowski functionals for each label in a 3D label image.
 
@@ -247,7 +266,15 @@ def minkowski_functionals_from_label_image(
         ``None``: use the origin.
         ``(3,)`` array: use an explicit point for all labels.
     compute : str or list of str
-        Passed through to :func:`minkowski_functionals`.
+        Which functionals to compute. ``'standard'`` returns the 14 base
+        functionals; ``'all'`` additionally computes ``w103``, ``w104``,
+        and spherical Minkowski summaries (``msm_ql``, ``msm_wl``); a list
+        of names selects specific quantities.
+    compute_eigensystems : bool, optional
+        If False, eigenvalues and eigenvectors for rank-2 tensors are
+        skipped (``*_eigvals`` / ``*_eigvecs`` keys are omitted from each
+        label's result dict), avoiding six ``np.linalg.eigh`` calls per
+        label. Default is True.
 
     Returns
     -------
@@ -306,6 +333,7 @@ def minkowski_functionals_from_label_image(
 
         results[lab] = minkowski_functionals(
             verts, faces, center=label_center, compute=compute,
+            compute_eigensystems=compute_eigensystems,
         )
 
     return results

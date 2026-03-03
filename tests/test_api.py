@@ -201,6 +201,76 @@ class TestComputeOptions:
         assert 'w102_eigvecs' in result
 
 
+class TestComputeEigensystems:
+
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.verts, self.faces = _box_mesh(2.0, 3.0, 4.0)
+
+    def test_false_omits_eigvals_and_eigvecs(self):
+        result = minkowski_functionals(
+            self.verts, self.faces, compute_eigensystems=False,
+        )
+        for name in ['w020', 'w120', 'w220', 'w320', 'w102', 'w202']:
+            assert f'{name}_eigvals' not in result
+            assert f'{name}_eigvecs' not in result
+
+    def test_false_retains_tensor_values(self):
+        result = minkowski_functionals(
+            self.verts, self.faces, compute_eigensystems=False,
+        )
+        for name in ['w020', 'w120', 'w220', 'w320', 'w102', 'w202']:
+            assert name in result
+            assert result[name].shape == (3, 3)
+
+    def test_false_works_with_scalar_only_compute(self):
+        result = minkowski_functionals(
+            self.verts, self.faces,
+            compute=['w000', 'w100', 'w200', 'w300'],
+            compute_eigensystems=False,
+        )
+        assert set(result.keys()) == {'w000', 'w100', 'w200', 'w300'}
+
+    def test_true_default_includes_eigvals_and_eigvecs(self):
+        result = minkowski_functionals(self.verts, self.faces)
+        for name in ['w020', 'w120', 'w220', 'w320', 'w102', 'w202']:
+            assert f'{name}_eigvals' in result
+            assert f'{name}_eigvecs' in result
+
+    def test_single_rank2_tensor_omits_eigensystem(self):
+        # Requesting a single rank-2 tensor with compute_eigensystems=False
+        # should return the tensor matrix but suppress its eigvals/eigvecs.
+        result = minkowski_functionals(
+            self.verts, self.faces,
+            compute=['w102'],
+            compute_eigensystems=False,
+        )
+        assert 'w102' in result
+        assert result['w102'].shape == (3, 3)
+        assert 'w102_eigvals' not in result
+        assert 'w102_eigvecs' not in result
+
+    def test_beta_with_false_raises_value_error(self):
+        # 'beta' is not yet implemented as a functional, but the guard fires
+        # proactively as a forward-compatibility check so that once beta lands
+        # it cannot be requested without eigensystems.
+        with pytest.raises(ValueError, match="compute_eigensystems=True"):
+            minkowski_functionals(
+                self.verts, self.faces,
+                compute=['w020', 'beta'],
+                compute_eigensystems=False,
+            )
+
+    def test_beta_suffix_with_false_raises_value_error(self):
+        # Same forward-compatibility guard for any *_beta quantity.
+        with pytest.raises(ValueError, match="compute_eigensystems=True"):
+            minkowski_functionals(
+                self.verts, self.faces,
+                compute=['w020', 'w020_beta'],
+                compute_eigensystems=False,
+            )
+
+
 class TestMultiLabel:
 
     def test_labels_returns_per_label_dict(self):
@@ -296,3 +366,12 @@ class TestLabelImage:
         vol = np.zeros((10, 10, 10), dtype=np.int32)
         result = minkowski_functionals_from_label_image(vol)
         assert len(result) == 0
+
+    def test_compute_eigensystems_false_threads_through(self):
+        vol = _voxel_box((20, 20, 20), np.s_[5:15, 5:15, 5:15])
+        result = minkowski_functionals_from_label_image(
+            vol, compute_eigensystems=False,
+        )
+        for name in ['w020', 'w120', 'w220', 'w320', 'w102', 'w202']:
+            assert f'{name}_eigvals' not in result[1]
+            assert f'{name}_eigvecs' not in result[1]
