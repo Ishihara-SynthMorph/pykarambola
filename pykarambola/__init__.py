@@ -1,6 +1,6 @@
 """
 pykarambola - Python implementation of the Karambola package for computing
-Minkowski functionals and tensors on 3D triangulated surfaces.
+Minkowski tensors on 3D triangulated surfaces.
 """
 
 from importlib.metadata import version, PackageNotFoundError
@@ -26,4 +26,4 @@ from .spherical import calculate_sphmink
 from .eigensystem import calculate_eigensystem
 from .results import CalcOptions, SurfaceStatistics
 from .surface import check_surface
-from .api import minkowski_functionals, minkowski_functionals_from_label_image
+from .api import minkowski_tensors, minkowski_tensors_from_label_image

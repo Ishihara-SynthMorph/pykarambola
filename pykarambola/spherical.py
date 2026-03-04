@@ -1,5 +1,5 @@
 """
-Spherical Minkowski functionals using spherical harmonics.
+Spherical Minkowski tensors using spherical harmonics.
 """
 
 import math
@@ -81,7 +81,7 @@ def _default_sphmink():
 
 
 class SphericalMinkowskis:
-    """Accumulates spherical harmonic coefficients for Minkowski functionals."""
+    """Accumulates spherical harmonic coefficients for Minkowski tensors."""
 
     def __init__(self):
         # Store d_lm coefficients: for each l, store m = 0..l as complex
@@ -182,7 +182,7 @@ class SphericalMinkowskis:
 
 
 def calculate_sphmink(surface):
-    """Calculate spherical Minkowski functionals for each label."""
+    """Calculate spherical Minkowski tensors for each label."""
     results = {}
     data = {}
 

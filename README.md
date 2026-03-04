@@ -1,16 +1,16 @@
 # pykarambola
 
-Python implementation of [karambola](https://github.com/morphometry/karambola) — a package for computing **Minkowski functionals and tensors** on 3D triangulated surfaces.
+Python implementation of [karambola](https://github.com/morphometry/karambola) — a package for computing **Minkowski tensors** on 3D triangulated surfaces.
 
-Minkowski functionals (volume, surface area, integrated mean curvature, Euler characteristic) and their tensor generalizations characterize the geometry and morphology of 3D shapes. They are widely used in structural analysis, materials science, and computational physics.
+Minkowski tensors (scalars, vectors, and rank-2 tensors) characterize the geometry and morphology of 3D shapes. The scalar quantities — volume, surface area, integrated mean curvature, and Euler characteristic — are sometimes called Minkowski functionals; the full family also includes Minkowski vectors and higher-rank tensors. They are widely used in structural analysis, materials science, and computational physics.
 
 ## New in pykarambola
 
 Compared to the original C++ karambola, this Python port adds:
 
 - **OBJ and GLB parsers** — read Wavefront OBJ and binary glTF (`.glb`) meshes directly, in addition to the original `.poly` and `.off` formats.
-- **High-level API** — `minkowski_functionals()` accepts NumPy arrays and returns a plain dict, making it easy to integrate into pipelines without dealing with the lower-level triangulation types.
-- **Label-image API** — `minkowski_functionals_from_label_image()` extracts surfaces from a 3D integer label image via marching cubes and computes functionals for every label in one call.
+- **High-level API** — `minkowski_tensors()` accepts NumPy arrays and returns a plain dict, making it easy to integrate into pipelines without dealing with the lower-level triangulation types.
+- **Label-image API** — `minkowski_tensors_from_label_image()` extracts surfaces from a 3D integer label image via marching cubes and computes tensors for every label in one call.
 
 ## Requirements
 
@@ -51,12 +51,12 @@ pip install "pykarambola[glb]"
 
 ### From NumPy arrays
 
-`minkowski_functionals()` is the main entry point. Pass vertices and faces as NumPy arrays and get back a plain dict:
+`minkowski_tensors()` is the main entry point. Pass vertices and faces as NumPy arrays and get back a plain dict:
 
 ```python
 import pykarambola as pk
 
-result = pk.minkowski_functionals(
+result = pk.minkowski_tensors(
     verts,   # (V, 3) float64 array of vertex positions
     faces,   # (F, 3) int64 array of vertex indices
 )
@@ -73,19 +73,19 @@ print(result["w020_eigvecs"])   # eigenvectors of w020 (columns)
 Control which quantities are computed with the `compute` argument:
 
 ```python
-# default: 14 standard functionals + eigensystems for rank-2 tensors
-result = pk.minkowski_functionals(verts, faces, compute="standard")
+# default: 14 standard tensors + eigensystems for rank-2 tensors
+result = pk.minkowski_tensors(verts, faces, compute="standard")
 
 # include higher-order tensors (w103, w104) and spherical Minkowski metrics
-result = pk.minkowski_functionals(verts, faces, compute="all")
+result = pk.minkowski_tensors(verts, faces, compute="all")
 
 # compute only specific quantities
-result = pk.minkowski_functionals(verts, faces, compute=["w000", "w100", "w020"])
+result = pk.minkowski_tensors(verts, faces, compute=["w000", "w100", "w020"])
 ```
 
 ### From a 3D label image
 
-`minkowski_functionals_from_label_image()` takes a 3D integer array, runs marching cubes on each label, and returns a dict of results keyed by label value. Requires [scikit-image](https://scikit-image.org/).
+`minkowski_tensors_from_label_image()` takes a 3D integer array, runs marching cubes on each label, and returns a dict of results keyed by label value. Requires [scikit-image](https://scikit-image.org/).
 
 ```python
 import numpy as np
@@ -95,10 +95,10 @@ label_image = np.zeros((64, 64, 64), dtype=int)
 label_image[10:40, 10:40, 10:40] = 1
 label_image[40:60, 40:60, 40:60] = 2
 
-result = pk.minkowski_functionals_from_label_image(
+result = pk.minkowski_tensors_from_label_image(
     label_image,
     spacing=(0.5, 0.5, 0.5),   # voxel size in physical units
-    center="centroid",          # shift tensors to per-label centroid
+    center="centroid_mesh",     # shift tensors to per-label centroid
 )
 
 print(result[1]["w000"])   # volume of label 1
@@ -107,10 +107,10 @@ print(result[2]["w100"])   # surface area of label 2
 
 ### Multi-label meshes
 
-Pass per-face integer labels to compute functionals for multiple bodies in a single mesh:
+Pass per-face integer labels to compute tensors for multiple bodies in a single mesh:
 
 ```python
-result = pk.minkowski_functionals(verts, faces, labels=face_labels)
+result = pk.minkowski_tensors(verts, faces, labels=face_labels)
 # result is dict[int, dict]
 print(result[1]["w000"])
 print(result[2]["w000"])
@@ -118,7 +118,7 @@ print(result[2]["w000"])
 
 ## File I/O
 
-pykarambola can read four mesh formats. The parsers return a `Triangulation` object whose `.vertices` and `.triangles` arrays can be passed directly to `minkowski_functionals()`.
+pykarambola can read four mesh formats. The parsers return a `Triangulation` object whose `.vertices` and `.triangles` arrays can be passed directly to `minkowski_tensors()`.
 
 ```python
 surface = pk.parse_poly_file("my_surface.poly")   # karambola native
@@ -126,7 +126,7 @@ surface = pk.parse_off_file("my_surface.off")     # Object File Format
 surface = pk.parse_obj_file("my_surface.obj")     # Wavefront OBJ  (new)
 surface = pk.parse_glb_file("my_surface.glb")     # binary glTF    (new, requires trimesh)
 
-result = pk.minkowski_functionals(surface.vertices, surface.triangles)
+result = pk.minkowski_tensors(surface.vertices, surface.triangles)
 ```
 
 | Extension | Description |

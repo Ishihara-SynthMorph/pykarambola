@@ -1,5 +1,5 @@
 """
-Port of test_box.cpp - tests Minkowski functionals on box geometries.
+Port of test_box.cpp - tests Minkowski tensors on box geometries.
 """
 
 import os

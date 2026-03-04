@@ -1,5 +1,5 @@
 """
-All Minkowski functional calculations — vectorized with NumPy.
+All Minkowski tensor calculations — vectorized with NumPy.
 
 Each function returns a dict mapping label -> MinkValResult.
 """

@@ -19,10 +19,10 @@ Initial Python port of [karambola](https://github.com/morphometry/karambola).
 
 ### Added
 
-- Core Minkowski functional and tensor compute functions (`calculate_w*`) ported from C++ karambola
+- Core Minkowski tensor compute functions (`calculate_w*`) ported from C++ karambola
 - `Triangulation` data structure with precomputed per-face normals, edge lengths, and dihedral angles
-- High-level NumPy array API: `minkowski_functionals(verts, faces)` returns a plain dict
-- Label-image API: `minkowski_functionals_from_label_image()` runs marching cubes per label and returns results keyed by label value
+- High-level NumPy array API: `minkowski_tensors(verts, faces)` returns a plain dict
+- Label-image API: `minkowski_tensors_from_label_image()` runs marching cubes per label and returns results keyed by label value
 - Rank-2 tensor eigensystem decomposition (`_eigvals`, `_eigvecs` entries in results)
 - File format parsers: `.poly` (karambola native), `.off`, `.obj` (new), `.glb` / binary glTF (new, requires `trimesh`)
 - Command-line interface: `python -m pykarambola`

@@ -1,5 +1,5 @@
 """
-High-level API for computing Minkowski functionals from numpy arrays.
+High-level API for computing Minkowski tensors from numpy arrays.
 """
 
 import warnings
@@ -77,9 +77,9 @@ def _build_label_dict(raw, wanted, label):
     return None
 
 
-def minkowski_functionals(verts, faces, labels=None, center=None, compute='standard',
-                          compute_eigensystems=True):
-    """Compute Minkowski functionals on a triangulated surface.
+def minkowski_tensors(verts, faces, labels=None, center=None, compute='standard',
+                      compute_eigensystems=True):
+    """Compute Minkowski tensors on a triangulated surface.
 
     Parameters
     ----------
@@ -91,10 +91,10 @@ def minkowski_functionals(verts, faces, labels=None, center=None, compute='stand
         Per-face labels. If None, treat as a single body.
     center : None, 'centroid', or (3,) array_like
         Reference point for position-dependent tensors.
-        None: use origin. 'centroid': use per-functional centroid.
+        None: use origin. 'centroid': use per-tensor centroid.
         (3,) array: shift vertices by -center before computing.
     compute : str or list of str
-        'standard' (14 base functionals + eigensystems),
+        'standard' (14 base tensors + eigensystems),
         'all' (adds w103, w104, msm), or list of names.
     compute_eigensystems : bool, optional
         Whether to compute eigenvalues and eigenvectors for each rank-2
@@ -109,7 +109,7 @@ def minkowski_functionals(verts, faces, labels=None, center=None, compute='stand
     Returns
     -------
     dict or dict[int, dict]
-        When ``labels`` is ``None``: a **flat** dict mapping functional names
+        When ``labels`` is ``None``: a **flat** dict mapping tensor names
         to values (e.g. ``result['w000']``).
 
         When ``labels`` is provided: a **nested** dict keyed by label value
@@ -364,11 +364,11 @@ def _any_needed(wanted, names):
     return bool(wanted.intersection(names))
 
 
-def minkowski_functionals_from_label_image(
+def minkowski_tensors_from_label_image(
     label_image, level=None, spacing=(1.0, 1.0, 1.0),
     center='centroid_mesh', compute='standard', compute_eigensystems=True
 ):
-    """Compute Minkowski functionals for each label in a 3D label image.
+    """Compute Minkowski tensors for each label in a 3D label image.
 
     Parameters
     ----------
@@ -414,7 +414,7 @@ def minkowski_functionals_from_label_image(
         from skimage.measure import marching_cubes
     except ImportError:
         raise ImportError(
-            "scikit-image is required for minkowski_functionals_from_label_image. "
+            "scikit-image is required for minkowski_tensors_from_label_image. "
             "Install it with: pip install scikit-image"
         )
 
@@ -480,7 +480,7 @@ def minkowski_functionals_from_label_image(
         else:
             label_center = center
 
-        results[lab] = minkowski_functionals(
+        results[lab] = minkowski_tensors(
             verts, faces, center=label_center, compute=compute,
             compute_eigensystems=compute_eigensystems,
         )

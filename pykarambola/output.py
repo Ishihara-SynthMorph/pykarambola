@@ -261,7 +261,7 @@ def write_tensor4_file(co, w):
 
 
 def write_sphmink_file(co, sphmink, append=False):
-    """Write spherical Minkowski functional output file."""
+    """Write spherical Minkowski tensor output file."""
     os.makedirs(co.outfoldername, exist_ok=True)
     filename = os.path.join(co.outfoldername, "msm_ql")
     mode = "a" if append else "w"

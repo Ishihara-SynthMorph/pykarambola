@@ -1,5 +1,5 @@
 """
-Result types and calculation options for Minkowski functionals.
+Result types and calculation options for Minkowski tensors.
 """
 
 from dataclasses import dataclass, field
@@ -12,7 +12,7 @@ LABEL_UNASSIGNED = -300
 
 @dataclass
 class MinkValResult:
-    """Stores a single Minkowski functional result."""
+    """Stores a single Minkowski tensor result."""
     result: Any = None
     name: str = "name_not_yet_assigned"
     keywords: list = field(default_factory=list)
@@ -56,7 +56,7 @@ COMPUTABLE_W = [
 
 
 class CalcOptions:
-    """Configuration for which Minkowski functionals to compute."""
+    """Configuration for which Minkowski tensors to compute."""
 
     def __init__(self):
         self.infilename = ""

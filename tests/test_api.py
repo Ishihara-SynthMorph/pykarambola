@@ -1,5 +1,5 @@
 """
-Tests for the high-level minkowski_functionals() API.
+Tests for the high-level minkowski_tensors() API.
 Uses a box mesh (a=2, b=3, c=4) built as numpy arrays (no file I/O).
 """
 
@@ -7,7 +7,7 @@ import math
 import numpy as np
 import pytest
 
-from pykarambola.api import minkowski_functionals, minkowski_functionals_from_label_image
+from pykarambola.api import minkowski_tensors, minkowski_tensors_from_label_image
 
 
 def _box_mesh(a, b, c):
@@ -56,7 +56,7 @@ class TestStandardBox:
     def setup(self):
         self.a, self.b, self.c = 2.0, 3.0, 4.0
         self.verts, self.faces = _box_mesh(self.a, self.b, self.c)
-        self.result = minkowski_functionals(self.verts, self.faces)
+        self.result = minkowski_tensors(self.verts, self.faces)
 
     def test_w000_volume(self):
         expected = self.a * self.b * self.c  # 24
@@ -158,13 +158,13 @@ class TestCenterOptions:
         self.verts, self.faces = _box_mesh(self.a, self.b, self.c)
 
     def test_centroid_runs(self):
-        result = minkowski_functionals(self.verts, self.faces, center='centroid')
+        result = minkowski_tensors(self.verts, self.faces, center='centroid')
         assert 'w000' in result
 
     def test_explicit_center_scalars(self):
         shift = np.array([1.0, 2.0, 3.0])
         shifted_verts = self.verts + shift
-        result = minkowski_functionals(shifted_verts, self.faces, center=shift)
+        result = minkowski_tensors(shifted_verts, self.faces, center=shift)
         # Scalars should match centered box
         expected_vol = self.a * self.b * self.c
         assert result['w000'] == pytest.approx(expected_vol, rel=1e-4)
@@ -174,7 +174,7 @@ class TestCenterOptions:
     def test_explicit_center_vectors_zero(self):
         shift = np.array([1.0, 2.0, 3.0])
         shifted_verts = self.verts + shift
-        result = minkowski_functionals(shifted_verts, self.faces, center=shift)
+        result = minkowski_tensors(shifted_verts, self.faces, center=shift)
         # Vectors should be zero for re-centered box
         for name in ['w010', 'w110', 'w210', 'w310']:
             np.testing.assert_allclose(result[name], [0, 0, 0], atol=1e-3)
@@ -182,12 +182,12 @@ class TestCenterOptions:
     def test_center_wrong_shape_2d_raises(self):
         """#46: center with shape (2,) raises ValueError with helpful message."""
         with pytest.raises(ValueError, match="center must be a \\(3,\\) array"):
-            minkowski_functionals(self.verts, self.faces, center=[1.0, 2.0])
+            minkowski_tensors(self.verts, self.faces, center=[1.0, 2.0])
 
     def test_center_wrong_shape_2d_array_raises(self):
         """#46: center with shape (1, 3) raises ValueError."""
         with pytest.raises(ValueError, match="center must be a \\(3,\\) array"):
-            minkowski_functionals(self.verts, self.faces, center=[[1.0, 2.0, 3.0]])
+            minkowski_tensors(self.verts, self.faces, center=[[1.0, 2.0, 3.0]])
 
 
 class TestComputeOptions:
@@ -197,7 +197,7 @@ class TestComputeOptions:
         self.verts, self.faces = _box_mesh(2.0, 3.0, 4.0)
 
     def test_compute_all_has_extras(self):
-        result = minkowski_functionals(self.verts, self.faces, compute='all')
+        result = minkowski_tensors(self.verts, self.faces, compute='all')
         assert 'w103' in result
         assert 'w104' in result
         assert 'msm_ql' in result
@@ -208,21 +208,21 @@ class TestComputeOptions:
         assert result['msm_wl'].shape[0] > 0
 
     def test_compute_subset(self):
-        result = minkowski_functionals(self.verts, self.faces, compute=['w000', 'w100'])
+        result = minkowski_tensors(self.verts, self.faces, compute=['w000', 'w100'])
         assert set(result.keys()) == {'w000', 'w100'}
 
     def test_compute_unknown_name_raises(self):
         """#45: unknown name in compute list raises ValueError."""
         with pytest.raises(ValueError, match="Unknown compute names"):
-            minkowski_functionals(self.verts, self.faces, compute=['w000', 'typo'])
+            minkowski_tensors(self.verts, self.faces, compute=['w000', 'typo'])
 
     def test_compute_all_unknown_raises(self):
         """#45: entirely unrecognised list raises ValueError."""
         with pytest.raises(ValueError, match="Unknown compute names"):
-            minkowski_functionals(self.verts, self.faces, compute=['bad_name'])
+            minkowski_tensors(self.verts, self.faces, compute=['bad_name'])
 
     def test_compute_single_tensor(self):
-        result = minkowski_functionals(self.verts, self.faces, compute=['w102'])
+        result = minkowski_tensors(self.verts, self.faces, compute=['w102'])
         assert 'w102' in result
         assert 'w102_eigvals' in result
         assert 'w102_eigvecs' in result
@@ -320,12 +320,12 @@ class TestReturnTypeAsymmetry:
         self.verts, self.faces = _box_mesh(2.0, 3.0, 4.0)
 
     def test_no_labels_returns_flat_dict(self):
-        result = minkowski_functionals(self.verts, self.faces, labels=None)
+        result = minkowski_tensors(self.verts, self.faces, labels=None)
         assert 'w000' in result
 
     def test_labels_provided_returns_nested_dict(self):
         labels = np.zeros(len(self.faces), dtype=int)
-        result = minkowski_functionals(self.verts, self.faces, labels=labels)
+        result = minkowski_tensors(self.verts, self.faces, labels=labels)
         assert 0 in result
         assert 'w000' in result[0]
         # Flat key access does not work on the nested result
@@ -334,7 +334,7 @@ class TestReturnTypeAsymmetry:
     def test_labels_single_value_still_nested(self):
         """Even one unique label → nested, not flat."""
         labels = np.ones(len(self.faces), dtype=int)
-        result = minkowski_functionals(self.verts, self.faces, labels=labels)
+        result = minkowski_tensors(self.verts, self.faces, labels=labels)
         assert 1 in result
         assert isinstance(result[1], dict)
 
@@ -346,7 +346,7 @@ class TestComputeEigensystems:
         self.verts, self.faces = _box_mesh(2.0, 3.0, 4.0)
 
     def test_false_omits_eigvals_and_eigvecs(self):
-        result = minkowski_functionals(
+        result = minkowski_tensors(
             self.verts, self.faces, compute_eigensystems=False,
         )
         for name in ['w020', 'w120', 'w220', 'w320', 'w102', 'w202']:
@@ -354,7 +354,7 @@ class TestComputeEigensystems:
             assert f'{name}_eigvecs' not in result
 
     def test_false_retains_tensor_values(self):
-        result = minkowski_functionals(
+        result = minkowski_tensors(
             self.verts, self.faces, compute_eigensystems=False,
         )
         for name in ['w020', 'w120', 'w220', 'w320', 'w102', 'w202']:
@@ -362,7 +362,7 @@ class TestComputeEigensystems:
             assert result[name].shape == (3, 3)
 
     def test_false_works_with_scalar_only_compute(self):
-        result = minkowski_functionals(
+        result = minkowski_tensors(
             self.verts, self.faces,
             compute=['w000', 'w100', 'w200', 'w300'],
             compute_eigensystems=False,
@@ -370,7 +370,7 @@ class TestComputeEigensystems:
         assert set(result.keys()) == {'w000', 'w100', 'w200', 'w300'}
 
     def test_true_default_includes_eigvals_and_eigvecs(self):
-        result = minkowski_functionals(self.verts, self.faces)
+        result = minkowski_tensors(self.verts, self.faces)
         for name in ['w020', 'w120', 'w220', 'w320', 'w102', 'w202']:
             assert f'{name}_eigvals' in result
             assert f'{name}_eigvecs' in result
@@ -378,7 +378,7 @@ class TestComputeEigensystems:
     def test_single_rank2_tensor_omits_eigensystem(self):
         # Requesting a single rank-2 tensor with compute_eigensystems=False
         # should return the tensor matrix but suppress its eigvals/eigvecs.
-        result = minkowski_functionals(
+        result = minkowski_tensors(
             self.verts, self.faces,
             compute=['w102'],
             compute_eigensystems=False,
@@ -391,7 +391,7 @@ class TestComputeEigensystems:
     def test_beta_plain_key_raises_unknown(self):
         # Plain 'beta' is not a valid compute name; use 'w020_beta' etc. instead.
         with pytest.raises(ValueError, match="Unknown compute names"):
-            minkowski_functionals(
+            minkowski_tensors(
                 self.verts, self.faces,
                 compute=['w020', 'beta'],
                 compute_eigensystems=False,
@@ -400,7 +400,7 @@ class TestComputeEigensystems:
     def test_beta_suffix_with_false_raises_value_error(self):
         # Same forward-compatibility guard for any *_beta quantity.
         with pytest.raises(ValueError, match="compute_eigensystems=True"):
-            minkowski_functionals(
+            minkowski_tensors(
                 self.verts, self.faces,
                 compute=['w020', 'w020_beta'],
                 compute_eigensystems=False,
@@ -413,7 +413,7 @@ class TestMultiLabel:
         verts, faces = _box_mesh(2.0, 3.0, 4.0)
         # Split faces into two groups
         labels = np.array([0]*6 + [1]*6, dtype=np.int64)
-        result = minkowski_functionals(verts, faces, labels=labels)
+        result = minkowski_tensors(verts, faces, labels=labels)
         assert isinstance(result, dict)
         assert 0 in result
         assert 1 in result
@@ -440,11 +440,11 @@ except ImportError:
 
 @pytest.mark.skipif(not _has_skimage, reason='scikit-image not installed')
 class TestLabelImage:
-    """Tests for minkowski_functionals_from_label_image()."""
+    """Tests for minkowski_tensors_from_label_image()."""
 
     def test_single_label_returns_dict_keyed_by_label(self):
         vol = _voxel_box((20, 20, 20), np.s_[5:15, 5:15, 5:15])
-        result = minkowski_functionals_from_label_image(vol)
+        result = minkowski_tensors_from_label_image(vol)
         assert isinstance(result, dict)
         assert 1 in result
         assert 'w000' in result[1]
@@ -452,20 +452,20 @@ class TestLabelImage:
     def test_voxel_box_volume(self):
         # 10x10x10 voxel box at unit spacing → volume ~ 1000
         vol = _voxel_box((20, 20, 20), np.s_[5:15, 5:15, 5:15])
-        result = minkowski_functionals_from_label_image(vol)
+        result = minkowski_tensors_from_label_image(vol)
         assert result[1]['w000'] == pytest.approx(1000.0, rel=0.05)
 
     def test_spacing_scales_volume(self):
         vol = _voxel_box((20, 20, 20), np.s_[5:15, 5:15, 5:15])
-        r1 = minkowski_functionals_from_label_image(vol, spacing=(1, 1, 1))
-        r2 = minkowski_functionals_from_label_image(vol, spacing=(2, 2, 2))
+        r1 = minkowski_tensors_from_label_image(vol, spacing=(1, 1, 1))
+        r2 = minkowski_tensors_from_label_image(vol, spacing=(2, 2, 2))
         # Volume scales by 2^3 = 8
         assert r2[1]['w000'] == pytest.approx(8.0 * r1[1]['w000'], rel=0.01)
 
     def test_spacing_scales_area(self):
         vol = _voxel_box((20, 20, 20), np.s_[5:15, 5:15, 5:15])
-        r1 = minkowski_functionals_from_label_image(vol, spacing=(1, 1, 1))
-        r2 = minkowski_functionals_from_label_image(vol, spacing=(2, 2, 2))
+        r1 = minkowski_tensors_from_label_image(vol, spacing=(1, 1, 1))
+        r2 = minkowski_tensors_from_label_image(vol, spacing=(2, 2, 2))
         # Area (w100) scales by 2^2 = 4
         assert r2[1]['w100'] == pytest.approx(4.0 * r1[1]['w100'], rel=0.01)
 
@@ -475,7 +475,7 @@ class TestLabelImage:
         vol = _voxel_box((20, 20, 20), np.s_[5:15, 5:15, 5:15])
         spacing = (1.0, 2.0, 3.0)
         for method in ('centroid_mesh', 'centroid_voxel'):
-            result = minkowski_functionals_from_label_image(vol, spacing=spacing,
+            result = minkowski_tensors_from_label_image(vol, spacing=spacing,
                                                             center=method)
             for name in ['w010', 'w110', 'w210', 'w310']:
                 np.testing.assert_allclose(
@@ -483,14 +483,14 @@ class TestLabelImage:
                     err_msg=f"{name} should be near zero with {method} and anisotropic spacing",
                 )
         # Volume should equal 10*10*10 * sz*sy*sx = 1000 * 6
-        result = minkowski_functionals_from_label_image(vol, spacing=spacing)
+        result = minkowski_tensors_from_label_image(vol, spacing=spacing)
         assert result[1]['w000'] == pytest.approx(6000.0, rel=0.05)
 
     def test_multi_label(self):
         vol = np.zeros((30, 30, 30), dtype=np.int32)
         vol[2:8, 2:8, 2:8] = 1
         vol[15:25, 15:25, 15:25] = 2
-        result = minkowski_functionals_from_label_image(vol)
+        result = minkowski_tensors_from_label_image(vol)
         assert 1 in result
         assert 2 in result
         # Label 1: 6^3=216, Label 2: 10^3=1000
@@ -500,7 +500,7 @@ class TestLabelImage:
     def test_centroid_default_symmetric_vectors(self):
         # Symmetric box → vectors should be near zero with centroid centering
         vol = _voxel_box((20, 20, 20), np.s_[5:15, 5:15, 5:15])
-        result = minkowski_functionals_from_label_image(vol, center='centroid_mesh')
+        result = minkowski_tensors_from_label_image(vol, center='centroid_mesh')
         for name in ['w010', 'w110', 'w210', 'w310']:
             np.testing.assert_allclose(
                 result[1][name], [0, 0, 0], atol=0.5,
@@ -523,7 +523,7 @@ class TestLabelImage:
     def test_centroid_mesh_offcenter_box_near_zero_vectors(self):
         # Off-center symmetric box: mesh-volume centroid should centre the functionals
         vol = _voxel_box((30, 30, 30), np.s_[10:20, 10:20, 10:20])
-        result = minkowski_functionals_from_label_image(vol, center='centroid_mesh')
+        result = minkowski_tensors_from_label_image(vol, center='centroid_mesh')
         for name in ['w010', 'w110', 'w210', 'w310']:
             np.testing.assert_allclose(
                 result[1][name], [0, 0, 0], atol=0.5,
@@ -533,7 +533,7 @@ class TestLabelImage:
     def test_centroid_voxel_offcenter_box_near_zero_vectors(self):
         # Off-center symmetric box: voxel centroid should also centre the functionals
         vol = _voxel_box((30, 30, 30), np.s_[10:20, 10:20, 10:20])
-        result = minkowski_functionals_from_label_image(vol, center='centroid_voxel')
+        result = minkowski_tensors_from_label_image(vol, center='centroid_voxel')
         for name in ['w010', 'w110', 'w210', 'w310']:
             np.testing.assert_allclose(
                 result[1][name], [0, 0, 0], atol=0.5,
@@ -542,7 +542,7 @@ class TestLabelImage:
 
     def test_center_none(self):
         vol = _voxel_box((20, 20, 20), np.s_[5:15, 5:15, 5:15])
-        result = minkowski_functionals_from_label_image(vol, center=None)
+        result = minkowski_tensors_from_label_image(vol, center=None)
         assert 'w000' in result[1]
         # With origin as center, vectors should NOT be zero (box not at origin)
         w010_norm = np.linalg.norm(result[1]['w010'])
@@ -550,14 +550,14 @@ class TestLabelImage:
 
     def test_zero_labels_ignored(self):
         vol = np.zeros((10, 10, 10), dtype=np.int32)
-        result = minkowski_functionals_from_label_image(vol)
+        result = minkowski_tensors_from_label_image(vol)
         assert len(result) == 0
 
     def test_float_label_image_warns(self):
         """#52: float32 label image triggers a UserWarning and still works."""
         vol = _voxel_box((20, 20, 20), np.s_[5:15, 5:15, 5:15]).astype(np.float32)
         with pytest.warns(UserWarning, match="dtype"):
-            result = minkowski_functionals_from_label_image(vol)
+            result = minkowski_tensors_from_label_image(vol)
         assert 1 in result
         assert 'w000' in result[1]
 
@@ -567,13 +567,13 @@ class TestLabelImage:
         vol = _voxel_box((20, 20, 20), np.s_[5:15, 5:15, 5:15])  # int32
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
-            minkowski_functionals_from_label_image(vol)
+            minkowski_tensors_from_label_image(vol)
         dtype_warnings = [w for w in caught if "dtype" in str(w.message).lower()]
         assert len(dtype_warnings) == 0
 
     def test_compute_eigensystems_false_threads_through(self):
         vol = _voxel_box((20, 20, 20), np.s_[5:15, 5:15, 5:15])
-        result = minkowski_functionals_from_label_image(
+        result = minkowski_tensors_from_label_image(
             vol, compute_eigensystems=False,
         )
         for name in ['w020', 'w120', 'w220', 'w320', 'w102', 'w202']:
@@ -590,13 +590,13 @@ class TestDerivedScalars:
 
     def test_w020_beta_via_derived_dep(self):
         """#53: requesting w020_beta alone auto-promotes w020 into wanted."""
-        result = minkowski_functionals(self.verts, self.faces, compute=['w020_beta'])
+        result = minkowski_tensors(self.verts, self.faces, compute=['w020_beta'])
         assert 'w020_beta' in result
         assert 0.0 <= result['w020_beta'] <= 1.0
 
     def test_beta_range(self):
         """#1: beta in [0, 1] for all rank-2 tensors on the standard box."""
-        result = minkowski_functionals(self.verts, self.faces, compute='all')
+        result = minkowski_tensors(self.verts, self.faces, compute='all')
         for name in ['w020', 'w120', 'w220', 'w320', 'w102', 'w202']:
             b = result[f'{name}_beta']
             assert 0.0 <= b <= 1.0, f"{name}_beta={b} out of range"
@@ -604,27 +604,27 @@ class TestDerivedScalars:
     def test_beta_requires_eigensystems_false_raises(self):
         """#1: requesting beta with compute_eigensystems=False raises ValueError."""
         with pytest.raises(ValueError, match="requires eigensystems"):
-            minkowski_functionals(self.verts, self.faces,
+            minkowski_tensors(self.verts, self.faces,
                                   compute=['w020_beta'],
                                   compute_eigensystems=False)
 
     def test_beta_compute_all_eigensystems_false_raises_helpful_message(self):
         """#1: compute='all' with compute_eigensystems=False gives actionable message."""
         with pytest.raises(ValueError, match="pass a list of names"):
-            minkowski_functionals(self.verts, self.faces,
+            minkowski_tensors(self.verts, self.faces,
                                   compute='all',
                                   compute_eigensystems=False)
 
     def test_w020_trace(self):
         """#2: w020_trace = Tr(w020) = np.trace of the 3x3 matrix."""
-        result = minkowski_functionals(self.verts, self.faces,
+        result = minkowski_tensors(self.verts, self.faces,
                                        compute=['w020', 'w020_trace'])
         expected_trace = float(np.trace(result['w020']))
         assert result['w020_trace'] == pytest.approx(expected_trace, rel=1e-6)
 
     def test_w020_trace_ratio_via_derived_dep(self):
         """#53: requesting w020_trace_ratio with parents listed returns correct value."""
-        result = minkowski_functionals(self.verts, self.faces,
+        result = minkowski_tensors(self.verts, self.faces,
                                        compute=['w020', 'w000', 'w020_trace_ratio'])
         assert 'w020_trace_ratio' in result
         expected = float(np.trace(result['w020'])) / result['w000']
@@ -632,14 +632,14 @@ class TestDerivedScalars:
 
     def test_w020_trace_ratio_auto_promotes(self):
         """#53: requesting w020_trace_ratio alone auto-promotes w020 and w000."""
-        result = minkowski_functionals(self.verts, self.faces,
+        result = minkowski_tensors(self.verts, self.faces,
                                        compute=['w020_trace_ratio'])
         assert 'w020_trace_ratio' in result
         assert np.isfinite(result['w020_trace_ratio'])
 
     def test_compute_all_includes_derived_keys(self):
         """#53: compute='all' includes all beta, trace, trace_ratio keys."""
-        result = minkowski_functionals(self.verts, self.faces, compute='all')
+        result = minkowski_tensors(self.verts, self.faces, compute='all')
         for name in ['w020', 'w120', 'w220', 'w320', 'w102', 'w202']:
             assert f'{name}_beta' in result
         for name in ['w020', 'w120', 'w220', 'w320', 'w102', 'w202']:
@@ -654,7 +654,7 @@ class TestPrerequisiteOptimization:
     def test_compute_w020_only_no_centroid(self):
         """compute=['w020'] in non-centroid mode must not produce w000/w010."""
         verts, faces = _box_mesh(2.0, 3.0, 4.0)
-        result = minkowski_functionals(verts, faces, compute=['w020'])
+        result = minkowski_tensors(verts, faces, compute=['w020'])
         assert 'w020' in result
         assert 'w000' not in result
         assert 'w010' not in result
@@ -662,5 +662,5 @@ class TestPrerequisiteOptimization:
     def test_compute_w020_centroid_includes_prerequisites(self):
         """With center='centroid', w020 is still computed correctly."""
         verts, faces = _box_mesh(2.0, 3.0, 4.0)
-        result = minkowski_functionals(verts, faces, compute=['w020'], center='centroid')
+        result = minkowski_tensors(verts, faces, compute=['w020'], center='centroid')
         assert 'w020' in result
