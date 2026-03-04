@@ -44,8 +44,10 @@ def calculate_eigensystem(w_matrix_results):
             # Use numpy's eigh for symmetric matrices
             eigenvalues, eigenvectors = np.linalg.eigh(mat)
 
-            # Sort by eigenvalue (ascending, which is default for eigh)
-            # eigh returns eigenvalues in ascending order
+            # Sort by ascending magnitude (|λ₁| ≤ |λ₂| ≤ |λ₃|), matching C++ Karambola
+            order = np.argsort(np.abs(eigenvalues))
+            eigenvalues = eigenvalues[order]
+            eigenvectors = eigenvectors[:, order]
 
             for i in range(3):
                 eigsys.result.eigen_values[i] = eigenvalues[i]

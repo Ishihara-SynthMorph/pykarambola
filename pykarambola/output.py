@@ -250,6 +250,7 @@ def write_tensor4_file(co, w):
                     f.write(f"{'ERROR':>{SW}}")
             else:
                 ev = np.linalg.eigvalsh(mat)
+                ev = ev[np.argsort(np.abs(ev))]
                 for val in ev:
                     f.write(_format_value(val))
             f.write(f"{result.name:>{SW}}")

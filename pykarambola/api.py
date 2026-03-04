@@ -27,10 +27,26 @@ _STANDARD = {
 # Extra functionals available with compute='all'
 _EXTRA = {'w103', 'w104', 'msm'}
 
-_ALL = _STANDARD | _EXTRA
-
 # Rank-2 tensor names that get eigensystems
 _RANK2 = ['w020', 'w120', 'w220', 'w320', 'w102', 'w202']
+
+# Derived-quantity dependency map: derived_key → tuple of required parent keys
+# Requesting a derived key auto-promotes its parents into `wanted`.
+_DERIVED_DEPS = {
+    # beta = min(|λ|) / max(|λ|) for each rank-2 tensor
+    'w020_beta': ('w020',), 'w120_beta': ('w120',),
+    'w220_beta': ('w220',), 'w320_beta': ('w320',),
+    'w102_beta': ('w102',), 'w202_beta': ('w202',),
+    # trace = Tr(wX20) for the wX20 family and Tr(w102), Tr(w202)
+    'w020_trace': ('w020',), 'w120_trace': ('w120',),
+    'w220_trace': ('w220',), 'w320_trace': ('w320',),
+    'w102_trace': ('w102',), 'w202_trace': ('w202',),
+    # trace_ratio = Tr(wX20) / wX00 (wX20 family only; w102/w202 have no scalar pair)
+    'w020_trace_ratio': ('w020', 'w000'), 'w120_trace_ratio': ('w120', 'w100'),
+    'w220_trace_ratio': ('w220', 'w200'), 'w320_trace_ratio': ('w320', 'w300'),
+}
+
+_ALL = _STANDARD | _EXTRA | set(_DERIVED_DEPS.keys())
 
 
 def _extract_result(mink_result):
@@ -112,20 +128,25 @@ def minkowski_functionals(verts, faces, labels=None, center=None, compute='stand
             raise ValueError(f"Unknown compute preset: {compute!r}")
     else:
         wanted = set(compute)
-        # Guard: beta (and future *_beta quantities) require eigensystems;
-        # check before the unknown-names gate so the message is actionable.
-        beta_keys = {name for name in wanted if name == 'beta' or name.endswith('_beta')}
-        if beta_keys and not compute_eigensystems:
-            raise ValueError(
-                f"{sorted(beta_keys)} requires eigensystems; "
-                "set compute_eigensystems=True or remove these from compute."
-            )
-        unknown = wanted - _ALL - beta_keys
+        unknown = wanted - _ALL
         if unknown:
             raise ValueError(
                 f"Unknown compute names: {sorted(unknown)}. "
                 f"Valid names: {sorted(_ALL)}"
             )
+
+    # Guard: beta quantities require eigensystems
+    beta_keys = {name for name in wanted if name.endswith('_beta')}
+    if beta_keys and not compute_eigensystems:
+        raise ValueError(
+            f"{sorted(beta_keys)} requires eigensystems; "
+            "set compute_eigensystems=True or remove these from compute."
+        )
+
+    # Expand derived-quantity dependencies (auto-promote parent tensors/scalars)
+    for derived, parents in _DERIVED_DEPS.items():
+        if derived in wanted:
+            wanted.update(parents)
 
     # Handle explicit center by shifting vertices
     use_centroid = False
@@ -153,16 +174,33 @@ def minkowski_functionals(verts, faces, labels=None, center=None, compute='stand
         unique_labels = [0]
 
     # --- Compute scalars ---
-    raw_w000 = calculate_w000(surface) if _any_needed(wanted, ['w000', 'w010', 'w020']) else {}
-    raw_w100 = calculate_w100(surface) if _any_needed(wanted, ['w100', 'w110', 'w120']) else {}
-    raw_w200 = calculate_w200(surface) if _any_needed(wanted, ['w200', 'w210', 'w220']) else {}
-    raw_w300 = calculate_w300(surface) if _any_needed(wanted, ['w300', 'w310', 'w320']) else {}
+    # Only compute prerequisite scalars for centroid mode or direct request (#47)
+    raw_w000 = calculate_w000(surface) if (
+        _any_needed(wanted, ['w000', 'w010']) or (use_centroid and 'w020' in wanted)
+    ) else {}
+    raw_w100 = calculate_w100(surface) if (
+        _any_needed(wanted, ['w100', 'w110']) or (use_centroid and 'w120' in wanted)
+    ) else {}
+    raw_w200 = calculate_w200(surface) if (
+        _any_needed(wanted, ['w200', 'w210']) or (use_centroid and 'w220' in wanted)
+    ) else {}
+    raw_w300 = calculate_w300(surface) if (
+        _any_needed(wanted, ['w300', 'w310']) or (use_centroid and 'w320' in wanted)
+    ) else {}
 
     # --- Compute vectors ---
-    raw_w010 = calculate_w010(surface) if _any_needed(wanted, ['w010', 'w020']) else {}
-    raw_w110 = calculate_w110(surface) if _any_needed(wanted, ['w110', 'w120']) else {}
-    raw_w210 = calculate_w210(surface) if _any_needed(wanted, ['w210', 'w220']) else {}
-    raw_w310 = calculate_w310(surface) if _any_needed(wanted, ['w310', 'w320']) else {}
+    raw_w010 = calculate_w010(surface) if (
+        'w010' in wanted or (use_centroid and 'w020' in wanted)
+    ) else {}
+    raw_w110 = calculate_w110(surface) if (
+        'w110' in wanted or (use_centroid and 'w120' in wanted)
+    ) else {}
+    raw_w210 = calculate_w210(surface) if (
+        'w210' in wanted or (use_centroid and 'w220' in wanted)
+    ) else {}
+    raw_w310 = calculate_w310(surface) if (
+        'w310' in wanted or (use_centroid and 'w320' in wanted)
+    ) else {}
 
     # --- Compute rank-2 tensors ---
     if 'w020' in wanted:
@@ -242,6 +280,46 @@ def minkowski_functionals(verts, faces, labels=None, center=None, compute='stand
                 es = eig_raw[name][label].result
                 out[f'{name}_eigvals'] = np.array(es.eigen_values)
                 out[f'{name}_eigvecs'] = np.array(es.eigen_vectors).T  # columns = eigenvectors
+
+        # Beta (anisotropy scalar): min(|λ|) / max(|λ|), NaN when max|λ|≈0
+        for name in _RANK2:
+            beta_key = f'{name}_beta'
+            if beta_key in wanted and f'{name}_eigvals' in out:
+                abs_eigs = np.abs(out[f'{name}_eigvals'])
+                max_eig = float(abs_eigs.max())
+                if max_eig < 1e-12:
+                    warnings.warn(
+                        f"Beta for {name} (label {label}): max|eigenvalue| is near zero; "
+                        "returning NaN.",
+                        stacklevel=2,
+                    )
+                    out[beta_key] = float('nan')
+                else:
+                    out[beta_key] = float(abs_eigs.min()) / max_eig
+
+        # Traces and trace ratios
+        _TRACE_DENOM = {
+            'w020': 'w000', 'w120': 'w100',
+            'w220': 'w200', 'w320': 'w300',
+        }
+        for tensor_name in _RANK2:
+            trace_key = f'{tensor_name}_trace'
+            ratio_key = f'{tensor_name}_trace_ratio'
+            needs_trace = trace_key in wanted
+            needs_ratio = ratio_key in wanted
+            if not (needs_trace or needs_ratio):
+                continue
+            if tensor_name not in all_raw or label not in all_raw[tensor_name]:
+                continue
+            mat = all_raw[tensor_name][label].result.to_numpy()
+            trace = float(np.trace(mat))
+            if needs_trace:
+                out[trace_key] = trace
+            if needs_ratio:
+                scalar_name = _TRACE_DENOM.get(tensor_name)
+                if scalar_name is not None and scalar_name in out:
+                    denom = out[scalar_name]
+                    out[ratio_key] = float('nan') if abs(denom) < 1e-12 else trace / denom
 
         per_label[label] = out
 

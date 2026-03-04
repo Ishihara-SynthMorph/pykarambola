@@ -82,7 +82,7 @@ class TestStandardBox:
     def test_w020_eigenvalues(self):
         a, b, c = self.a, self.b, self.c
         expected = sorted([a**3 * b * c / 12, b**3 * a * c / 12, c**3 * a * b / 12])
-        actual = sorted(self.result['w020_eigvals'])
+        actual = self.result['w020_eigvals']
         np.testing.assert_allclose(actual, expected, rtol=1e-4)
 
     def test_w120_eigenvalues(self):
@@ -92,7 +92,7 @@ class TestStandardBox:
             1.0/6 * (1.0/3 * b**3 * (a + c) + b**2 * a * c),
             1.0/6 * (1.0/3 * c**3 * (a + b) + c**2 * a * b),
         ])
-        actual = sorted(self.result['w120_eigvals'])
+        actual = self.result['w120_eigvals']
         np.testing.assert_allclose(actual, expected, rtol=1e-4)
 
     def test_w220_eigenvalues(self):
@@ -103,28 +103,35 @@ class TestStandardBox:
             pi / 36 * (b**3 + 3 * b**2 * (a + c)),
             pi / 36 * (c**3 + 3 * c**2 * (a + b)),
         ])
-        actual = sorted(self.result['w220_eigvals'])
+        actual = self.result['w220_eigvals']
         np.testing.assert_allclose(actual, expected, rtol=1e-4)
 
     def test_w320_eigenvalues(self):
         a, b, c = self.a, self.b, self.c
         pi = math.pi
         expected = sorted([pi / 3 * a**2, pi / 3 * b**2, pi / 3 * c**2])
-        actual = sorted(self.result['w320_eigvals'])
+        actual = self.result['w320_eigvals']
         np.testing.assert_allclose(actual, expected, rtol=1e-4)
 
     def test_w102_eigenvalues(self):
         a, b, c = self.a, self.b, self.c
         expected = sorted([2.0/3 * a * b, 2.0/3 * a * c, 2.0/3 * b * c])
-        actual = sorted(self.result['w102_eigvals'])
+        actual = self.result['w102_eigvals']
         np.testing.assert_allclose(actual, expected, rtol=1e-4)
 
     def test_w202_eigenvalues(self):
         a, b, c = self.a, self.b, self.c
         pi = math.pi
         expected = sorted([pi / 6 * (a + b), pi / 6 * (a + c), pi / 6 * (b + c)])
-        actual = sorted(self.result['w202_eigvals'])
+        actual = self.result['w202_eigvals']
         np.testing.assert_allclose(actual, expected, rtol=1e-4)
+
+    def test_eigvals_ascending_magnitude(self):
+        """#59: eigenvalues are returned in ascending |λ| order."""
+        for name in ['w020', 'w120', 'w220', 'w320', 'w102', 'w202']:
+            evs = np.abs(self.result[f'{name}_eigvals'])
+            assert list(evs) == sorted(evs), \
+                f"{name}_eigvals not in ascending magnitude order"
 
     def test_eigvecs_shape(self):
         for name in ['w020', 'w120', 'w220', 'w320', 'w102', 'w202']:
@@ -381,11 +388,9 @@ class TestComputeEigensystems:
         assert 'w102_eigvals' not in result
         assert 'w102_eigvecs' not in result
 
-    def test_beta_with_false_raises_value_error(self):
-        # 'beta' is not yet implemented as a functional, but the guard fires
-        # proactively as a forward-compatibility check so that once beta lands
-        # it cannot be requested without eigensystems.
-        with pytest.raises(ValueError, match="compute_eigensystems=True"):
+    def test_beta_plain_key_raises_unknown(self):
+        # Plain 'beta' is not a valid compute name; use 'w020_beta' etc. instead.
+        with pytest.raises(ValueError, match="Unknown compute names"):
             minkowski_functionals(
                 self.verts, self.faces,
                 compute=['w020', 'beta'],
@@ -574,3 +579,73 @@ class TestLabelImage:
         for name in ['w020', 'w120', 'w220', 'w320', 'w102', 'w202']:
             assert f'{name}_eigvals' not in result[1]
             assert f'{name}_eigvecs' not in result[1]
+
+
+class TestDerivedScalars:
+    """Tests for beta (#1), traces (#2), and dependency chain (#53)."""
+
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.verts, self.faces = _box_mesh(2.0, 3.0, 4.0)
+
+    def test_w020_beta_via_derived_dep(self):
+        """#53: requesting w020_beta alone auto-promotes w020 into wanted."""
+        result = minkowski_functionals(self.verts, self.faces, compute=['w020_beta'])
+        assert 'w020_beta' in result
+        assert 0.0 <= result['w020_beta'] <= 1.0
+
+    def test_beta_range(self):
+        """#1: beta in [0, 1] for all rank-2 tensors on the standard box."""
+        result = minkowski_functionals(self.verts, self.faces, compute='all')
+        for name in ['w020', 'w120', 'w220', 'w320', 'w102', 'w202']:
+            b = result[f'{name}_beta']
+            assert 0.0 <= b <= 1.0, f"{name}_beta={b} out of range"
+
+    def test_beta_requires_eigensystems_false_raises(self):
+        """#1: requesting beta with compute_eigensystems=False raises ValueError."""
+        with pytest.raises(ValueError, match="requires eigensystems"):
+            minkowski_functionals(self.verts, self.faces,
+                                  compute=['w020_beta'],
+                                  compute_eigensystems=False)
+
+    def test_w020_trace(self):
+        """#2: w020_trace = Tr(w020) = np.trace of the 3x3 matrix."""
+        result = minkowski_functionals(self.verts, self.faces,
+                                       compute=['w020', 'w020_trace'])
+        expected_trace = float(np.trace(result['w020']))
+        assert result['w020_trace'] == pytest.approx(expected_trace, rel=1e-6)
+
+    def test_w020_trace_ratio_via_derived_dep(self):
+        """#53: requesting w020_trace_ratio alone auto-promotes w020 and w000."""
+        result = minkowski_functionals(self.verts, self.faces,
+                                       compute=['w020_trace_ratio'])
+        assert 'w020_trace_ratio' in result
+        assert np.isfinite(result['w020_trace_ratio'])
+
+    def test_compute_all_includes_derived_keys(self):
+        """#53: compute='all' includes all beta, trace, trace_ratio keys."""
+        result = minkowski_functionals(self.verts, self.faces, compute='all')
+        for name in ['w020', 'w120', 'w220', 'w320', 'w102', 'w202']:
+            assert f'{name}_beta' in result
+        for name in ['w020', 'w120', 'w220', 'w320', 'w102', 'w202']:
+            assert f'{name}_trace' in result
+        for name in ['w020', 'w120', 'w220', 'w320']:
+            assert f'{name}_trace_ratio' in result
+
+
+class TestPrerequisiteOptimization:
+    """#47: w000/w010 must not be computed when only w020 is wanted (no centroid)."""
+
+    def test_compute_w020_only_no_centroid(self):
+        """compute=['w020'] in non-centroid mode must not produce w000/w010."""
+        verts, faces = _box_mesh(2.0, 3.0, 4.0)
+        result = minkowski_functionals(verts, faces, compute=['w020'])
+        assert 'w020' in result
+        assert 'w000' not in result
+        assert 'w010' not in result
+
+    def test_compute_w020_centroid_includes_prerequisites(self):
+        """With center='centroid', w020 is still computed correctly."""
+        verts, faces = _box_mesh(2.0, 3.0, 4.0)
+        result = minkowski_functionals(verts, faces, compute=['w020'], center='centroid')
+        assert 'w020' in result
