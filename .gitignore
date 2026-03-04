@@ -8,3 +8,14 @@ dist/
 *.so
 *.pyd
 pykarambola/_accel*.c
+
+# LaTeX build artifacts
+paper/*.aux
+paper/*.log
+paper/*.out
+paper/*.bbl
+paper/*.blg
+paper/*.fls
+paper/*.fdb_latexmk
+paper/*.synctex.gz
+paper/*.pdf

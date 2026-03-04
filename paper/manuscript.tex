@@ -1,0 +1,142 @@
+\documentclass[times, twoside, watermark]{zHenriquesLab-StyleBioRxiv}
+
+% Please give the surname of the lead author for the running footer
+\leadauthor{Ishihara}
+
+\begin{document}
+
+\title{pykarambola: a Python package for Minkowski tensor analysis of 3D triangulated surfaces}
+\shorttitle{pykarambola}
+
+% Use letters for affiliations, numbers to show equal authorship (if applicable) and to indicate the corresponding author
+\author[1,\Letter]{TODO: Author list}
+
+\affil[1]{TODO: Affiliation}
+
+\maketitle
+
+%TC:break Abstract
+\begin{abstract}
+% TODO (issue #22): Write abstract
+\end{abstract}
+%TC:break main
+
+\begin{keywords}
+Minkowski tensors | morphometry | 3D image analysis | Python | bioimage analysis
+\end{keywords}
+
+\begin{corrauthor}
+% TODO: corresponding author email
+\end{corrauthor}
+
+
+%% -------------------------------------------------------
+\section*{Introduction}
+%% -------------------------------------------------------
+
+% TODO (issue #23): Minkowski functionals and tensors
+
+% TODO (issue #24): karambola C++ and motivation for a Python port
+
+% TODO (issue #25): Python ecosystem and bioimage analysis community
+
+
+%% -------------------------------------------------------
+\section*{Methods}
+%% -------------------------------------------------------
+
+\subsection*{Architecture of pykarambola}
+% TODO (issue #26)
+
+\subsection*{Acceleration strategy: NumPy vectorization and Cython}
+% TODO (issue #27)
+
+\subsection*{New file format support (OBJ, GLB)}
+% TODO (issue #28)
+
+\subsection*{High-level NumPy array API}
+% TODO (issue #29)
+
+\subsection*{Label-image API}
+% TODO (issue #30)
+
+
+%% -------------------------------------------------------
+\section*{Results}
+%% -------------------------------------------------------
+
+\subsection*{Runtime benchmark}
+% TODO (issue #31)
+
+\begin{figure}
+\centering
+% TODO (issue #19): Figure — runtime benchmark pykarambola vs C++ karambola
+\caption{Runtime benchmark comparing pykarambola and C++ karambola as a function of mesh size.}
+\label{fig:runtime}
+\end{figure}
+
+\subsection*{Numerical accuracy}
+% TODO (issue #32)
+
+\begin{figure}
+\centering
+% TODO (issue #20): Figure — numerical accuracy agreement with C++ karambola
+\caption{Numerical accuracy of pykarambola relative to the reference C++ karambola implementation.}
+\label{fig:accuracy}
+\end{figure}
+
+\subsection*{Label-image API walkthrough}
+% TODO (issue #33)
+
+\begin{figure}
+\centering
+% TODO (issue #18): Figure — Minkowski tensor computation pipeline schematic
+\caption{Schematic of the Minkowski tensor computation pipeline in pykarambola.}
+\label{fig:pipeline}
+\end{figure}
+
+\begin{figure}
+\centering
+% TODO (issue #21): Figure — label-image API single-label vs multi-label
+\caption{Label-image API applied to a 3D binary image: single-label versus multi-label mode.}
+\label{fig:labelimage}
+\end{figure}
+
+
+%% -------------------------------------------------------
+\section*{Discussion}
+%% -------------------------------------------------------
+% TODO (issue #34)
+
+
+%% -------------------------------------------------------
+\section*{Conclusions}
+%% -------------------------------------------------------
+% TODO (issue #35)
+
+
+%% -------------------------------------------------------
+\section*{Software availability}
+%% -------------------------------------------------------
+% TODO (issue #36): Software availability statement
+% pykarambola is available at https://github.com/Pitt-IshiharaLab/pykarambola
+
+
+\begin{acknowledgements}
+% TODO: Acknowledgements
+\end{acknowledgements}
+
+\section*{Bibliography}
+\bibliography{references}
+
+%TC:ignore
+\onecolumn
+\newpage
+
+\section*{Word Counts}
+\subsection*{Statistics on word count}
+\detailtexcount
+
+%TC:endignore
+
+\end{document}
