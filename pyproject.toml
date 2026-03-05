@@ -6,11 +6,29 @@ build-backend = "setuptools.build_meta"
 name = "pykarambola"
 version = "0.1.0"
 description = "Python implementation of Karambola – Minkowski tensors on 3D triangulated surfaces"
+readme = "README.md"
+license = {file = "LICENSE"}
 requires-python = ">=3.9"
+keywords = ["minkowski", "tensors", "bioimage", "morphometry"]
+classifiers = [
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Topic :: Scientific/Engineering :: Image Processing",
+]
 dependencies = [
     "numpy",
     "scipy",
 ]
+
+[project.urls]
+Homepage = "https://github.com/Pitt-IshiharaLab/pykarambola"
+"Bug Tracker" = "https://github.com/Pitt-IshiharaLab/pykarambola/issues"
 
 [project.optional-dependencies]
 dev = ["pytest", "scikit-image"]
