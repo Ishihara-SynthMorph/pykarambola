@@ -1,0 +1,12 @@
+# Requirements for paper/notebooks
+# Install into the pykarambola_helper conda environment:
+#   pip install -r paper/notebooks/requirements.txt
+#
+# Or via the package optional group:
+#   pip install "pykarambola[notebooks]"
+
+scikit-image>=0.26.0
+matplotlib>=3.10.8
+seaborn>=0.13.2
+pandas>=3.0.1
+medmnist>=3.0.2
