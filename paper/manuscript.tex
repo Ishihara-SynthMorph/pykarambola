@@ -60,10 +60,29 @@ Here we present pykarambola, a Python package that integrates Minkowski tensor a
 %% -------------------------------------------------------
 
 \subsection*{Architecture of pykarambola}
-% TODO (issue #26)
+pykarambola is a complete Python reimplementation of the C++ karambola package~\cite{Schaller2020karambola}.
+The port reproduces the logical structure of the C++ source: a \texttt{Triangulation} class holds the surface mesh and precomputed per-triangle and per-edge geometry, a set of \texttt{calculate\_w*} functions implements the Minkowski tensor formulae, and a command-line interface reproduces the behaviour of the original binary.
+The C++ implementation depended on the GNU Scientific Library (GSL) for eigenvalue decomposition; pykarambola replaces this with NumPy's \texttt{eigh} routine, removing the only non-Python build dependency from the core computation.
+
+The package is structured around a pure-Python core that requires only NumPy~\cite{harris2020numpy}.
+An optional Cython extension module (\texttt{\_accel}) accelerates the graph-traversal steps of mesh initialisation and is compiled at install time when Cython is available (\texttt{pip install pykarambola[accel]}); the package falls back to pure-Python implementations when the extension is absent (described below).
+The label-image API (\texttt{minkowski\_tensors\_from\_label\_image}) requires scikit-image~\cite{vanderwalt2014scikit} for marching-cubes surface extraction; this dependency is not declared as mandatory and resolves automatically in environments where scikit-image is already present.
+The spherical Minkowski summary quantities (\texttt{msm}) additionally require SciPy~\cite{virtanen2020scipy} for spherical harmonic basis functions (\texttt{scipy.special.sph\_harm}); this dependency is likewise optional and is only invoked when \texttt{msm} is included in the requested outputs.
+
+pykarambola retains support for the two mesh formats accepted by C++ karambola: the karambola-native \texttt{.poly} format and the Object File Format (\texttt{.off}).
+Two additional parsers for Wavefront OBJ (\texttt{.obj}) and binary glTF (\texttt{.glb}) were added to broaden compatibility with mesh files produced by common 3D reconstruction and visualisation tools.
 
 \subsection*{Acceleration strategy: NumPy vectorization and Cython}
-% TODO (issue #27)
+The primary performance strategy in pykarambola is NumPy vectorization~\cite{harris2020numpy}.
+Rather than iterating over individual triangles or edges in Python, all mesh data are stored as contiguous NumPy arrays and bulk array operations are applied across the entire mesh at once.
+During \texttt{Triangulation} construction, triangle normals, face areas, triangle centroids, edge lengths, and dihedral angles are precomputed in a single vectorized pass using batched cross-products and array-wise norm computations on $(F \times 3)$ arrays, where $F$ is the number of triangles.
+Each Minkowski tensor function then reduces these precomputed arrays to per-label scalar, vector, or matrix accumulators using \texttt{numpy.sum} and \texttt{numpy.einsum}, with no Python-level loop over faces.
+
+Two initialisation steps resisted vectorization: building the edge-keyed triangle-adjacency table and constructing the compressed-sparse-row vertex-to-triangle lookup table.
+Both require sequential insertion into a hash map indexed by vertex-pair keys, a graph-traversal pattern with data-dependent branching that cannot be expressed as bulk array operations.
+These two routines are therefore provided as an optional Cython extension (\texttt{\_accel.pyx}) that uses typed memoryviews and eliminates interpreter overhead on the inner loops.
+When the extension is not installed, equivalent pure-Python implementations are used as a fallback.
+The impact of the Cython extension on wall-clock runtime is quantified in the Results section.
 
 \subsection*{New file format support (OBJ, GLB)}
 % TODO (issue #28)
