@@ -69,7 +69,7 @@ An optional Cython extension module (\texttt{\_accel}) accelerates the graph-tra
 The label-image API (\texttt{minkowski\_tensors\_from\_label\_image}) requires scikit-image~\cite{vanderwalt2014scikit} for marching-cubes surface extraction; this dependency is not declared as mandatory and resolves automatically in environments where scikit-image is already present.
 The spherical Minkowski summary quantities (\texttt{msm}) additionally require SciPy~\cite{virtanen2020scipy} for spherical harmonic basis functions (\texttt{scipy.special.sph\_harm}); this dependency is likewise optional and is only invoked when \texttt{msm} is included in the requested outputs.
 
-pykarambola retains support for the two mesh formats accepted by C++ karambola: the karambola-native \texttt{.poly} format and the Object File Format (\texttt{.off}).
+Pykarambola retains support for the two mesh formats accepted by C++ karambola: the karambola-native \texttt{.poly} format and the Object File Format (\texttt{.off}).
 Two additional parsers for Wavefront OBJ (\texttt{.obj}) and binary glTF (\texttt{.glb}) were added to broaden compatibility with mesh files produced by common 3D reconstruction and visualisation tools.
 
 \subsection*{Acceleration strategy: NumPy vectorization and Cython}
