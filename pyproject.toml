@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pykarambola"
-version = "0.1.0"
+version = "0.2.0"
 description = "Python implementation of Karambola – Minkowski tensors on 3D triangulated surfaces"
 readme = "README.md"
 license = {file = "LICENSE"}

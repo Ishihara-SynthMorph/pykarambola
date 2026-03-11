@@ -13,6 +13,18 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.2.0] - Unreleased
+
+### Added
+- `center='centroid_mesh'` option in `minkowski_tensors` (volume-weighted center of mass = w010/w000), consistent with the existing option in `minkowski_tensors_from_label_image` (#73)
+- `center_scope='per_label'|'global'` parameter in both `minkowski_tensors` and `minkowski_tensors_from_label_image` to control whether the centroid is computed independently per label or from the full mesh (#73)
+- `return_count=False` flag in both `minkowski_tensors` and `minkowski_tensors_from_label_image`; when `True`, returns `(results, n_objects)` where `n_objects` is the total number of connected components (#80)
+
+### Changed
+- `center='centroid'` in `minkowski_tensors` renamed to `center='reference_centroid'` to match the C++ `--reference_centroid` flag (#73)
+
+---
+
 ## [0.1.0] - 2026-02-25
 
 Initial Python port of [karambola](https://github.com/morphometry/karambola).
