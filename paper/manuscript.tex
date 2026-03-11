@@ -38,20 +38,21 @@ ishihara\at pitt.edu
 
 % TODO (issue #23): Minkowski functionals and tensors
 
-% TODO (issue #24): karambola C++ and motivation for a Python port
-The C++ karambola package~\cite{Schaller2020karambola} is the reference implementation for computing Minkowski tensors on 3D triangulated surfaces, and has been widely used in structural analysis of soft matter and disordered systems~\cite{SchroderTurk2013}.
-It accepts meshes in two formats: the karambola-native \texttt{.poly} format and the Object File Format (\texttt{.off}), and writes results to plain-text files.
-Despite its numerical capabilities, karambola is not distributed through a package manager, requires a C++ build toolchain, and provides no NumPy-compatible interface.
-Researchers who wish to use it within a Python pipeline must write format-conversion scripts for the input and output parsers around the binary, adding fragile intermediates that are difficult to maintain.
-pykarambola removes these barriers: it is installable with \texttt{pip install pykarambola}, extends input support to Wavefront OBJ (\texttt{.obj}) and binary glTF (\texttt{.glb}) in addition to \texttt{.poly} and \texttt{.off}, accepts vertex and face arrays directly as NumPy arrays, and returns results as plain Python dicts.
-
 % TODO (issue #25): Python ecosystem and bioimage analysis community
 Modern bioimage analysis relies on open source tools largely written in Python.
 A typical morphometry pipeline proceeds from microscopy acquisition through volumetric segmentation to quantitative shape measurement, with tools such as scikit-image~\cite{vanderwalt2014scikit} for image processing and surface extraction, napari~\cite{Sofroniew2026napari} for interactive 3D visualisation, and pandas~\cite{McKinney2010pandas} for tabular data handling.
 Most morphometry tools in this ecosystem report simple scalar descriptors (volume, surface area, sphericity) that do not capture the directional properties of shape.
 Approaches based on spherical harmonics~\cite{Shen2006spherical} capture richer structural information but are restricted to genus-zero surfaces and do not generalise to objects with complex 3D topology.
 Minkowski tensors capture directional information explicitly: their eigensystems directly quantify elongation and orientation, which are biologically relevant for polarised cells, elongated organelles, and anisotropic tissue architecture.
-Here we present pykarambola, a Python package that integrates Minkowski tensor analysis directly into the Python bioimage ecosystem: scikit-image's \texttt{marching\_cubes} provides the triangulated surface from a segmentation, \texttt{minkowski\_tensors\_from\_label\_image()} processes every segmented object in a single call, and the resulting dict of NumPy arrays is immediately compatible with pandas DataFrames and mesh visualisation tools such as napari~\cite{Sofroniew2026napari}, PyVista~\cite{Sullivan2019pyvista}, and vedo~\cite{Musy2026vedo}.
+While computing Minkowski tensors on 3D triangulated surfaces is possible in C++ (karambola~\cite{Schaller2020karambola}), but it is not directly accessible within Python workflows.
+Here we present our tool pykarambola, a Python package that integrates Minkowski tensor analysis directly into the Python bioimage ecosystem: in a single call, segmented objects are converted into triangulated surfaces and processed into a dict of NumPy arrays with the objects' corresponding Minkowski tensors, which makes its output immediately compatible with downstream analysis and mesh visualisation tools~\cite{Sofroniew2026napari, Sullivan2019pyvista, Musy2026vedo}.
+
+% TODO (issue #24): karambola C++ and motivation for a Python port
+The C++ karambola package~\cite{Schaller2020karambola} is the reference implementation for computing Minkowski tensors on 3D triangulated surfaces, and has been widely used in structural analysis of soft matter and disordered systems~\cite{SchroderTurk2013}.
+It accepts meshes in two formats: the karambola-native \texttt{.poly} format and the Object File Format (\texttt{.off}), and writes results to plain-text files.
+Despite its numerical capabilities, karambola is not distributed through a package manager, requires a C++ build toolchain, and provides no NumPy-compatible interface.
+Researchers who wish to use it within a Python pipeline must write format-conversion scripts for the input and output parsers around the binary, adding fragile intermediates that are difficult to maintain.
+pykarambola removes these barriers: it is installable with \texttt{pip install pykarambola}, extends input support to Wavefront OBJ (\texttt{.obj}) and binary glTF (\texttt{.glb}) in addition to \texttt{.poly} and \texttt{.off}, accepts vertex and face arrays directly as NumPy arrays, and returns results as plain Python dicts.
 
 
 
