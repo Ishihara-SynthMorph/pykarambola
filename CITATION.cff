@@ -1,14 +1,28 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
+title: "pykarambola: TENTATIVE TITLE"  # TODO: finalize title in M2 (#22–25)
+version: X.X.X  # TODO: update to actual version for v1.0.0 release
+date-released: YYYY-MM-DD  # TODO: update to v1.0.0 release date (#11)
+repository-code: "https://github.com/Pitt-IshiharaLab/pykarambola"
+license: GPL-3.0-or-later
 authors:
-  - family-names: "Schaller"
-    given-names: "Fabian M."
-    orcid: "https://orcid.org/0000-0003-2609-9988"
-  - family-names: "Kapfer"
-    given-names: "Sebastian C."
-    orcid: "https://orcid.org/0000-0002-7591-2739"
-  - family-names: "Schröder-Turk"
-    given-names: "Gerd E."
-title: "karambola - 3D Minkowski Tensor Package"
-version: 2.0
-url: "https://github.com/morphometry/karambola"
+  - family-names: "Ishihara"
+    given-names: "Keisuke"
+    orcid: "https://orcid.org/0000-0002-8481-8680"
+  - family-names: "Khurana"
+    given-names: "Yajushi"
+    orcid: "https://orcid.org/0009-0001-9064-8008"
+references:
+  - type: software
+    title: "karambola - 3D Minkowski Tensor Package"
+    version: 2.0
+    url: "https://github.com/morphometry/karambola"
+    authors:
+      - family-names: "Schaller"
+        given-names: "Fabian M."
+        orcid: "https://orcid.org/0000-0003-2609-9988"
+      - family-names: "Kapfer"
+        given-names: "Sebastian C."
+        orcid: "https://orcid.org/0000-0002-7591-2739"
+      - family-names: "Schröder-Turk"
+        given-names: "Gerd E."
