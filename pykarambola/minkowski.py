@@ -3,7 +3,7 @@
 # This file is part of pykarambola, a Python port of karambola.
 # See LICENSE for the full license text.
 """
-All Minkowski functional calculations — vectorized with NumPy.
+All Minkowski tensor calculations — vectorized with NumPy.
 
 Each function returns a dict mapping label -> MinkValResult.
 """

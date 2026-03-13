@@ -5,7 +5,7 @@
 """
 Triangulation data structure for representing 3D triangulated surfaces.
 
-Uses contiguous NumPy arrays for vectorized computation of Minkowski functionals.
+Uses contiguous NumPy arrays for vectorized computation of Minkowski tensors.
 """
 
 import warnings

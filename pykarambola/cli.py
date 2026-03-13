@@ -89,7 +89,7 @@ def _calculate_if_needed(name, co, surface, calc_func, *args):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(
-        description="Compute Minkowski functionals on triangulated surfaces.",
+        description="Compute Minkowski tensors on triangulated surfaces.",
         prog="pykarambola",
     )
     parser.add_argument("-i", "--input", dest="infile", required=True,
@@ -275,7 +275,7 @@ def main(argv=None):
     else:
         w103 = {}
 
-    # Spherical Minkowski functionals
+    # Spherical Minkowski tensors
     print("calculate msm ...", end="", flush=True)
     if co.get_compute("msm") or co.get_force("msm"):
         sphmink = calculate_sphmink(surface)

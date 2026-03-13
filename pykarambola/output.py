@@ -254,6 +254,7 @@ def write_tensor4_file(co, w):
                     f.write(f"{'ERROR':>{SW}}")
             else:
                 ev = np.linalg.eigvalsh(mat)
+                ev = ev[np.argsort(np.abs(ev))]
                 for val in ev:
                     f.write(_format_value(val))
             f.write(f"{result.name:>{SW}}")
@@ -264,7 +265,7 @@ def write_tensor4_file(co, w):
 
 
 def write_sphmink_file(co, sphmink, append=False):
-    """Write spherical Minkowski functional output file."""
+    """Write spherical Minkowski tensor output file."""
     os.makedirs(co.outfoldername, exist_ok=True)
     filename = os.path.join(co.outfoldername, "msm_ql")
     mode = "a" if append else "w"
