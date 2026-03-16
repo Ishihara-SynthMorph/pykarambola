@@ -17,7 +17,7 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 - `center='centroid_mesh'` option in `minkowski_tensors` (volume-weighted center of mass = w010/w000), consistent with the existing option in `minkowski_tensors_from_label_image` (#73)
-- `center_scope='per_label'|'global'` parameter in both `minkowski_tensors` and `minkowski_tensors_from_label_image` to control whether the centroid is computed independently per label or from the full mesh (#73)
+- `center_per_label=True` boolean parameter in both `minkowski_tensors` and `minkowski_tensors_from_label_image` to control whether the centroid is computed independently per label (`True`, default) or from the full mesh (`False`) (#73)
 - `return_count=False` flag in both `minkowski_tensors` and `minkowski_tensors_from_label_image`; when `True`, returns `(results, n_objects)` where `n_objects` is the total number of connected components (#80)
 
 ### Changed

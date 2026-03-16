@@ -146,7 +146,7 @@ def _count_mesh_components(faces):
     return count
 
 
-def minkowski_tensors(verts, faces, labels=None, center=None, center_scope='per_label',
+def minkowski_tensors(verts, faces, labels=None, center=None, center_per_label=True,
                       compute='standard', compute_eigensystems=True, return_count=False):
     """Compute Minkowski tensors on a triangulated surface.
 
@@ -172,8 +172,8 @@ def minkowski_tensors(verts, faces, labels=None, center=None, center_scope='per_
         ``'centroid_mesh'``: volume-weighted center of mass computed via the
             divergence theorem (``w010 / w000`` geometrically). Vertices are
             shifted by ``-centroid`` before all computations. See
-            ``center_scope`` for per-label vs global behavior when ``labels``
-            is provided.
+            ``center_per_label`` for per-label vs global behavior when
+            ``labels`` is provided.
 
         ``(3,)`` array: shift all vertices by ``-center`` before computing.
 
@@ -181,16 +181,16 @@ def minkowski_tensors(verts, faces, labels=None, center=None, center_scope='per_
             ``center='centroid'`` is deprecated; use
             ``center='reference_centroid'`` instead.
 
-    center_scope : {'per_label', 'global'}, optional
+    center_per_label : bool, optional
         Controls centroid scope when ``labels`` is provided and
         ``center='centroid_mesh'``. Ignored for ``'reference_centroid'``
         (always per-label) and explicit array centers.
 
-        ``'per_label'`` (default): centroid computed independently for each
+        ``True`` (default): centroid computed independently for each
             labeled sub-mesh. Matches the behavior of
             ``minkowski_tensors_from_label_image``.
 
-        ``'global'``: centroid computed from the entire mesh (all faces)
+        ``False``: centroid computed from the entire mesh (all faces)
             and applied as a single shift to every label.
 
     compute : str or list of str
@@ -272,7 +272,7 @@ def minkowski_tensors(verts, faces, labels=None, center=None, center_scope='per_
 
     # --- Special dispatch: centroid_mesh + per_label + labels provided ---
     # Each labeled sub-mesh gets its own center of mass shift before dispatch.
-    if isinstance(center, str) and center == 'centroid_mesh' and labels is not None and center_scope == 'per_label':
+    if isinstance(center, str) and center == 'centroid_mesh' and labels is not None and center_per_label:
         face_labels_arr = np.asarray(labels)
         per_label_out = {}
         n_objects = 0
@@ -532,7 +532,7 @@ def _any_needed(wanted, names):
 
 def minkowski_tensors_from_label_image(
     label_image, level=None, spacing=(1.0, 1.0, 1.0),
-    center='centroid_mesh', center_scope='per_label',
+    center='centroid_mesh', center_per_label=True,
     compute='standard', compute_eigensystems=True, return_count=False,
 ):
     """Compute Minkowski tensors for each label in a 3D label image.
@@ -551,11 +551,11 @@ def minkowski_tensors_from_label_image(
 
         ``'centroid_mesh'`` (default): volume-weighted center of mass computed
             via the divergence theorem (equivalent to ``w010 / w000``). See
-            ``center_scope`` for per-label vs global behavior.
+            ``center_per_label`` for per-label vs global behavior.
 
         ``'centroid_voxel'``: centroid of the set of labelled voxels (mean of
             voxel-grid coordinates scaled by spacing), consistent with
-            scikit-image ``regionprops`` convention. See ``center_scope``.
+            scikit-image ``regionprops`` convention. See ``center_per_label``.
 
         ``'reference_centroid'``: per-tensor Minkowski centroid, equivalent to
             the C++ ``--reference_centroid`` flag. Passed through to
@@ -566,14 +566,14 @@ def minkowski_tensors_from_label_image(
 
         ``(3,)`` array: explicit point applied to all labels.
 
-    center_scope : {'per_label', 'global'}, optional
+    center_per_label : bool, optional
         Controls centroid scope for ``'centroid_mesh'`` and ``'centroid_voxel'``.
         Ignored for ``'reference_centroid'`` and explicit array centers.
 
-        ``'per_label'`` (default): centroid computed independently for each
+        ``True`` (default): centroid computed independently for each
             label's mesh or voxel set.
 
-        ``'global'``: a single centroid is computed from all non-zero labels
+        ``False``: a single centroid is computed from all non-zero labels
             combined and applied uniformly to all labels.
 
     compute : str or list of str
@@ -636,7 +636,7 @@ def minkowski_tensors_from_label_image(
     # --- Compute global center upfront for center_scope='global' ---
     global_center = None
     label_meshes = None  # cache to avoid running marching_cubes twice
-    if (center_scope == 'global'
+    if (not center_per_label
             and isinstance(center, str)
             and center in ('centroid_mesh', 'centroid_voxel')):
         if center == 'centroid_voxel':

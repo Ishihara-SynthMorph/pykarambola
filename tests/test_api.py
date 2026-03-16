@@ -176,7 +176,7 @@ class TestCenterOptions:
         shifted_verts = self.verts + shift
         labels = np.array([0] * 6 + [1] * 6, dtype=np.int64)
         result = minkowski_tensors(shifted_verts, self.faces, labels=labels,
-                                   center='centroid_mesh', center_scope='per_label')
+                                   center='centroid_mesh', center_per_label=True)
         assert isinstance(result, dict)
         assert 0 in result and 1 in result
         for lab in [0, 1]:
@@ -189,7 +189,7 @@ class TestCenterOptions:
         shifted_verts = self.verts + shift
         labels = np.array([0] * 6 + [1] * 6, dtype=np.int64)
         result = minkowski_tensors(shifted_verts, self.faces, labels=labels,
-                                   center='centroid_mesh', center_scope='global')
+                                   center='centroid_mesh', center_per_label=False)
         assert isinstance(result, dict)
         assert 0 in result and 1 in result
         assert 'w000' in result[0] and 'w000' in result[1]
@@ -628,24 +628,24 @@ class TestLabelImage:
         # rank-2 tensors are computed with per-tensor centroids; scalars are unaffected
         assert result[1]['w000'] == pytest.approx(1000.0, rel=0.05)
 
-    def test_center_scope_global_centroid_voxel(self):
-        """center_scope='global' + centroid_voxel: single shift applied to all labels."""
+    def test_center_per_label_false_centroid_voxel(self):
+        """center_per_label=False + centroid_voxel: single shift applied to all labels."""
         vol = np.zeros((30, 30, 30), dtype=np.int32)
         vol[2:8, 2:8, 2:8] = 1
         vol[15:25, 15:25, 15:25] = 2
         result = minkowski_tensors_from_label_image(
-            vol, center='centroid_voxel', center_scope='global'
+            vol, center='centroid_voxel', center_per_label=False
         )
         assert 1 in result and 2 in result
         assert 'w000' in result[1] and 'w000' in result[2]
 
-    def test_center_scope_global_centroid_mesh(self):
-        """center_scope='global' + centroid_mesh: single shift applied to all labels."""
+    def test_center_per_label_false_centroid_mesh(self):
+        """center_per_label=False + centroid_mesh: single shift applied to all labels."""
         vol = np.zeros((30, 30, 30), dtype=np.int32)
         vol[2:8, 2:8, 2:8] = 1
         vol[15:25, 15:25, 15:25] = 2
         result = minkowski_tensors_from_label_image(
-            vol, center='centroid_mesh', center_scope='global'
+            vol, center='centroid_mesh', center_per_label=False
         )
         assert 1 in result and 2 in result
         assert 'w000' in result[1] and 'w000' in result[2]
