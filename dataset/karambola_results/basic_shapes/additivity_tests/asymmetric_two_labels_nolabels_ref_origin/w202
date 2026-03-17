@@ -1,0 +1,16 @@
+# input_file = /Users/yk/Desktop/karambola_mac/bash_scripts/../data/input_files/basic_shapes/additivity_tests/asymmetric_two_labels.off
+#
+# keyword explanations: (not all keywords have to show up)
+# closed = the labeled surface is closed
+# shared = the labeled surface has edges whose neighbours are surfaces with other labels
+# open   = the labeled surface is open, there are no neighbours to some of the edges
+# calculation_forced = stubbornly applied the formulae even though the surface is shared or open
+# cant_be_calculated = can't be calculated because surface is shared or open
+# reference_origin   = the tensors are calculated with respect to the origin
+# reference_centroid = the tensors are calculated with respect to the minkowski-vectors
+#
+# calculated with karambola 2.0
+# contact: karambola@physik.uni-erlangen.de
+#
+#           #1 label           #2 m(0,0)           #3 m(0,1)           #4 m(0,2)           #5 m(1,0)           #6 m(1,1)           #7 m(1,2)           #8 m(2,0)           #9 m(2,1)          #10 m(2,2)            #11 name        #12 Keywords
+                 ALL       6.28318530718   1.85037170771e-17   9.25185853854e-18   1.85037170771e-17       6.28318530718  -1.85037170771e-17   9.25185853854e-18  -1.85037170771e-17       6.28318530718                w202              closed     reference_origin 

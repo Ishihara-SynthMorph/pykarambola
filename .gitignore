@@ -22,4 +22,4 @@ paper/*.pdf
 
 # Generated datasets and benchmark outputs (large, not tracked)
 dataset/medmnist_benchmarking/
-dataset/karambola_results/
+dataset/karambola_results/medmnist_benchmarking/

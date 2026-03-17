@@ -1,0 +1,16 @@
+# input_file = /Users/yk/Desktop/karambola_mac/bash_scripts/../data/input_files/basic_shapes/additivity_tests/box_a_2x2x2.off
+#
+# keyword explanations: (not all keywords have to show up)
+# closed = the labeled surface is closed
+# shared = the labeled surface has edges whose neighbours are surfaces with other labels
+# open   = the labeled surface is open, there are no neighbours to some of the edges
+# calculation_forced = stubbornly applied the formulae even though the surface is shared or open
+# cant_be_calculated = can't be calculated because surface is shared or open
+# reference_origin   = the tensors are calculated with respect to the origin
+# reference_centroid = the tensors are calculated with respect to the minkowski-vectors
+#
+# calculated with karambola 2.0
+# contact: karambola@physik.uni-erlangen.de
+#
+#           #1 label            #2 EVal1         #3 EVec1[x]         #4 EVec1[y]         #5 EVec1[z]            #6 EVal2         #7 EVec2[x]         #8 EVec2[y]         #9 EVec2[z]           #10 EVal3        #11 EVec3[x]        #12 EVec3[y]        #13 EVec3[z]            #14 name        #15 Keywords
+                 ALL       2.09439510239                   1                   0                   0       2.09439510239                  -0         0.894427191        0.4472135955       2.09439510239                   0       -0.4472135955         0.894427191         w202_eigsys              closed     reference_origin 
