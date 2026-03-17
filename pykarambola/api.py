@@ -162,7 +162,7 @@ def minkowski_tensors(verts, faces, labels=None, center=None, center_per_label=T
     labels : (F,) array_like, 'auto', or None
         Per-face labels. If None, treat as a single body.
         If ``'auto'``, connected mesh components are detected automatically
-        and assigned 0-based integer labels (``0``, ``1``, …). The return
+        and assigned 1-based integer labels (``1``, ``2``, …). The return
         value has the same nested-dict structure as the explicit-labels case.
     center : None, 'reference_centroid', 'centroid_mesh', or (3,) array_like
         Reference point for position-dependent tensors.
@@ -615,8 +615,8 @@ def minkowski_tensors_from_label_image(
     dict[int, dict]
         When ``autolabel=False``: mapping from label value (int) to a dict
         of Minkowski functionals.
-        When ``autolabel=True``: mapping from component index (int) to a
-        dict of Minkowski functionals.
+        When ``autolabel=True``: mapping from component index (int, 1-based)
+        to a dict of Minkowski functionals.
 
     tuple (dict, int)
         When ``return_count=True``: ``(results, n_objects)`` where the dict
@@ -667,7 +667,7 @@ def minkowski_tensors_from_label_image(
             mt_center = center
         return minkowski_tensors(
             verts, faces, labels='auto',
-            center=mt_center, center_scope=center_scope,
+            center=mt_center, center_per_label=center_per_label,
             compute=compute, compute_eigensystems=compute_eigensystems,
             return_count=return_count,
         )
