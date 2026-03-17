@@ -49,7 +49,6 @@
 \RequirePackage{lmodern}
 \RequirePackage{siunitx}
 \RequirePackage{textgreek}
-\RequirePackage{cleveref}
 \RequirePackage{gensymb}
 \RequirePackage{textcomp}
 \RequirePackage[version=4]{mhchem}
