@@ -5,6 +5,8 @@ High-level API for computing Minkowski tensors from numpy arrays.
 import warnings
 
 import numpy as np
+from scipy.sparse import csr_matrix
+from scipy.sparse.csgraph import connected_components as _sp_connected_components
 
 from .triangulation import Triangulation
 from .minkowski import (
@@ -104,8 +106,33 @@ def _ensure_outward_normals(verts, faces):
     return faces
 
 
+def _label_mesh_components(faces):
+    """Return a per-face integer label (1-based) for each connected component.
+
+    Parameters
+    ----------
+    faces : (F, 3) array_like
+        Triangle vertex indices (any non-negative integer values).
+
+    Returns
+    -------
+    labels : np.ndarray, shape (F,)
+        Component label for each face, integers starting from 1.
+        Empty array when ``faces`` is empty.
+    """
+    faces = np.asarray(faces)
+    if len(faces) == 0:
+        return np.empty(0, dtype=np.intp)
+    edges = np.concatenate([faces[:, [0, 1]], faces[:, [1, 2]], faces[:, [0, 2]]])
+    n = int(faces.max()) + 1
+    data = np.ones(len(edges), dtype=np.int8)
+    graph = csr_matrix((data, (edges[:, 0], edges[:, 1])), shape=(n, n))
+    _, vertex_labels = _sp_connected_components(graph, directed=False)
+    return vertex_labels[faces[:, 0]].astype(np.intp) + 1
+
+
 def _count_mesh_components(faces):
-    """Count connected components by vertex-adjacency BFS.
+    """Return the number of disconnected components in a triangular mesh.
 
     Parameters
     ----------
@@ -116,34 +143,10 @@ def _count_mesh_components(faces):
     -------
     int
     """
-    if len(faces) == 0:
+    component_labels = _label_mesh_components(np.asarray(faces))
+    if len(component_labels) == 0:
         return 0
-    faces = np.asarray(faces)
-    unique_verts = np.unique(faces)
-    n = len(unique_verts)
-    idx_map = np.full(int(unique_verts.max()) + 1, -1, dtype=np.intp)
-    idx_map[unique_verts] = np.arange(n, dtype=np.intp)
-    remapped = idx_map[faces]  # (F, 3)
-    adj = [[] for _ in range(n)]
-    for a, b, c in remapped:
-        adj[a].extend([b, c])
-        adj[b].extend([a, c])
-        adj[c].extend([a, b])
-    visited = np.zeros(n, dtype=bool)
-    count = 0
-    for start in range(n):
-        if not visited[start]:
-            count += 1
-            stack = [start]
-            while stack:
-                v = stack.pop()
-                if visited[v]:
-                    continue
-                visited[v] = True
-                for nb in adj[v]:
-                    if not visited[nb]:
-                        stack.append(nb)
-    return count
+    return int(np.unique(component_labels).size)
 
 
 def minkowski_tensors(verts, faces, labels=None, center=None, center_per_label=True,
@@ -156,8 +159,11 @@ def minkowski_tensors(verts, faces, labels=None, center=None, center_per_label=T
         Vertex positions.
     faces : (F, 3) array_like
         Triangle vertex indices.
-    labels : (F,) array_like or None
+    labels : (F,) array_like, 'auto', or None
         Per-face labels. If None, treat as a single body.
+        If ``'auto'``, connected mesh components are detected automatically
+        and assigned 0-based integer labels (``0``, ``1``, …). The return
+        value has the same nested-dict structure as the explicit-labels case.
     center : None, 'reference_centroid', 'centroid_mesh', or (3,) array_like
         Reference point for position-dependent tensors.
 
@@ -233,6 +239,10 @@ def minkowski_tensors(verts, faces, labels=None, center=None, center_per_label=T
     """
     verts = np.asarray(verts, dtype=np.float64)
     faces = np.asarray(faces, dtype=np.int64)
+
+    # Expand 'auto' labels: detect connected mesh components
+    if isinstance(labels, str) and labels == 'auto':
+        labels = _label_mesh_components(faces)
 
     # Determine which functionals to compute
     if isinstance(compute, str):
@@ -534,6 +544,7 @@ def minkowski_tensors_from_label_image(
     label_image, level=None, spacing=(1.0, 1.0, 1.0),
     center='centroid_mesh', center_per_label=True,
     compute='standard', compute_eigensystems=True, return_count=False,
+    autolabel=False,
 ):
     """Compute Minkowski tensors for each label in a 3D label image.
 
@@ -588,20 +599,32 @@ def minkowski_tensors_from_label_image(
         label. Default is True.
     return_count : bool, optional
         If True, return a ``(results, n_objects)`` tuple where ``n_objects``
-        is the total number of connected components across all labels,
-        determined via ``skimage.measure.label``. Default is False.
+        is the total number of connected components across all labels.
+        Default is False.
+    autolabel : bool, optional
+        If False (default), compute tensors for each unique non-zero label
+        value as a single body; results are keyed by label value (int).
+        If True, ignore voxel label values: treat the image as binary,
+        build a single mesh from all non-zero voxels, and detect connected
+        components automatically (equivalent to calling
+        ``minkowski_tensors(..., labels='auto')``). Results are keyed by
+        0-based component index (``0``, ``1``, …).
 
     Returns
     -------
     dict[int, dict]
-        Mapping from label value to a dict of Minkowski functionals.
+        When ``autolabel=False``: mapping from label value (int) to a dict
+        of Minkowski functionals.
+        When ``autolabel=True``: mapping from component index (int) to a
+        dict of Minkowski functionals.
 
-    tuple (dict[int, dict], int)
-        When ``return_count=True``: ``(results, n_objects)``.
+    tuple (dict, int)
+        When ``return_count=True``: ``(results, n_objects)`` where the dict
+        has the same structure as above.
 
     Notes
     -----
-    Requires *scikit-image* (``skimage.measure.marching_cubes``).
+    Requires *scikit-image*.
     """
     try:
         from skimage.measure import marching_cubes, label as sk_label
@@ -625,6 +648,29 @@ def minkowski_tensors_from_label_image(
 
     unique_labels = np.unique(label_image)
     unique_labels = unique_labels[unique_labels != 0]
+
+    # --- autolabel=True: treat image as binary, delegate to minkowski_tensors ---
+    if autolabel:
+        binary = (label_image != 0).astype(np.float64)
+        try:
+            verts, faces, _, _ = marching_cubes(binary, level=level, spacing=spacing,
+                                                gradient_direction='ascent')
+        except Exception as exc:
+            raise RuntimeError(f"marching_cubes failed on binary mask: {exc}") from exc
+        faces = _ensure_outward_normals(verts, faces)
+        # centroid_voxel is not supported by minkowski_tensors; pre-compute it here.
+        if isinstance(center, str) and center == 'centroid_voxel':
+            nz_coords = np.argwhere(binary > 0)
+            mt_center = (nz_coords.mean(axis=0) * np.array(spacing)
+                         if len(nz_coords) else np.zeros(3))
+        else:
+            mt_center = center
+        return minkowski_tensors(
+            verts, faces, labels='auto',
+            center=mt_center, center_scope=center_scope,
+            compute=compute, compute_eigensystems=compute_eigensystems,
+            return_count=return_count,
+        )
 
     # --- Count connected components upfront if requested ---
     n_objects_total = 0
@@ -683,49 +729,54 @@ def minkowski_tensors_from_label_image(
 
         # Use cached mesh if available (avoids re-running marching_cubes)
         if label_meshes is not None and lab in label_meshes:
-            verts, faces = label_meshes[lab]
+            cached = label_meshes[lab]
         else:
-            mask = (label_image == lab).astype(np.float64)
-            try:
-                verts, faces, _, _ = marching_cubes(mask, level=level, spacing=spacing,
-                                                    gradient_direction='ascent')
-            except Exception as exc:
-                warnings.warn(
-                    f"marching_cubes failed for label {lab}: {exc}",
-                    stacklevel=2,
-                )
-                continue
-            # Ensure outward-facing normals
-            faces = _ensure_outward_normals(verts, faces)
+            cached = None
+        items = [(lab, (label_image == lab).astype(np.float64), cached)]
 
-        # Determine center for this label
-        if global_center is not None:
-            label_center = global_center
-        elif isinstance(center, str) and center == 'centroid_mesh':
-            # Volume-weighted center of mass via the divergence theorem.
-            # Uses _ensure_outward_normals result so normals are outward.
-            centroid, ok = _compute_mesh_centroid(verts, faces)
-            if not ok:
-                warnings.warn(
-                    f"Mesh centroid denominator near zero for label {lab}; "
-                    "falling back to origin reference.",
-                    stacklevel=2,
-                )
-                label_center = np.zeros(3)
+        for result_key, mask, cached_mesh in items:
+            if cached_mesh is not None:
+                verts, faces = cached_mesh
             else:
-                label_center = centroid
-        elif isinstance(center, str) and center == 'centroid_voxel':
-            voxel_coords = np.argwhere(label_image == lab)  # (N, 3)
-            label_center = voxel_coords.mean(axis=0) * np.array(spacing)
-        elif isinstance(center, str) and center == 'reference_centroid':
-            label_center = 'reference_centroid'
-        else:
-            label_center = center
+                try:
+                    verts, faces, _, _ = marching_cubes(mask, level=level, spacing=spacing,
+                                                        gradient_direction='ascent')
+                except Exception as exc:
+                    warnings.warn(
+                        f"marching_cubes failed for {result_key}: {exc}",
+                        stacklevel=2,
+                    )
+                    continue
+                faces = _ensure_outward_normals(verts, faces)
 
-        results[lab] = minkowski_tensors(
-            verts, faces, center=label_center, compute=compute,
-            compute_eigensystems=compute_eigensystems,
-        )
+            # Determine center for this entry
+            if global_center is not None:
+                label_center = global_center
+            elif isinstance(center, str) and center == 'centroid_mesh':
+                # Volume-weighted center of mass via the divergence theorem.
+                # Uses _ensure_outward_normals result so normals are outward.
+                centroid, ok = _compute_mesh_centroid(verts, faces)
+                if not ok:
+                    warnings.warn(
+                        f"Mesh centroid denominator near zero for {result_key}; "
+                        "falling back to origin reference.",
+                        stacklevel=2,
+                    )
+                    label_center = np.zeros(3)
+                else:
+                    label_center = centroid
+            elif isinstance(center, str) and center == 'centroid_voxel':
+                voxel_coords = np.argwhere(mask > 0)  # (N, 3)
+                label_center = voxel_coords.mean(axis=0) * np.array(spacing)
+            elif isinstance(center, str) and center == 'reference_centroid':
+                label_center = 'reference_centroid'
+            else:
+                label_center = center
+
+            results[result_key] = minkowski_tensors(
+                verts, faces, center=label_center, compute=compute,
+                compute_eigensystems=compute_eigensystems,
+            )
 
     if return_count:
         return results, n_objects_total

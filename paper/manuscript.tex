@@ -65,10 +65,10 @@ pykarambola is a complete Python reimplementation of the C++ karambola package~\
 The port reproduces the logical structure of the C++ source: a \texttt{Triangulation} class holds the surface mesh and precomputed per-triangle and per-edge geometry, a set of \texttt{calculate\_w*} functions implements the Minkowski tensor formulae, and a command-line interface reproduces the behaviour of the original binary.
 The C++ implementation depended on the GNU Scientific Library (GSL) for eigenvalue decomposition; pykarambola replaces this with NumPy's \texttt{eigh} routine, removing the only non-Python build dependency from the core computation.
 
-The package is structured around a pure-Python core that requires only NumPy~\cite{harris2020numpy}.
+The package is structured around a pure-Python core that requires NumPy~\cite{harris2020numpy} and SciPy~\cite{virtanen2020scipy}.
+SciPy is used for connected component detection (\texttt{scipy.ndimage.label}) when extracting surfaces from label images, and for spherical harmonic basis functions (\texttt{scipy.special.sph\_harm}) in the spherical Minkowski summary quantities (\texttt{msm}).
 An optional Cython extension module (\texttt{\_accel}) accelerates the graph-traversal steps of mesh initialisation and is compiled at install time when Cython is available (\texttt{pip install pykarambola[accel]}); the package falls back to pure-Python implementations when the extension is absent (described below).
 The label-image API (\texttt{minkowski\_tensors\_from\_label\_image}) requires scikit-image~\cite{vanderwalt2014scikit} for marching-cubes surface extraction; this dependency is not declared as mandatory and resolves automatically in environments where scikit-image is already present.
-The spherical Minkowski summary quantities (\texttt{msm}) additionally require SciPy~\cite{virtanen2020scipy} for spherical harmonic basis functions (\texttt{scipy.special.sph\_harm}); this dependency is likewise optional and is only invoked when \texttt{msm} is included in the requested outputs.
 
 Pykarambola retains support for the two mesh formats accepted by C++ karambola: the karambola-native \texttt{.poly} format and the Object File Format (\texttt{.off}).
 Two additional parsers for Wavefront OBJ (\texttt{.obj}) and binary glTF (\texttt{.glb}) were added to broaden compatibility with mesh files produced by common 3D reconstruction and visualisation tools.
@@ -91,7 +91,9 @@ When the extension is not installed, equivalent pure-Python implementations are 
 % TODO (issue #29)
 
 \subsection*{Label-image API}
-% TODO (issue #30)
+The label-image API automatically identifies connected components in a 3D segmented image using scipy's connected-component labeling (\texttt{scipy.ndimage.label}).
+Each label is then converted to a triangulated surface mesh via marching cubes, and Minkowski tensors are computed independently for each component.
+% TODO (issue #30): Expand with implementation details and example workflow
 
 
 %% -------------------------------------------------------
@@ -151,8 +153,9 @@ When the extension is not installed, equivalent pure-Python implementations are 
 %% -------------------------------------------------------
 \section*{Software availability}
 %% -------------------------------------------------------
-% TODO (issue #36): Software availability statement
-% pykarambola is available at https://github.com/Pitt-IshiharaLab/pykarambola
+pykarambola is available at \url{https://github.com/Pitt-IshiharaLab/pykarambola}.
+Core dependencies are NumPy and SciPy; optional dependencies include Cython (for acceleration) and scikit-image (for label-image API).
+% TODO (issue #36): Complete software availability statement
 
 
 \begin{acknowledgements}

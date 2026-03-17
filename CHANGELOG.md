@@ -19,6 +19,9 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 - `center='centroid_mesh'` option in `minkowski_tensors` (volume-weighted center of mass = w010/w000), consistent with the existing option in `minkowski_tensors_from_label_image` (#73)
 - `center_per_label=True` boolean parameter in both `minkowski_tensors` and `minkowski_tensors_from_label_image` to control whether the centroid is computed independently per label (`True`, default) or from the full mesh (`False`) (#73)
 - `return_count=False` flag in both `minkowski_tensors` and `minkowski_tensors_from_label_image`; when `True`, returns `(results, n_objects)` where `n_objects` is the total number of connected components (#80)
+- `labels='auto'` option in `minkowski_tensors()` to automatically detect connected mesh components and return results keyed by 1-based component index
+- `autolabel=False` parameter in `minkowski_tensors_from_label_image()`: when `True`, treats the label image as binary, builds one mesh from all non-zero voxels, and detects connected components automatically (#80)
+- `_label_mesh_components()` public helper function that returns per-face component labels for a triangular mesh using scipy-based connected components detection
 
 ### Changed
 - `center='centroid'` in `minkowski_tensors` renamed to `center='reference_centroid'` to match the C++ `--reference_centroid` flag (#73)
