@@ -1,0 +1,19 @@
+# input_file = /Users/yk/Desktop/karambola_mac/bash_scripts/../data/input_files/basic_shapes/additivity_tests/box_b_4x4x4.off
+#
+# keyword explanations: (not all keywords have to show up)
+# closed = the labeled surface is closed
+# shared = the labeled surface has edges whose neighbours are surfaces with other labels
+# open   = the labeled surface is open, there are no neighbours to some of the edges
+# calculation_forced = stubbornly applied the formulae even though the surface is shared or open
+# cant_be_calculated = can't be calculated because surface is shared or open
+# reference_origin   = the tensors are calculated with respect to the origin
+# reference_centroid = the tensors are calculated with respect to the minkowski-vectors
+#
+# calculated with karambola 2.0
+# contact: karambola@physik.uni-erlangen.de
+#
+#           #1 label                #2 w             #3 name         #4 Keywords
+                 ALL                  64                w000              closed     reference_origin 
+                 ALL                  32                w100              closed     reference_origin 
+                 ALL       12.5663706144                w200              closed     reference_origin 
+                 ALL       4.18879020479                w300              closed     reference_origin 

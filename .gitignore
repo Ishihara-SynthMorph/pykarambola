@@ -19,3 +19,7 @@ paper/*.fls
 paper/*.fdb_latexmk
 paper/*.synctex.gz
 paper/*.pdf
+
+# Generated datasets and benchmark outputs (large, not tracked)
+dataset/medmnist_benchmarking/
+dataset/karambola_results/medmnist_benchmarking/

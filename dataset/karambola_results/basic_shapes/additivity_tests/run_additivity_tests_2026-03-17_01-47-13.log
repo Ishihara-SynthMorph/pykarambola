@@ -1,0 +1,229 @@
+Run started: Tue Mar 17 01:47:13 EDT 2026 | binary: /Users/yk/Desktop/karambola_mac/bash_scripts/../karambola-master/karambola
+=========================================
+
+[box_a_2x2x2_ref_origin] flags: --no-labels
+Converting Polyfile to Minkowski triangulation format ...     done
+check surface ...
+shortest edge = 2
+longest edge  = 2.82843
+smallest area = 2
+largest area  = 2
+                       done
+calculate w000 ...done
+calculate w100 ...done
+calculate w200 ...done
+calculate w300 ...done
+calculate w010 ...done
+calculate w110 ...done
+calculate w210 ...done
+calculate w310 ...done
+calculate w020 ...done
+calculate w120 ...done
+calculate w220 ...done
+calculate w320 ...done
+calculate w102 ...done
+calculate w202 ...done
+calculate msm ...done
+
+write results to files ...     done
+calculate and write eigensystems to file ...     done
+exit: 0
+
+[box_a_2x2x2_ref_centroid] flags: --no-labels --reference_centroid
+Converting Polyfile to Minkowski triangulation format ...     done
+check surface ...
+shortest edge = 2
+longest edge  = 2.82843
+smallest area = 2
+largest area  = 2
+                       done
+calculate w000 ...done
+calculate w100 ...done
+calculate w200 ...done
+calculate w300 ...done
+calculate w010 ...done
+calculate w110 ...done
+calculate w210 ...done
+calculate w310 ...done
+calculate w020 ...done
+calculate w120 ...done
+calculate w220 ...done
+calculate w320 ...done
+calculate w102 ...done
+calculate w202 ...done
+calculate msm ...done
+
+write results to files ...     done
+calculate and write eigensystems to file ...     done
+exit: 0
+
+[box_b_4x4x4_ref_origin] flags: --no-labels
+Converting Polyfile to Minkowski triangulation format ...     done
+check surface ...
+shortest edge = 4
+longest edge  = 5.65685
+smallest area = 8
+largest area  = 8
+                       done
+calculate w000 ...done
+calculate w100 ...done
+calculate w200 ...done
+calculate w300 ...done
+calculate w010 ...done
+calculate w110 ...done
+calculate w210 ...done
+calculate w310 ...done
+calculate w020 ...done
+calculate w120 ...done
+calculate w220 ...done
+calculate w320 ...done
+calculate w102 ...done
+calculate w202 ...done
+calculate msm ...done
+
+write results to files ...     done
+calculate and write eigensystems to file ...     done
+exit: 0
+
+[box_b_4x4x4_ref_centroid] flags: --no-labels --reference_centroid
+Converting Polyfile to Minkowski triangulation format ...     done
+check surface ...
+shortest edge = 4
+longest edge  = 5.65685
+smallest area = 8
+largest area  = 8
+                       done
+calculate w000 ...done
+calculate w100 ...done
+calculate w200 ...done
+calculate w300 ...done
+calculate w010 ...done
+calculate w110 ...done
+calculate w210 ...done
+calculate w310 ...done
+calculate w020 ...done
+calculate w120 ...done
+calculate w220 ...done
+calculate w320 ...done
+calculate w102 ...done
+calculate w202 ...done
+calculate msm ...done
+
+write results to files ...     done
+calculate and write eigensystems to file ...     done
+exit: 0
+
+[asymmetric_two_labels_nolabels_ref_origin] flags: --no-labels
+Converting Polyfile to Minkowski triangulation format ...     done
+check surface ...
+shortest edge = 2
+longest edge  = 5.65685
+smallest area = 2
+largest area  = 8
+                       done
+calculate w000 ...done
+calculate w100 ...done
+calculate w200 ...done
+calculate w300 ...done
+calculate w010 ...done
+calculate w110 ...done
+calculate w210 ...done
+calculate w310 ...done
+calculate w020 ...done
+calculate w120 ...done
+calculate w220 ...done
+calculate w320 ...done
+calculate w102 ...done
+calculate w202 ...done
+calculate msm ...done
+
+write results to files ...     done
+calculate and write eigensystems to file ...     done
+exit: 0
+
+[asymmetric_two_labels_nolabels_ref_centroid] flags: --no-labels --reference_centroid
+Converting Polyfile to Minkowski triangulation format ...     done
+check surface ...
+shortest edge = 2
+longest edge  = 5.65685
+smallest area = 2
+largest area  = 8
+                       done
+calculate w000 ...done
+calculate w100 ...done
+calculate w200 ...done
+calculate w300 ...done
+calculate w010 ...done
+calculate w110 ...done
+calculate w210 ...done
+calculate w310 ...done
+calculate w020 ...done
+calculate w120 ...done
+calculate w220 ...done
+calculate w320 ...done
+calculate w102 ...done
+calculate w202 ...done
+calculate msm ...done
+
+write results to files ...     done
+calculate and write eigensystems to file ...     done
+exit: 0
+
+[asymmetric_two_labels_labels_ref_origin] flags: --labels
+Converting Polyfile to Minkowski triangulation format ...     done
+check surface ...
+shortest edge = 2
+longest edge  = 5.65685
+smallest area = 2
+largest area  = 8
+                       done
+calculate w000 ...done
+calculate w100 ...done
+calculate w200 ...done
+calculate w300 ...done
+calculate w010 ...done
+calculate w110 ...done
+calculate w210 ...done
+calculate w310 ...done
+calculate w020 ...done
+calculate w120 ...done
+calculate w220 ...done
+calculate w320 ...done
+calculate w102 ...done
+calculate w202 ...done
+calculate msm ...done
+
+write results to files ...     done
+calculate and write eigensystems to file ...     done
+exit: 0
+
+[asymmetric_two_labels_labels_ref_centroid] flags: --labels --reference_centroid
+Converting Polyfile to Minkowski triangulation format ...     done
+check surface ...
+shortest edge = 2
+longest edge  = 5.65685
+smallest area = 2
+largest area  = 8
+                       done
+calculate w000 ...done
+calculate w100 ...done
+calculate w200 ...done
+calculate w300 ...done
+calculate w010 ...done
+calculate w110 ...done
+calculate w210 ...done
+calculate w310 ...done
+calculate w020 ...done
+calculate w120 ...done
+calculate w220 ...done
+calculate w320 ...done
+calculate w102 ...done
+calculate w202 ...done
+calculate msm ...done
+
+write results to files ...     done
+calculate and write eigensystems to file ...     done
+exit: 0
+
+=========================================
+Total: 0s | Finished: Tue Mar 17 01:47:13 EDT 2026

@@ -7,7 +7,10 @@ import math
 import numpy as np
 import pytest
 
-from pykarambola.api import minkowski_tensors, minkowski_tensors_from_label_image
+from pykarambola.api import (
+    minkowski_tensors, minkowski_tensors_from_label_image,
+    _label_mesh_components,
+)
 
 
 def _box_mesh(a, b, c):
@@ -157,9 +160,42 @@ class TestCenterOptions:
         self.a, self.b, self.c = 2.0, 3.0, 4.0
         self.verts, self.faces = _box_mesh(self.a, self.b, self.c)
 
-    def test_centroid_runs(self):
-        result = minkowski_tensors(self.verts, self.faces, center='centroid')
+    def test_reference_centroid_runs(self):
+        result = minkowski_tensors(self.verts, self.faces, center='reference_centroid')
         assert 'w000' in result
+
+    def test_centroid_mesh_no_labels_centers_vectors(self):
+        """centroid_mesh shifts a box to its center of mass; vectors should be near zero."""
+        shift = np.array([5.0, 3.0, 2.0])
+        shifted_verts = self.verts + shift
+        result = minkowski_tensors(shifted_verts, self.faces, center='centroid_mesh')
+        for name in ['w010', 'w110', 'w210', 'w310']:
+            np.testing.assert_allclose(result[name], [0, 0, 0], atol=1e-3,
+                                       err_msg=f"{name} should be near zero after centroid_mesh shift")
+
+    def test_centroid_mesh_with_labels_per_label(self):
+        """centroid_mesh + per_label: returns per-label nested dict with all quantities."""
+        shift = np.array([5.0, 3.0, 2.0])
+        shifted_verts = self.verts + shift
+        labels = np.array([0] * 6 + [1] * 6, dtype=np.int64)
+        result = minkowski_tensors(shifted_verts, self.faces, labels=labels,
+                                   center='centroid_mesh', center_per_label=True)
+        assert isinstance(result, dict)
+        assert 0 in result and 1 in result
+        for lab in [0, 1]:
+            assert 'w000' in result[lab]
+            assert 'w020' in result[lab]
+
+    def test_centroid_mesh_with_labels_global(self):
+        """centroid_mesh + global: a single whole-mesh COM is applied to all labels."""
+        shift = np.array([5.0, 3.0, 2.0])
+        shifted_verts = self.verts + shift
+        labels = np.array([0] * 6 + [1] * 6, dtype=np.int64)
+        result = minkowski_tensors(shifted_verts, self.faces, labels=labels,
+                                   center='centroid_mesh', center_per_label=False)
+        assert isinstance(result, dict)
+        assert 0 in result and 1 in result
+        assert 'w000' in result[0] and 'w000' in result[1]
 
     def test_explicit_center_scalars(self):
         shift = np.array([1.0, 2.0, 3.0])
@@ -579,6 +615,243 @@ class TestLabelImage:
         dtype_warnings = [w for w in caught if "dtype" in str(w.message).lower()]
         assert len(dtype_warnings) == 0
 
+    def test_reference_centroid_from_label_image(self):
+        """center='reference_centroid' passes through to minkowski_tensors correctly.
+
+        reference_centroid uses per-tensor Minkowski centroids for rank-2 tensors
+        but does NOT shift vertices, so w010 etc. are NOT zeroed out.
+        Verify the result matches calling minkowski_tensors directly with the same option.
+        """
+        vol = _voxel_box((20, 20, 20), np.s_[5:15, 5:15, 5:15])
+        result = minkowski_tensors_from_label_image(vol, center='reference_centroid')
+        assert 1 in result
+        assert 'w000' in result[1]
+        assert 'w020' in result[1]
+        # rank-2 tensors are computed with per-tensor centroids; scalars are unaffected
+        assert result[1]['w000'] == pytest.approx(1000.0, rel=0.05)
+
+    def test_center_per_label_false_centroid_voxel(self):
+        """center_per_label=False + centroid_voxel: single shift applied to all labels."""
+        vol = np.zeros((30, 30, 30), dtype=np.int32)
+        vol[2:8, 2:8, 2:8] = 1
+        vol[15:25, 15:25, 15:25] = 2
+        result = minkowski_tensors_from_label_image(
+            vol, center='centroid_voxel', center_per_label=False
+        )
+        assert 1 in result and 2 in result
+        assert 'w000' in result[1] and 'w000' in result[2]
+
+    def test_center_per_label_false_centroid_mesh(self):
+        """center_per_label=False + centroid_mesh: single shift applied to all labels."""
+        vol = np.zeros((30, 30, 30), dtype=np.int32)
+        vol[2:8, 2:8, 2:8] = 1
+        vol[15:25, 15:25, 15:25] = 2
+        result = minkowski_tensors_from_label_image(
+            vol, center='centroid_mesh', center_per_label=False
+        )
+        assert 1 in result and 2 in result
+        assert 'w000' in result[1] and 'w000' in result[2]
+
+    def test_return_count_single_blob(self):
+        """return_count=True: single connected blob → n_objects=1."""
+        vol = _voxel_box((20, 20, 20), np.s_[5:15, 5:15, 5:15])
+        result, n = minkowski_tensors_from_label_image(vol, return_count=True)
+        assert n == 1
+        assert 1 in result
+
+    def test_return_count_two_disconnected_blobs_same_label(self):
+        """return_count=True: two disconnected blobs under label 1 → n_objects=2."""
+        vol = np.zeros((30, 30, 30), dtype=np.int32)
+        vol[2:6, 2:6, 2:6] = 1    # blob A
+        vol[22:26, 22:26, 22:26] = 1  # blob B, same label
+        result, n = minkowski_tensors_from_label_image(vol, return_count=True)
+        assert n == 2
+        assert 1 in result  # still one result entry (labels are not split)
+
+    def test_return_count_two_labels(self):
+        """return_count=True: two labels each with one component → n_objects=2."""
+        vol = np.zeros((30, 30, 30), dtype=np.int32)
+        vol[2:8, 2:8, 2:8] = 1
+        vol[15:25, 15:25, 15:25] = 2
+        result, n = minkowski_tensors_from_label_image(vol, return_count=True)
+        assert n == 2
+        assert len(result) == 2
+
+
+class TestReturnCount:
+    """#80: return_count for minkowski_tensors()."""
+
+    def _two_box_mesh(self):
+        """Two disconnected boxes: box A at origin, box B shifted far away."""
+        vA, fA = _box_mesh(2.0, 2.0, 2.0)
+        vB, fB = _box_mesh(2.0, 2.0, 2.0)
+        vB = vB + np.array([20.0, 0.0, 0.0])
+        fB_shifted = fB + len(vA)
+        verts = np.vstack([vA, vB])
+        faces = np.vstack([fA, fB_shifted])
+        return verts, faces
+
+    def test_single_box_count_one(self):
+        verts, faces = _box_mesh(2.0, 3.0, 4.0)
+        result, n = minkowski_tensors(verts, faces, return_count=True)
+        assert n == 1
+        assert 'w000' in result
+
+    def test_two_disconnected_boxes_count_two(self):
+        verts, faces = self._two_box_mesh()
+        result, n = minkowski_tensors(verts, faces, return_count=True)
+        assert n == 2
+        assert 'w000' in result
+
+    def test_return_count_false_returns_plain_dict(self):
+        verts, faces = _box_mesh(2.0, 3.0, 4.0)
+        result = minkowski_tensors(verts, faces, return_count=False)
+        assert isinstance(result, dict)
+        assert 'w000' in result
+
+    def test_return_count_with_labels(self):
+        """Two labels, each a disconnected half of the box → count=2."""
+        verts, faces = _box_mesh(2.0, 3.0, 4.0)
+        labels = np.array([0] * 6 + [1] * 6, dtype=np.int64)
+        result, n = minkowski_tensors(verts, faces, labels=labels, return_count=True)
+        assert n == 2  # one component per label
+        assert 0 in result and 1 in result
+
+    def test_return_count_two_disconnected_boxes_labeled(self):
+        """Two disconnected boxes under label 0 → count=2."""
+        verts, faces = self._two_box_mesh()
+        labels = np.zeros(len(faces), dtype=np.int64)
+        result, n = minkowski_tensors(verts, faces, labels=labels, return_count=True)
+        assert n == 2
+
+
+class TestLabelMeshComponents:
+    """Tests for _label_mesh_components()."""
+
+    def test_single_component_all_same_label(self):
+        """Single connected box → all faces get label 1."""
+        _, faces = _box_mesh(1.0, 1.0, 1.0)
+        labels = _label_mesh_components(faces)
+        assert labels.shape == (len(faces),)
+        assert set(labels.tolist()) == {1}
+
+    def test_two_disconnected_boxes_two_labels(self):
+        """Two disconnected boxes → exactly two distinct labels."""
+        vA, fA = _box_mesh(1.0, 1.0, 1.0)
+        vB, fB = _box_mesh(1.0, 1.0, 1.0)
+        fB_shifted = fB + len(vA)
+        faces = np.vstack([fA, fB_shifted])
+        labels = _label_mesh_components(faces)
+        assert len(set(labels.tolist())) == 2
+        # Each box has 12 faces
+        assert (labels[:12] == labels[0]).all()
+        assert (labels[12:] == labels[12]).all()
+        assert labels[0] != labels[12]
+
+    def test_empty_faces_returns_empty(self):
+        """Empty face array → empty label array."""
+        faces = np.empty((0, 3), dtype=np.int64)
+        labels = _label_mesh_components(faces)
+        assert len(labels) == 0
+
+
+class TestAutoLabels:
+    """Tests for labels='auto' in minkowski_tensors()."""
+
+    def _two_box_mesh(self):
+        vA, fA = _box_mesh(2.0, 2.0, 2.0)
+        vB, fB = _box_mesh(2.0, 2.0, 2.0)
+        vB = vB + np.array([20.0, 0.0, 0.0])
+        fB_shifted = fB + len(vA)
+        return np.vstack([vA, vB]), np.vstack([fA, fB_shifted])
+
+    def test_single_box_auto_returns_nested_dict_one_key(self):
+        """Single box with labels='auto' → nested dict with one key (1)."""
+        verts, faces = _box_mesh(2.0, 3.0, 4.0)
+        result = minkowski_tensors(verts, faces, labels='auto')
+        assert isinstance(result, dict)
+        assert set(result.keys()) == {1}
+        assert 'w000' in result[1]
+
+    def test_two_disconnected_boxes_auto_returns_two_keys(self):
+        """Two disconnected boxes → dict with keys 1 and 2."""
+        verts, faces = self._two_box_mesh()
+        result = minkowski_tensors(verts, faces, labels='auto')
+        assert set(result.keys()) == {1, 2}
+        assert 'w000' in result[1] and 'w000' in result[2]
+
+    def test_auto_volume_matches_single_box(self):
+        """Each auto-detected component's volume equals a single-box volume."""
+        verts, faces = self._two_box_mesh()
+        result = minkowski_tensors(verts, faces, labels='auto')
+        single_result = minkowski_tensors(*_box_mesh(2.0, 2.0, 2.0))
+        expected_vol = single_result['w000']
+        assert result[1]['w000'] == pytest.approx(expected_vol, rel=1e-6)
+        assert result[2]['w000'] == pytest.approx(expected_vol, rel=1e-6)
+
+    def test_auto_matches_explicit_label_array(self):
+        """labels='auto' gives same tensors as passing the explicit label array."""
+        verts, faces = self._two_box_mesh()
+        explicit_labels = _label_mesh_components(faces)
+        result_auto = minkowski_tensors(verts, faces, labels='auto')
+        result_explicit = minkowski_tensors(verts, faces, labels=explicit_labels)
+        assert set(result_auto.keys()) == set(result_explicit.keys())
+        for key in result_auto:
+            np.testing.assert_allclose(
+                result_auto[key]['w000'], result_explicit[key]['w000'], rtol=1e-12,
+            )
+
+    def test_auto_with_return_count(self):
+        """labels='auto' + return_count=True: count equals number of components."""
+        verts, faces = self._two_box_mesh()
+        result, n = minkowski_tensors(verts, faces, labels='auto', return_count=True)
+        assert n == 2
+        assert set(result.keys()) == {1, 2}
+
+
+@pytest.mark.skipif(not _has_skimage, reason='scikit-image not installed')
+class TestAutoLabelsFromLabelImage:
+    """Tests for autolabel=True in minkowski_tensors_from_label_image()."""
+
+    def test_single_blob_autolabel_one_key(self):
+        """Single connected blob → result keyed by component index 1."""
+        vol = _voxel_box((20, 20, 20), np.s_[5:15, 5:15, 5:15])
+        result = minkowski_tensors_from_label_image(vol, autolabel=True)
+        assert set(result.keys()) == {1}
+        assert 'w000' in result[1]
+
+    def test_two_disconnected_blobs_same_label_split(self):
+        """Two disconnected blobs (same label value) → split into components 1 and 2."""
+        vol = np.zeros((30, 30, 30), dtype=np.int32)
+        vol[2:6, 2:6, 2:6] = 1
+        vol[22:26, 22:26, 22:26] = 1
+        result = minkowski_tensors_from_label_image(vol, autolabel=True)
+        assert set(result.keys()) == {1, 2}
+
+    def test_two_labels_treated_as_binary(self):
+        """Two different label values → treated as binary, two components, keys 1 and 2."""
+        vol = np.zeros((30, 30, 30), dtype=np.int32)
+        vol[2:8, 2:8, 2:8] = 1
+        vol[15:25, 15:25, 15:25] = 2
+        result = minkowski_tensors_from_label_image(vol, autolabel=True)
+        assert set(result.keys()) == {1, 2}
+
+    def test_autolabel_vs_default_same_volume_single_blob(self):
+        """autolabel=True and default give same volume for a single connected blob."""
+        vol = _voxel_box((20, 20, 20), np.s_[5:15, 5:15, 5:15])
+        r_default = minkowski_tensors_from_label_image(vol)
+        r_auto = minkowski_tensors_from_label_image(vol, autolabel=True)
+        assert r_auto[1]['w000'] == pytest.approx(r_default[1]['w000'], rel=1e-6)
+
+    def test_autolabel_with_return_count(self):
+        """autolabel=True + return_count=True returns correct object count."""
+        vol = np.zeros((30, 30, 30), dtype=np.int32)
+        vol[2:6, 2:6, 2:6] = 1
+        vol[22:26, 22:26, 22:26] = 1
+        result, n = minkowski_tensors_from_label_image(vol, autolabel=True, return_count=True)
+        assert n == 2
+        assert len(result) == 2
+
 
 class TestDerivedScalars:
     """Tests for beta (#1), traces (#2), and dependency chain (#53)."""
@@ -658,8 +931,8 @@ class TestPrerequisiteOptimization:
         assert 'w000' not in result
         assert 'w010' not in result
 
-    def test_compute_w020_centroid_includes_prerequisites(self):
-        """With center='centroid', w020 is still computed correctly."""
+    def test_compute_w020_reference_centroid_includes_prerequisites(self):
+        """With center='reference_centroid', w020 is still computed correctly."""
         verts, faces = _box_mesh(2.0, 3.0, 4.0)
-        result = minkowski_tensors(verts, faces, compute=['w020'], center='centroid')
+        result = minkowski_tensors(verts, faces, compute=['w020'], center='reference_centroid')
         assert 'w020' in result
