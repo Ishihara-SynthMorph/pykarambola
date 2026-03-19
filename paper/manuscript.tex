@@ -66,7 +66,7 @@ The port reproduces the logical structure of the C++ source: a \texttt{Triangula
 The C++ implementation depended on the GNU Scientific Library (GSL) for eigenvalue decomposition; pykarambola replaces this with NumPy's \texttt{eigh} routine, removing the only non-Python build dependency from the core computation.
 
 The package is structured around a pure-Python core that requires NumPy~\cite{harris2020numpy} and SciPy~\cite{virtanen2020scipy}.
-SciPy is used for connected component detection (\texttt{scipy.ndimage.label}) when extracting surfaces from label images, and for spherical harmonic basis functions (\texttt{scipy.special.sph\_harm}) in the spherical Minkowski summary quantities (\texttt{msm}).
+SciPy is used for connected component detection on mesh graphs (\texttt{scipy.sparse.csgraph.connected\_components}) and for spherical harmonic basis functions (\texttt{scipy.special.sph\_harm}) in the spherical Minkowski summary quantities (\texttt{msm}).
 An optional Cython extension module (\texttt{\_accel}) accelerates the graph-traversal steps of mesh initialisation and is compiled at install time when Cython is available (\texttt{pip install pykarambola[accel]}); the package falls back to pure-Python implementations when the extension is absent (described below).
 The label-image API (\texttt{minkowski\_tensors\_from\_label\_image}) requires scikit-image~\cite{vanderwalt2014scikit} for marching-cubes surface extraction; this dependency is not declared as mandatory and resolves automatically in environments where scikit-image is already present.
 
@@ -84,16 +84,13 @@ Both require sequential insertion into a hash map indexed by vertex-pair keys, a
 These two routines are therefore provided as an optional Cython extension (\texttt{\_accel.pyx}) that uses typed memoryviews and eliminates interpreter overhead on the inner loops.
 When the extension is not installed, equivalent pure-Python implementations are used as a fallback.
 
-\subsection*{New file format support (OBJ, GLB)}
-% TODO (issue #28)
-
-\subsection*{High-level NumPy array API}
-% TODO (issue #29)
-
-\subsection*{Label-image API}
-The label-image API automatically identifies connected components in a 3D segmented image using scipy's connected-component labeling (\texttt{scipy.ndimage.label}).
-Each label is then converted to a triangulated surface mesh via marching cubes, and Minkowski tensors are computed independently for each component.
-% TODO (issue #30): Expand with implementation details and example workflow
+\subsection*{High-level Python API}
+pykarambola exposes two high-level entry points that accept NumPy arrays and return plain Python dicts.
+\texttt{minkowski\_tensors(verts, faces)} accepts an $(V \times 3)$ vertex array and an $(F \times 3)$ integer face array and returns a dict whose string keys (\texttt{w000}, \texttt{w020}, \texttt{w020\_eigvals}, \ldots) map to NumPy scalars, vectors, or matrices.
+The \texttt{compute} argument accepts \texttt{'standard'} (14 base tensors plus eigensystems), \texttt{'all'} (adds higher-order terms \texttt{w103}, \texttt{w104}, and the spherical Minkowski summary quantities \texttt{msm}), or an explicit list of names for selective computation.
+When the \texttt{labels} argument is provided as a per-face integer array, or set to \texttt{'auto'} to detect connected components automatically via \texttt{scipy.sparse.csgraph}, the function returns a nested dict keyed by label.
+The \texttt{center} argument controls the reference point for position-dependent tensors: \texttt{None} uses the array origin, \texttt{'reference\_centroid'} reproduces the C++ \texttt{--reference\_centroid} flag, \texttt{'centroid\_mesh'} shifts each object to its volume-weighted centre of mass before computing, and an explicit $(3,)$ array applies a fixed shift; the boolean \texttt{center\_per\_label} (default \texttt{True}) determines whether centroid shifts are computed independently per labelled object or from the whole mesh.
+\texttt{minkowski\_tensors\_from\_label\_image(label\_image)} accepts a three-dimensional integer NumPy array in which each nonzero value identifies an object, extracts a triangulated isosurface for each label via \texttt{scikit-image} marching cubes, and returns a dict keyed by integer label with the same structure as the mesh API; the \texttt{spacing} argument propagates physical voxel dimensions to all length, area, and volume quantities, and \texttt{autolabel=True} treats the array as a binary mask and delegates connected-component splitting to the mesh API.
 
 
 %% -------------------------------------------------------
