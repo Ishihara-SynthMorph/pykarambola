@@ -63,22 +63,28 @@ def _make_accel(verts, faces):
 
 
 # ---------------------------------------------------------------------------
-# Python fallback
+# Shared correctness tests (used by both TestPythonFallback and TestAccelPath)
 # ---------------------------------------------------------------------------
 
-class TestPythonFallback:
-    """Correctness checks for the pure-Python fallback code path."""
+class _TriangulationTests:
+    """Correctness checks shared between the Python and Cython code paths.
+
+    Subclasses must implement ``_make(verts, faces) -> Triangulation``.
+    """
+
+    def _make(self, verts, faces):
+        raise NotImplementedError
 
     def test_neighbour_table_shape(self):
-        t = _make_python(_VERTS, _FACES)
+        t = self._make(_VERTS, _FACES)
         assert t._neighbours.shape == (_N_FACES, 3)
 
     def test_all_edges_assigned_on_closed_mesh(self):
-        t = _make_python(_VERTS, _FACES)
+        t = self._make(_VERTS, _FACES)
         assert np.all(t._neighbours != NEIGHBOUR_UNASSIGNED)
 
     def test_neighbour_relation_is_symmetric(self):
-        t = _make_python(_VERTS, _FACES)
+        t = self._make(_VERTS, _FACES)
         for i in range(_N_FACES):
             for j in range(3):
                 k = t._neighbours[i, j]
@@ -91,19 +97,33 @@ class TestPythonFallback:
                 )
 
     def test_vertex_triangles_total_count(self):
-        t = _make_python(_VERTS, _FACES)
+        t = self._make(_VERTS, _FACES)
         total = sum(len(t.get_triangles_of_vertex(v)) for v in range(_N_VERTS))
         assert total == 3 * _N_FACES
 
     def test_each_triangle_in_vertex_lists(self):
-        t = _make_python(_VERTS, _FACES)
+        t = self._make(_VERTS, _FACES)
         for i in range(_N_FACES):
             for j in range(3):
                 v = int(_FACES[i, j])
                 assert i in list(t.get_triangles_of_vertex(v))
 
+
+# ---------------------------------------------------------------------------
+# Python fallback
+# ---------------------------------------------------------------------------
+
+class TestPythonFallback(_TriangulationTests):
+    """Correctness checks for the pure-Python fallback code path."""
+
+    def _make(self, verts, faces):
+        return _make_python(verts, faces)
+
+    # This test pins internal storage details intentionally: it documents
+    # that the Python path uses a list-of-lists layout rather than CSR.
+    # It will break if the internal representation changes, which is acceptable.
     def test_uses_list_of_lists_storage(self):
-        t = _make_python(_VERTS, _FACES)
+        t = self._make(_VERTS, _FACES)
         assert t._vt_offsets is None
         assert t._vt_indices is None
         assert t._vertex_triangles is not None
@@ -113,46 +133,20 @@ class TestPythonFallback:
 # Cython accelerated path
 # ---------------------------------------------------------------------------
 
-class TestAccelPath:
+class TestAccelPath(_TriangulationTests):
     """Correctness checks for the Cython accelerated code path.
 
     All tests in this class are skipped when the extension is not compiled.
     """
 
-    def test_neighbour_table_shape(self):
-        t = _make_accel(_VERTS, _FACES)
-        assert t._neighbours.shape == (_N_FACES, 3)
+    def _make(self, verts, faces):
+        return _make_accel(verts, faces)
 
-    def test_all_edges_assigned_on_closed_mesh(self):
-        t = _make_accel(_VERTS, _FACES)
-        assert np.all(t._neighbours != NEIGHBOUR_UNASSIGNED)
-
-    def test_neighbour_relation_is_symmetric(self):
-        t = _make_accel(_VERTS, _FACES)
-        for i in range(_N_FACES):
-            for j in range(3):
-                k = t._neighbours[i, j]
-                if k == NEIGHBOUR_UNASSIGNED:
-                    continue
-                assert i in t._neighbours[k], (
-                    f"neighbour relation not symmetric: tri {i} edge {j} -> tri {k}, "
-                    f"but {k}'s neighbours are {t._neighbours[k]}"
-                )
-
-    def test_vertex_triangles_total_count(self):
-        t = _make_accel(_VERTS, _FACES)
-        total = sum(len(t.get_triangles_of_vertex(v)) for v in range(_N_VERTS))
-        assert total == 3 * _N_FACES
-
-    def test_each_triangle_in_vertex_lists(self):
-        t = _make_accel(_VERTS, _FACES)
-        for i in range(_N_FACES):
-            for j in range(3):
-                v = int(_FACES[i, j])
-                assert i in list(t.get_triangles_of_vertex(v))
-
+    # This test pins internal storage details intentionally: it documents
+    # that the Cython path uses CSR layout rather than a list-of-lists.
+    # It will break if the internal representation changes, which is acceptable.
     def test_uses_csr_storage(self):
-        t = _make_accel(_VERTS, _FACES)
+        t = self._make(_VERTS, _FACES)
         assert t._vt_offsets is not None
         assert t._vt_indices is not None
         assert t._vertex_triangles is None
