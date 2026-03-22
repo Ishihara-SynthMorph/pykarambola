@@ -33,10 +33,10 @@ so changes you make to `.py` files are immediately reflected without reinstallin
 
 `[dev]` installs the optional dependencies needed for tests: `pytest` and `scikit-image`.
 
-To also enable GLB file support:
+To also enable GLB file support and Cython acceleration:
 
 ```bash
-pip install -e ".[dev,glb]"
+pip install -e ".[dev,glb,accel]"
 ```
 
 **Verify the installation:**
