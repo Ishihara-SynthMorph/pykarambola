@@ -19,6 +19,7 @@ paper/*.fls
 paper/*.fdb_latexmk
 paper/*.synctex.gz
 paper/*.pdf
+paper/*.xwm
 
 # Generated datasets and benchmark outputs (large, not tracked)
 dataset/medmnist_benchmarking/
