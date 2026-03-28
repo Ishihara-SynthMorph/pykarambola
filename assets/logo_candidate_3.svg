@@ -1,0 +1,56 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" width="200" height="200">
+  <title>pykarambola — Candidate 3: Tensor Star (dark science)</title>
+  <defs>
+    <!-- Subtle radial glow behind the star -->
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#1E3A5F" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#0F172A" stop-opacity="1"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Dark circular background -->
+  <circle cx="100" cy="100" r="97" fill="url(#glow)"/>
+  <circle cx="100" cy="100" r="97" fill="none" stroke="#334155" stroke-width="1"/>
+
+  <!-- ─── Carambola star outline ───
+       outer R=77, inner r=32, centred at (100,100)
+       Outer: (100,23)  (173,76)  (145,162)  (55,162)  (27,76)
+       Inner: (119,74)  (130,110) (100,132)  (70,110)  (81,74)
+  ─── -->
+  <polygon
+    points="100,23 119,74 173,76 130,110 145,162 100,132 55,162 70,110 27,76 81,74"
+    fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.80)" stroke-width="2" stroke-linejoin="round"/>
+
+  <!-- ─── Minkowski tensor W^(0,2) — three principal-axis ellipses ───
+       Represents the eigensystem of the rank-2 tensor:
+         λ₁ (largest) → widest ellipse, horizontal
+         λ₂ (medium)  → medium ellipse, rotated 60°
+         λ₃ (smallest)→ narrow ellipse, rotated 120°
+  ─── -->
+  <ellipse cx="100" cy="100" rx="74" ry="17"
+    fill="none" stroke="#60A5FA" stroke-width="1.6" opacity="0.80"/>
+  <ellipse cx="100" cy="100" rx="52" ry="14"
+    fill="none" stroke="#34D399" stroke-width="1.3" opacity="0.70"
+    transform="rotate(60 100 100)"/>
+  <ellipse cx="100" cy="100" rx="33" ry="10"
+    fill="none" stroke="#F472B6" stroke-width="1.1" opacity="0.65"
+    transform="rotate(120 100 100)"/>
+
+  <!-- Axis tick marks on λ₁ ellipse endpoints -->
+  <g stroke="#60A5FA" stroke-width="1.5" opacity="0.6">
+    <line x1="26" y1="97" x2="26" y2="103"/>
+    <line x1="174" y1="97" x2="174" y2="103"/>
+  </g>
+
+  <!-- Vertex dots at star tips -->
+  <g fill="rgba(255,255,255,0.65)">
+    <circle cx="100" cy="23"  r="2"/>
+    <circle cx="173" cy="76"  r="2"/>
+    <circle cx="145" cy="162" r="2"/>
+    <circle cx="55"  cy="162" r="2"/>
+    <circle cx="27"  cy="76"  r="2"/>
+  </g>
+
+  <!-- Centre dot -->
+  <circle cx="100" cy="100" r="3.5" fill="white"/>
+</svg>

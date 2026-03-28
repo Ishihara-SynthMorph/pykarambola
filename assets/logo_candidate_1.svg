@@ -1,0 +1,54 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" width="200" height="200">
+  <title>pykarambola — Candidate 1: Amber Mesh Star</title>
+  <defs>
+    <linearGradient id="g1" x1="0.3" y1="0" x2="0.7" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0%"   stop-color="#FDE68A"/>
+      <stop offset="55%"  stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#D97706"/>
+    </linearGradient>
+  </defs>
+
+  <!-- ─── Carambola cross-section ───
+       5-pointed star: outer R=85, inner r=38, centred at (100,100)
+       Outer tips:  (100,15)  (181,74)  (150,169)  (50,169)  (19,74)
+       Inner cusps: (122,69)  (136,112) (100,138)  (64,112)  (78,69)
+  ─── -->
+  <polygon
+    points="100,15 122,69 181,74 136,112 150,169 100,138 50,169 64,112 19,74 78,69"
+    fill="url(#g1)" stroke="#B45309" stroke-width="2.5" stroke-linejoin="round"/>
+
+  <!-- Triangulation mesh: spokes to outer tips (stronger) -->
+  <g stroke="#78350F" stroke-width="0.9" opacity="0.55" fill="none">
+    <line x1="100" y1="100" x2="100" y2="15"/>
+    <line x1="100" y1="100" x2="181" y2="74"/>
+    <line x1="100" y1="100" x2="150" y2="169"/>
+    <line x1="100" y1="100" x2="50"  y2="169"/>
+    <line x1="100" y1="100" x2="19"  y2="74"/>
+  </g>
+
+  <!-- Triangulation mesh: spokes to inner cusps (lighter) -->
+  <g stroke="#78350F" stroke-width="0.6" opacity="0.35" fill="none">
+    <line x1="100" y1="100" x2="122" y2="69"/>
+    <line x1="100" y1="100" x2="136" y2="112"/>
+    <line x1="100" y1="100" x2="100" y2="138"/>
+    <line x1="100" y1="100" x2="64"  y2="112"/>
+    <line x1="100" y1="100" x2="78"  y2="69"/>
+  </g>
+
+  <!-- Inner pentagon connecting the five cusps -->
+  <polygon
+    points="122,69 136,112 100,138 64,112 78,69"
+    fill="none" stroke="#78350F" stroke-width="0.7" opacity="0.4"/>
+
+  <!-- Vertex dots at outer tips -->
+  <g fill="#92400E">
+    <circle cx="100" cy="15"  r="2.5"/>
+    <circle cx="181" cy="74"  r="2.5"/>
+    <circle cx="150" cy="169" r="2.5"/>
+    <circle cx="50"  cy="169" r="2.5"/>
+    <circle cx="19"  cy="74"  r="2.5"/>
+  </g>
+
+  <!-- Centre dot -->
+  <circle cx="100" cy="100" r="3.5" fill="#78350F"/>
+</svg>

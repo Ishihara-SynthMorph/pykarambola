@@ -1,0 +1,61 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" width="200" height="200">
+  <title>pykarambola — Candidate 2: Crystal Fruit (3-D Wireframe)</title>
+
+  <!-- ─── 3-D star prism (carambola extruded cross-section) ───
+       Front face: outer R=68, inner r=30, centred at (103,110)
+         Tips:   (103,42)  (168,89)  (144,165)  (62,165)  (38,89)
+         Cusps:  (121,86)  (132,119) (103,140)  (74,119)  (85,86)
+       Back face: same shape shifted (−15, −30)
+         Tips:   (88,12)   (153,59)  (129,135)  (47,135)  (23,59)
+         Cusps:  (106,56)  (117,89)  (88,110)   (59,89)   (70,56)
+  ─── -->
+
+  <!-- Back face (faint) -->
+  <polygon
+    points="88,12 106,56 153,59 117,89 129,135 88,110 47,135 59,89 23,59 70,56"
+    fill="none" stroke="#0EA5E9" stroke-width="1.2" stroke-linejoin="round" opacity="0.35"/>
+
+  <!-- Depth edges connecting back tips to front tips -->
+  <g stroke="#0EA5E9" stroke-width="1.1" opacity="0.5" fill="none">
+    <line x1="88"  y1="12"  x2="103" y2="42"/>
+    <line x1="153" y1="59"  x2="168" y2="89"/>
+    <line x1="129" y1="135" x2="144" y2="165"/>
+    <line x1="47"  y1="135" x2="62"  y2="165"/>
+    <line x1="23"  y1="59"  x2="38"  y2="89"/>
+  </g>
+
+  <!-- Front face (solid) -->
+  <polygon
+    points="103,42 121,86 168,89 132,119 144,165 103,140 62,165 74,119 38,89 85,86"
+    fill="rgba(14,165,233,0.07)" stroke="#0EA5E9" stroke-width="2.5" stroke-linejoin="round"/>
+
+  <!-- Triangulation mesh on front face: spokes from centroid -->
+  <g stroke="#0EA5E9" stroke-width="0.6" opacity="0.4" fill="none">
+    <line x1="103" y1="110" x2="103" y2="42"/>
+    <line x1="103" y1="110" x2="168" y2="89"/>
+    <line x1="103" y1="110" x2="144" y2="165"/>
+    <line x1="103" y1="110" x2="62"  y2="165"/>
+    <line x1="103" y1="110" x2="38"  y2="89"/>
+  </g>
+
+  <!-- Vertex dots — front tips (bright) -->
+  <g fill="#38BDF8">
+    <circle cx="103" cy="42"  r="2.5"/>
+    <circle cx="168" cy="89"  r="2.5"/>
+    <circle cx="144" cy="165" r="2.5"/>
+    <circle cx="62"  cy="165" r="2.5"/>
+    <circle cx="38"  cy="89"  r="2.5"/>
+  </g>
+
+  <!-- Vertex dots — back tips (faint) -->
+  <g fill="#38BDF8" opacity="0.35">
+    <circle cx="88"  cy="12"  r="1.5"/>
+    <circle cx="153" cy="59"  r="1.5"/>
+    <circle cx="129" cy="135" r="1.5"/>
+    <circle cx="47"  cy="135" r="1.5"/>
+    <circle cx="23"  cy="59"  r="1.5"/>
+  </g>
+
+  <!-- Front centroid dot -->
+  <circle cx="103" cy="110" r="3" fill="#0EA5E9"/>
+</svg>
