@@ -1,8 +1,17 @@
 # pykarambola
 
-Python implementation of [karambola](https://github.com/morphometry/karambola) — a package for computing **Minkowski tensors** on 3D triangulated surfaces.
+[![CI](https://github.com/Pitt-IshiharaLab/pykarambola/actions/workflows/ci.yml/badge.svg)](https://github.com/Pitt-IshiharaLab/pykarambola/actions/workflows/ci.yml)
+[![PyPI version](https://img.shields.io/pypi/v/pykarambola)](https://pypi.org/project/pykarambola/)
+[![Python versions](https://img.shields.io/pypi/pyversions/pykarambola)](https://pypi.org/project/pykarambola/)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-Minkowski tensors (scalars, vectors, and rank-2 tensors) characterize the geometry and morphology of 3D shapes. The scalar quantities — volume, surface area, integrated mean curvature, and Euler characteristic — are sometimes called Minkowski functionals; the full family also includes Minkowski vectors and higher-rank tensors. They are widely used in structural analysis, materials science, and computational physics.
+**pykarambola** computes shape descriptors for 3D objects represented as triangulated meshes.
+Given a mesh — a cell, a grain, a pore, a particle — it returns scalar, vector, and tensor quantities that rigorously characterize its size, shape, and orientation.
+These descriptors are useful whenever you need to compare or classify 3D shapes in a principled, rotation-aware way.
+
+Technically, these descriptors are **Minkowski tensors**: a family of quantities rooted in integral geometry that includes volume, surface area, integrated mean curvature, and Euler characteristic (the Minkowski functionals), as well as higher-rank tensors that capture anisotropy and preferred orientation.
+pykarambola is a Python implementation of [karambola](https://github.com/morphometry/karambola), the reference C++ package for Minkowski tensor computation on 3D triangulated surfaces.
+Minkowski tensors are widely used in bioimage analysis, structural biology, computational physics, and materials science.
 
 ## New in pykarambola
 
@@ -173,7 +182,7 @@ Rank-2 tensors additionally yield `{name}_eigvals` and `{name}_eigvecs` entries.
 If you use pykarambola in published work, please cite both pykarambola and the original karambola package.
 
 > Ishihara, K., & Khurana, Y.
-> *pykarambola: TENTATIVE TITLE* (vX.X.X).
+> *pykarambola: A Python Package for Minkowski Tensor-based 3D Shape Analysis* (v0.2.0).
 > https://doi.org/10.5281/zenodo.XXXXXXX
 
 > Schaller, F. M., Kapfer, S. C., & Schröder-Turk, G. E.
