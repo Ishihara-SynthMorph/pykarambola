@@ -341,7 +341,8 @@ class TestVectorDotProducts:
         assert len(dots) == 3  # C(2,2) + 2 = 3
 
     def test_count_four_vectors(self):
-        tensors = {f'v{i}': np.random.randn(3) for i in range(4)}
+        rng = np.random.default_rng(1001)
+        tensors = {f'v{i}': rng.standard_normal(3) for i in range(4)}
         decomposed = decompose_all(tensors)
         dots = _vector_dot_products(decomposed)
         assert len(dots) == 10  # 4*(4+1)/2 = 10
@@ -379,7 +380,8 @@ class TestFrobeniusInnerProducts:
         assert len(frobs) == 1
 
     def test_count_three_matrices(self):
-        tensors = {f'T{i}': np.random.randn(3, 3) for i in range(3)}
+        rng = np.random.default_rng(1002)
+        tensors = {f'T{i}': rng.standard_normal((3, 3)) for i in range(3)}
         decomposed = decompose_all(tensors)
         frobs = _frobenius_inner_products(decomposed)
         assert len(frobs) == 6  # 3*(3+1)/2 = 6
@@ -494,7 +496,8 @@ class TestTripleTraces:
         assert len(ttrs) == 4
 
     def test_count_three_matrices(self):
-        tensors = {f'T{i}': np.random.randn(3, 3) for i in range(3)}
+        rng = np.random.default_rng(1003)
+        tensors = {f'T{i}': rng.standard_normal((3, 3)) for i in range(3)}
         decomposed = decompose_all(tensors)
         ttrs = _triple_traces(decomposed)
         # C(3+2, 3) = C(5,3) = 10
@@ -502,7 +505,8 @@ class TestTripleTraces:
 
     def test_count_six_matrices(self):
         """The standard case with 6 rank-2 tensors gives 56 triple traces."""
-        tensors = {f'T{i}': np.random.randn(3, 3) for i in range(6)}
+        rng = np.random.default_rng(1004)
+        tensors = {f'T{i}': rng.standard_normal((3, 3)) for i in range(6)}
         decomposed = decompose_all(tensors)
         ttrs = _triple_traces(decomposed)
         # C(6+2, 3) = C(8,3) = 56
@@ -580,14 +584,16 @@ class TestTripleVectorDets:
     """Tests for triple vector determinant pseudo-scalars."""
 
     def test_count_three_vectors(self):
-        tensors = {f'v{i}': np.random.randn(3) for i in range(3)}
+        rng = np.random.default_rng(1005)
+        tensors = {f'v{i}': rng.standard_normal(3) for i in range(3)}
         decomposed = decompose_all(tensors)
         dets = _triple_vector_dets(decomposed)
         # C(3, 3) = 1
         assert len(dets) == 1
 
     def test_count_four_vectors(self):
-        tensors = {f'v{i}': np.random.randn(3) for i in range(4)}
+        rng = np.random.default_rng(1006)
+        tensors = {f'v{i}': rng.standard_normal(3) for i in range(4)}
         decomposed = decompose_all(tensors)
         dets = _triple_vector_dets(decomposed)
         # C(4, 3) = 4
