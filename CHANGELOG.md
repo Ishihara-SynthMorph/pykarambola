@@ -16,6 +16,10 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 ## [0.2.0] - Unreleased
 
 ### Added
+- `compute_invariants(tensors_dict, max_degree=3, symmetry='SO3')` in new `pykarambola.invariants` module: computes SO(3)- or O(3)-invariant basis scalars from Minkowski tensors (ranks 0-2). Returns 155 O(3) or 219 SO(3) invariants at degree 3. (#102)
+- `compute_invariant_labels(max_degree=3, symmetry='SO3')`: returns deterministic human-readable labels matching the invariant vector positions (#102)
+- Harmonic decomposition utilities: `trace_rank2(M)` and `traceless_rank2(M)` for extracting 0e and 2e irreps from rank-2 tensors (#102)
+- `decompose_all(tensors_dict)`: decomposes all Minkowski tensors into SO(3) irreducible components (#102)
 - `center='centroid_mesh'` option in `minkowski_tensors` (volume-weighted center of mass = w010/w000), consistent with the existing option in `minkowski_tensors_from_label_image` (#73)
 - `center_per_label=True` boolean parameter in both `minkowski_tensors` and `minkowski_tensors_from_label_image` to control whether the centroid is computed independently per label (`True`, default) or from the full mesh (`False`) (#73)
 - `return_count=False` flag in both `minkowski_tensors` and `minkowski_tensors_from_label_image`; when `True`, returns `(results, n_objects)` where `n_objects` is the total number of connected components (#80)
