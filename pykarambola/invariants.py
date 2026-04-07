@@ -465,3 +465,137 @@ def _degree3_o3_contractions(decomposed):
     labels = qf_labels + ttr_labels
 
     return invariants, labels
+
+
+# -----------------------------------------------------------------------------
+# Degree-3 SO(3)-Only Pseudo-Scalars
+# -----------------------------------------------------------------------------
+
+def _triple_vector_determinants(decomposed):
+    """Compute SO(3)-only triple vector determinant pseudo-scalars.
+
+    Parameters
+    ----------
+    decomposed : dict
+        Output from decompose_all().
+
+    Returns
+    -------
+    invariants : np.ndarray, shape (4,)
+        The 4 triple vector determinant pseudo-scalars.
+    labels : list of str
+        Human-readable labels.
+
+    Notes
+    -----
+    For i < j < k, det([v_i, v_j, v_k]) = v_i · (v_j × v_k) is a pseudo-scalar
+    that is SO(3)-invariant but changes sign under reflection.
+
+    With 4 vectors, there are C(4,3) = 4 distinct combinations.
+
+    These pseudo-scalars detect chirality: mirror-image shapes will have
+    opposite signs.
+    """
+    vectors = [decomposed[(_VECTOR_ALIASES[f'v{i}'], '1o')] for i in range(4)]
+
+    invariants = []
+    labels = []
+
+    # All strictly increasing triples (i < j < k)
+    for i, j, k in combinations(range(4), 3):
+        # det([vi, vj, vk]) = vi · (vj × vk)
+        det_val = np.linalg.det(np.column_stack([vectors[i], vectors[j], vectors[k]]))
+        invariants.append(det_val)
+        labels.append(f'det_v{i}_v{j}_v{k}')
+
+    return np.array(invariants, dtype=np.float64), labels
+
+
+def _commutator_pseudoscalars(decomposed):
+    """Compute SO(3)-only commutator pseudo-scalars.
+
+    Parameters
+    ----------
+    decomposed : dict
+        Output from decompose_all().
+
+    Returns
+    -------
+    invariants : np.ndarray, shape (60,)
+        The 60 commutator pseudo-scalar invariants.
+    labels : list of str
+        Human-readable labels.
+
+    Notes
+    -----
+    For symmetric traceless matrices T_a, T_b and vector v_k:
+    ψ(T_a, T_b, v_k) = ε_{ijk} [T_a, T_b]_{ij} v_k
+
+    where [T_a, T_b] = T_a T_b - T_b T_a is the matrix commutator.
+
+    This equals v_k dotted with the axial vector of the antisymmetric
+    commutator [T_a, T_b]. Since [T_a, T_a] = 0, only the 15 off-diagonal
+    pairs (a < b) contribute.
+
+    15 matrix pairs × 4 vectors = 60 pseudo-scalars.
+
+    These are SO(3)-invariant but change sign under reflection (pseudo-scalars).
+    """
+    vectors = [decomposed[(_VECTOR_ALIASES[f'v{i}'], '1o')] for i in range(4)]
+    traceless = [decomposed[(_TRACELESS_ALIASES[f'T{k}'], '2e')] for k in range(6)]
+
+    invariants = []
+    labels = []
+
+    # For each off-diagonal matrix pair (a < b)
+    for a in range(6):
+        for b in range(a + 1, 6):
+            # Commutator: [T_a, T_b] = T_a @ T_b - T_b @ T_a
+            comm = traceless[a] @ traceless[b] - traceless[b] @ traceless[a]
+
+            # Extract axial vector from antisymmetric matrix:
+            # axial[0] = comm[1,2], axial[1] = comm[2,0], axial[2] = comm[0,1]
+            axial = np.array([comm[1, 2], comm[2, 0], comm[0, 1]])
+
+            # For each vector v_k
+            for k in range(4):
+                # ψ = axial · v_k
+                psi = np.dot(axial, vectors[k])
+                invariants.append(psi)
+                labels.append(f'comm_T{a}_T{b}_v{k}')
+
+    return np.array(invariants, dtype=np.float64), labels
+
+
+def _degree3_so3_only_pseudoscalars(decomposed):
+    """Compute all degree-3 SO(3)-only pseudo-scalar invariants.
+
+    Combines triple vector determinants (4) and commutator pseudo-scalars (60)
+    for a total of 64 pseudo-scalar invariants that are SO(3)-invariant but
+    change sign under reflection.
+
+    Parameters
+    ----------
+    decomposed : dict
+        Output from decompose_all().
+
+    Returns
+    -------
+    invariants : np.ndarray, shape (64,)
+        The degree-3 SO(3)-only pseudo-scalars.
+    labels : list of str
+        Human-readable labels matching the invariant positions.
+
+    Notes
+    -----
+    These pseudo-scalars are chirality-sensitive: they distinguish mirror-image
+    shapes. Include them with symmetry='SO3' to detect handedness in biological
+    structures such as left- and right-handed helices.
+    """
+    det_inv, det_labels = _triple_vector_determinants(decomposed)
+    comm_inv, comm_labels = _commutator_pseudoscalars(decomposed)
+
+    invariants = np.concatenate([det_inv, comm_inv])
+    labels = det_labels + comm_labels
+
+    return invariants, labels
