@@ -169,3 +169,61 @@ def decompose_all(tensors_dict):
         decomposed[(name, '2e')] = traceless_rank2(M)
 
     return decomposed
+
+
+# -----------------------------------------------------------------------------
+# Degree-1 Invariants (Scalars)
+# -----------------------------------------------------------------------------
+
+# Rank-2 tensors whose traces are included as independent scalars.
+# Tr(w102)/3 = w100 and Tr(w202)/3 = w200 exactly (by construction), so they
+# are excluded to avoid redundancy (Open Q#1 resolution: Option A).
+_RANK2_INDEPENDENT_TRACES = ['w020', 'w120', 'w220', 'w320']
+
+# Human-readable labels for degree-1 scalars (deterministic order)
+_DEGREE1_LABELS = [
+    's0_w000',        # volume
+    's1_w100',        # surface area
+    's2_w200',        # mean curvature integral
+    's3_w300',        # Gaussian curvature integral
+    's4_tr_w020',     # Tr(w020)/3
+    's5_tr_w120',     # Tr(w120)/3
+    's6_tr_w220',     # Tr(w220)/3
+    's7_tr_w320',     # Tr(w320)/3
+]
+
+
+def _degree1_scalars(decomposed):
+    """Extract degree-1 basis invariants (scalars).
+
+    Collects 8 independent scalars:
+    - s0-s3: the 4 rank-0 Minkowski scalars (w000, w100, w200, w300)
+    - s4-s7: the traces of w020, w120, w220, w320 (Tr(M)/3)
+
+    Note: Tr(w102)/3 = w100 and Tr(w202)/3 = w200 exactly (the trace of n⊗n
+    integrated over the surface equals the surface area), so these are excluded
+    to avoid linear dependency.
+
+    Parameters
+    ----------
+    decomposed : dict
+        Output from decompose_all().
+
+    Returns
+    -------
+    scalars : np.ndarray, shape (8,)
+        The degree-1 basis invariants.
+    labels : list of str
+        Human-readable labels matching the scalar positions.
+    """
+    scalars = np.zeros(8, dtype=np.float64)
+
+    # s0-s3: rank-0 scalars
+    for i, name in enumerate(SCALARS):
+        scalars[i] = decomposed[(name, '0e')]
+
+    # s4-s7: traces of w020, w120, w220, w320 (not w102, w202)
+    for i, name in enumerate(_RANK2_INDEPENDENT_TRACES):
+        scalars[4 + i] = decomposed[(name, '0e')]
+
+    return scalars, list(_DEGREE1_LABELS)
