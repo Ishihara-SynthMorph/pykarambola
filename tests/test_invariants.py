@@ -1237,42 +1237,6 @@ class TestClebschGordanConsistency:
         pseudo_scalar = np.dot(axial, v)
         assert isinstance(pseudo_scalar, (int, float, np.floating))
 
-    def test_all_invariant_types_satisfy_selection_rules(self, random_tensors):
-        """Verify all computed invariants satisfy CG selection rules by construction.
-
-        This is a meta-test: since we've verified each type individually,
-        and compute_invariants uses only these types, all invariants must
-        satisfy the selection rules.
-        """
-        result = compute_invariants(random_tensors, max_degree=3, symmetry='SO3')
-
-        # Categorize all invariants
-        for key in result:
-            if key.startswith('dot_'):
-                # 1 ⊗ 1 -> 0: valid
-                pass
-            elif key.startswith('frob_'):
-                # 2 ⊗ 2 -> 0: valid
-                pass
-            elif key.startswith('qf_'):
-                # 1 ⊗ 2 ⊗ 1 -> 0: valid
-                pass
-            elif key.startswith('ttr_'):
-                # 2 ⊗ 2 ⊗ 2 -> 0: valid
-                pass
-            elif key.startswith('det_'):
-                # 1 ⊗ 1 ⊗ 1 -> 0 (pseudo): valid with ε
-                pass
-            elif key.startswith('comm_'):
-                # (2 ⊗ 2 -> 1) ⊗ 1 -> 0 (pseudo): valid
-                pass
-            else:
-                # Degree-1 scalar: trivially l=0
-                pass
-
-        # If we get here without error, all invariants are accounted for
-        assert True
-
     def test_forbidden_coupling_not_present(self):
         """Verify we don't compute any forbidden couplings.
 
