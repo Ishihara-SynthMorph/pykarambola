@@ -21,6 +21,16 @@ This benchmark evaluates whether SO(3) rotational invariants computed from Minko
 
 **Note on preprocessing**: The Minkowski tensors were computed directly from MedMNIST 3D voxel segmentations using `minkowski_tensors_from_label_image()` **without any rotation alignment or orientation normalization**. Objects retain their original orientation in the scanner/image coordinate system. This is relevant to interpreting the vessel3d results, where raw tensor components outperformed rotation-invariant features — suggesting that vessel orientation relative to the imaging axes may carry diagnostic information.
 
+**Note on centering**: Meshes were centered at their centroid before tensor computation, making **w010 = 0** for all samples. This causes some SO3 invariants to have zero variance:
+
+| Feature Set | Total Features | Zero-Variance | Effective Features |
+|-------------|----------------|---------------|-------------------|
+| SO3 Degree 1 | 8 | 0 | 8 |
+| SO3 Degree 2 | 39 | 4 | 35 |
+| SO3 Degree 3 | 219 | 46 | 173 |
+
+The zero-variance features are those involving w010 (dot products, quadratic forms, determinants, commutator pseudo-scalars). These are filtered out by PCA and do not affect classification, but could be omitted from computation for efficiency.
+
 ---
 
 ## Results
