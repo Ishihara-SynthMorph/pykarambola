@@ -1,0 +1,32 @@
+{
+  "Baseline (tensors)": {
+    "classifier__estimator__C": 3.625919672638014,
+    "classifier__estimator__gamma": "scale",
+    "classifier__estimator__kernel": "rbf",
+    "pca__n_components": 41
+  },
+  "Baseline (w/ eigen)": {
+    "classifier__estimator__C": 1000.0,
+    "classifier__estimator__gamma": "auto",
+    "classifier__estimator__kernel": "rbf",
+    "pca__n_components": 67
+  },
+  "SO3 Degree 1": {
+    "classifier__estimator__C": 23.661810479162018,
+    "classifier__estimator__gamma": "auto",
+    "classifier__estimator__kernel": "rbf",
+    "pca__n_components": 8
+  },
+  "SO3 Degree 2": {
+    "classifier__estimator__C": 197.4234165896505,
+    "classifier__estimator__gamma": "auto",
+    "classifier__estimator__kernel": "linear",
+    "pca__n_components": 39
+  },
+  "SO3 Degree 3": {
+    "classifier__estimator__C": 0.1,
+    "classifier__estimator__gamma": "scale",
+    "classifier__estimator__kernel": "linear",
+    "pca__n_components": 57
+  }
+}

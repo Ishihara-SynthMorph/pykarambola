@@ -402,13 +402,16 @@ def main():
         print(f"{name:<25} | {res['n_features']:>7} | {bal_str:>15} | {geo_str:>15}")
     print("="*80)
 
-    # Save results
-    results_path = os.path.join(args.output, 'adrenal3d_invariants_scores.json')
+    # Save results - derive dataset name from output directory or input file
+    dataset_name = os.path.basename(args.output.rstrip('/')) or \
+                   os.path.basename(os.path.dirname(args.input))
+
+    results_path = os.path.join(args.output, f'{dataset_name}_invariants_scores.json')
     with open(results_path, 'w') as f:
         json.dump(all_results, f, indent=2, default=str)
     print(f"\nResults saved to: {results_path}")
 
-    hyperparams_path = os.path.join(args.output, 'adrenal3d_invariants_hyperparams.json')
+    hyperparams_path = os.path.join(args.output, f'{dataset_name}_invariants_hyperparams.json')
     with open(hyperparams_path, 'w') as f:
         json.dump(all_hyperparams, f, indent=2, default=str)
     print(f"Hyperparams saved to: {hyperparams_path}")
