@@ -3,11 +3,11 @@
     "n_features": 52,
     "feature_names": "52 features",
     "balanced_accuracy": {
-      "mean": 0.6660970824631353,
+      "mean": 0.6696728055186381,
       "std": 0.0
     },
     "geometric_mean": {
-      "mean": 0.6622058211654963,
+      "mean": 0.6680575327273334,
       "std": 0.0
     }
   },
@@ -15,11 +15,11 @@
     "n_features": 76,
     "feature_names": "76 features",
     "balanced_accuracy": {
-      "mean": 0.6964749066514777,
+      "mean": 0.726251503069426,
       "std": 0.0
     },
     "geometric_mean": {
-      "mean": 0.6963064924820762,
+      "mean": 0.7260728778402303,
       "std": 0.0
     }
   },
@@ -36,11 +36,11 @@
       "w320"
     ],
     "balanced_accuracy": {
-      "mean": 0.7493829504461743,
+      "mean": 0.8139991139801279,
       "std": 0.0
     },
     "geometric_mean": {
-      "mean": 0.7486460153336284,
+      "mean": 0.8129621993042646,
       "std": 0.0
     }
   },
@@ -88,11 +88,11 @@
       "w320"
     ],
     "balanced_accuracy": {
-      "mean": 0.7522625150306943,
+      "mean": 0.7740965761660654,
       "std": 0.0
     },
     "geometric_mean": {
-      "mean": 0.7509250039092504,
+      "mean": 0.7737546672203343,
       "std": 0.0
     }
   },
@@ -100,11 +100,11 @@
     "n_features": 219,
     "feature_names": "219 features",
     "balanced_accuracy": {
-      "mean": 0.6499272197962154,
+      "mean": 0.6716663502309981,
       "std": 0.0
     },
     "geometric_mean": {
-      "mean": 0.649711614449449,
+      "mean": 0.6705632595968817,
       "std": 0.0
     }
   }
