@@ -10,6 +10,11 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `pykarambola.spharm_invariants` module for rotation-invariant features from SPHARM coefficients:
+  - `compute_spharm_invariants(df, lmax, include_bispectrum)` — power spectrum (lmax+1 features) + bispectrum (69 features for lmax=5) from aics-shparam CSV format
+  - `power_spectrum`, `bispectrum`, `parse_spharm_df` exposed as public helpers
+  - Exported from top-level `pykarambola` namespace
+- Benchmark now evaluates `SPHARM Inv lmax={n}` feature sets (75 features for lmax=5) alongside raw SPHARM coefficients
 - `pykarambola.invariants` module for computing SO(3) and O(3) rotational invariants from Minkowski tensors (#102)
   - `compute_invariants(tensors_dict, max_degree, symmetry, deduplicate_scalars)` computes a complete basis of polynomial invariants up to degree 3
   - `decompose_all(tensors_dict)` decomposes tensors into irreducible representations (trace/traceless split for rank-2)

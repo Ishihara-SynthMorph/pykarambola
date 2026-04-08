@@ -18,5 +18,9 @@
   "SPHARM lmax=5": {
     "classifier__estimator__C": 0.38875791819415506,
     "pca__n_components": 57
+  },
+  "SPHARM Inv lmax=5": {
+    "classifier__estimator__C": 738.7966194299759,
+    "pca__n_components": 57
   }
 }

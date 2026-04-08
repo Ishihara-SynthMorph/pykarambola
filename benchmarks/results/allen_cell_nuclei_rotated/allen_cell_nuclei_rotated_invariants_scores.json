@@ -9,6 +9,10 @@
     "geometric_mean": {
       "mean": 0.7282224566942617,
       "std": 0.0012596635100530743
+    },
+    "runtime_seconds": {
+      "optimization": 0.0,
+      "evaluation": 12.1
     }
   },
   "Baseline (w/ eigen)": {
@@ -21,6 +25,10 @@
     "geometric_mean": {
       "mean": 0.7538142032367586,
       "std": 0.005418897846144118
+    },
+    "runtime_seconds": {
+      "optimization": 0.0,
+      "evaluation": 5.1
     }
   },
   "SO3 Degree 1": {
@@ -42,6 +50,10 @@
     "geometric_mean": {
       "mean": 0.6881221811573055,
       "std": 0.00368659927742161
+    },
+    "runtime_seconds": {
+      "optimization": 0.0,
+      "evaluation": 4.6
     }
   },
   "SO3 Degree 2": {
@@ -94,6 +106,10 @@
     "geometric_mean": {
       "mean": 0.6958453124603773,
       "std": 0.0004165538137389848
+    },
+    "runtime_seconds": {
+      "optimization": 0.0,
+      "evaluation": 3.6
     }
   },
   "SO3 Degree 3": {
@@ -106,18 +122,48 @@
     "geometric_mean": {
       "mean": 0.6253261593028795,
       "std": 0.002587276297550888
+    },
+    "runtime_seconds": {
+      "optimization": 0.0,
+      "evaluation": 9.5
     }
   },
   "SPHARM lmax=16": {
     "n_features": 578,
     "feature_names": "578 features",
     "balanced_accuracy": {
-      "mean": 0.6030648088246128,
-      "std": 0.007540101127692122
+      "mean": 0.6059483072963464,
+      "std": 0.00633745558580381
     },
     "geometric_mean": {
-      "mean": 0.573868430480024,
-      "std": 0.011807098072619608
+      "mean": 0.5779706523616753,
+      "std": 0.009223477361215348
+    },
+    "runtime_seconds": {
+      "optimization": 0.0,
+      "evaluation": 7.6
     }
+  },
+  "SPHARM Inv lmax=16": {
+    "n_features": 1358,
+    "feature_names": "1358 features",
+    "balanced_accuracy": {
+      "mean": 0.6278231009848657,
+      "std": 0.004495858054092767
+    },
+    "geometric_mean": {
+      "mean": 0.6081580859587724,
+      "std": 0.0059698362480768465
+    },
+    "runtime_seconds": {
+      "optimization": 0.0,
+      "evaluation": 7.1
+    }
+  },
+  "_meta": {
+    "total_runtime_seconds": 76.7,
+    "n_iter": 50,
+    "seeds": 3,
+    "linear_only": false
   }
 }

@@ -34,5 +34,11 @@
     "classifier__estimator__C": 1.0,
     "classifier__estimator__kernel": "rbf",
     "classifier__estimator__gamma": "scale"
+  },
+  "SPHARM Inv lmax=16": {
+    "pca__n_components": 10,
+    "classifier__estimator__C": 1.0,
+    "classifier__estimator__kernel": "rbf",
+    "classifier__estimator__gamma": "scale"
   }
 }

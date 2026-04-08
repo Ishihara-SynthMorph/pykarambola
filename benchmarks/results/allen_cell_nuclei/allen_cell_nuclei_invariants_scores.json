@@ -1,26 +1,34 @@
 {
   "Baseline (tensors)": {
-    "n_features": 52,
-    "feature_names": "52 features",
+    "n_features": 62,
+    "feature_names": "62 features",
     "balanced_accuracy": {
-      "mean": 0.6851847805279178,
-      "std": 0.0034986278347306256
+      "mean": 0.6713944798503623,
+      "std": 0.004926960342609805
     },
     "geometric_mean": {
-      "mean": 0.6643086276780511,
-      "std": 0.006106686283762624
+      "mean": 0.6445031657880999,
+      "std": 0.006546448974139131
+    },
+    "runtime_seconds": {
+      "optimization": 0.0,
+      "evaluation": 10.2
     }
   },
   "Baseline (w/ eigen)": {
-    "n_features": 76,
-    "feature_names": "76 features",
+    "n_features": 86,
+    "feature_names": "86 features",
     "balanced_accuracy": {
-      "mean": 0.7322766935512034,
-      "std": 0.002626040368544111
+      "mean": 0.725439593209201,
+      "std": 0.0037167355935890127
     },
     "geometric_mean": {
-      "mean": 0.724690943595912,
-      "std": 0.004040941504833253
+      "mean": 0.7164933588776434,
+      "std": 0.005735025575803691
+    },
+    "runtime_seconds": {
+      "optimization": 0.0,
+      "evaluation": 5.9
     }
   },
   "SO3 Degree 1": {
@@ -42,6 +50,10 @@
     "geometric_mean": {
       "mean": 0.6881221811573055,
       "std": 0.00368659927742161
+    },
+    "runtime_seconds": {
+      "optimization": 0.0,
+      "evaluation": 4.6
     }
   },
   "SO3 Degree 2": {
@@ -94,6 +106,10 @@
     "geometric_mean": {
       "mean": 0.7046252346269274,
       "std": 0.002555166616312458
+    },
+    "runtime_seconds": {
+      "optimization": 0.0,
+      "evaluation": 5.4
     }
   },
   "SO3 Degree 3": {
@@ -106,6 +122,10 @@
     "geometric_mean": {
       "mean": 0.636431878609657,
       "std": 4.147292380129328e-05
+    },
+    "runtime_seconds": {
+      "optimization": 0.0,
+      "evaluation": 5.8
     }
   },
   "SPHARM lmax=5": {
@@ -118,18 +138,64 @@
     "geometric_mean": {
       "mean": 0.6149708947276632,
       "std": 0.0029306273767628357
+    },
+    "runtime_seconds": {
+      "optimization": 0.0,
+      "evaluation": 6.9
+    }
+  },
+  "SPHARM Inv lmax=5": {
+    "n_features": 75,
+    "feature_names": "75 features",
+    "balanced_accuracy": {
+      "mean": 0.6704692294153078,
+      "std": 0.005231453050452205
+    },
+    "geometric_mean": {
+      "mean": 0.6627998301692412,
+      "std": 0.005789689803526455
+    },
+    "runtime_seconds": {
+      "optimization": 0.0,
+      "evaluation": 6.1
     }
   },
   "SPHARM lmax=16": {
     "n_features": 578,
     "feature_names": "578 features",
     "balanced_accuracy": {
-      "mean": 0.6130323059244628,
-      "std": 0.003037352223748982
+      "mean": 0.5993008621685092,
+      "std": 0.009100282985571289
     },
     "geometric_mean": {
-      "mean": 0.5878273980575829,
-      "std": 0.0037015505144881015
+      "mean": 0.5669108927627478,
+      "std": 0.0118690790268316
+    },
+    "runtime_seconds": {
+      "optimization": 0.0,
+      "evaluation": 6.4
     }
+  },
+  "SPHARM Inv lmax=16": {
+    "n_features": 1358,
+    "feature_names": "1358 features",
+    "balanced_accuracy": {
+      "mean": 0.6274864006481654,
+      "std": 0.00440526141798169
+    },
+    "geometric_mean": {
+      "mean": 0.6077918441548282,
+      "std": 0.0058576261291124025
+    },
+    "runtime_seconds": {
+      "optimization": 0.0,
+      "evaluation": 7.1
+    }
+  },
+  "_meta": {
+    "total_runtime_seconds": 82.7,
+    "n_iter": 50,
+    "seeds": 3,
+    "linear_only": false
   }
 }

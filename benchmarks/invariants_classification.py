@@ -118,6 +118,17 @@ def build_invariant_features(
     return X, feature_names
 
 
+def build_spharm_invariant_features(
+    df: pd.DataFrame,
+    spharm_df: pd.DataFrame,
+    lmax: int = 5,
+) -> tuple[np.ndarray, list[str]]:
+    """Compute rotation-invariant power spectrum + bispectrum from SPHARM coefficients."""
+    from pykarambola.spharm_invariants import compute_spharm_invariants
+    merged = df[['image_num']].merge(spharm_df, on='image_num', how='left')
+    return compute_spharm_invariants(merged, lmax=lmax)
+
+
 def build_spharm_features(
     df: pd.DataFrame,
     spharm_df: pd.DataFrame,
@@ -384,8 +395,12 @@ def main():
         )
 
     for spharm_name, spharm_df in spharm_entries:
+        lmax_val = int(spharm_name.split('=')[-1])
         feature_sets.append(
             (spharm_name, lambda df, s=spharm_df: build_spharm_features(df, s))
+        )
+        feature_sets.append(
+            (f'SPHARM Inv lmax={lmax_val}', lambda df, s=spharm_df, l=lmax_val: build_spharm_invariant_features(df, s, l))
         )
 
     all_results = {}
