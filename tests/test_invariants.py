@@ -1276,17 +1276,6 @@ class TestSO2Invariants:
             'w020': np.diag([1.0, 2.0, 3.0]),
         }
 
-    @pytest.fixture
-    def all_rank_tensors(self):
-        rng = np.random.default_rng(42)
-        M = rng.standard_normal((3, 3))
-        M = (M + M.T) / 2  # symmetrize
-        return {
-            'sc': 5.0,
-            'vec': rng.standard_normal(3),
-            'mat': M,
-        }
-
     # ---- _decompose_so2 ----
 
     def test_decompose_so2_rank0(self):
@@ -1407,18 +1396,37 @@ class TestSO2Invariants:
 
     # ---- degree-3 triple products ----
 
-    def test_so2_triple_product_known_value(self):
-        """Known value check: v=[1,0,0], M=diag([2,-1,-1]).
-        m2 = [2-(-1), 2*0] = [3, 0]
-        v_xy = [1, 0]
-        tp_re = (1*1-0*0)*3 + (1*0+0*1)*0 = 3
-        tp_im = (1*1-0*0)*0 - (1*0+0*1)*3 = 0
+    def test_so2_triple_product_known_value_re(self):
+        """Known value check for tp_re: v=[1,0,0], M=diag([2,-1,-1]).
+        v_xy=[1,0], m2=[3,0]
+        re_ab = 1*1 - 0*0 = 1, im_ab = 1*0 + 0*1 = 0
+        tp_re = Re[conj(m2) * (v_xy*v_xy)] = 1*3 + 0*0 = 3
+        tp_im = Im[conj(m2) * (v_xy*v_xy)] = 0*3 - 1*0 = 0
         """
         v = np.array([1.0, 0.0, 0.0])
         M = np.diag([2.0, -1.0, -1.0])
         inv = compute_invariants({'w010': v, 'w020': M}, symmetry='SO2', max_degree=3)
         assert inv['tp_re_w010_xy_w010_xy_w020_m2'] == pytest.approx(3.0)
         assert inv['tp_im_w010_xy_w010_xy_w020_m2'] == pytest.approx(0.0)
+
+    def test_so2_triple_product_known_value_im(self):
+        """Known value check for tp_im using inputs that make Im non-zero.
+        v=[1,1,0], M with m2=[0,2] (M_xx=M_yy, M_xy=1).
+        v_xy=[1,1], re_ab=1*1-1*1=0, im_ab=1*1+1*1=2
+        tp_re = Re[conj(m2)*(v_xy*v_xy)] = 0*0 + 2*2 = 4
+        tp_im = Im[conj(m2)*(v_xy*v_xy)] = 2*0 - 0*2 = 0... try different m2.
+
+        Use v=[1,1,0], M s.t. m2=[1,0]:
+        re_ab=0, im_ab=2
+        tp_re = 0*1 + 2*0 = 0
+        tp_im = 2*1 - 0*0 = 2
+        """
+        v = np.array([1.0, 1.0, 0.0])
+        # M_xx - M_yy = 1, M_xy = 0  → m2 = [1, 0]
+        M = np.array([[0.5, 0., 0.], [0., -0.5, 0.], [0., 0., 0.]])
+        inv = compute_invariants({'w010': v, 'w020': M}, symmetry='SO2', max_degree=3)
+        assert inv['tp_re_w010_xy_w010_xy_w020_m2'] == pytest.approx(0.0)
+        assert inv['tp_im_w010_xy_w010_xy_w020_m2'] == pytest.approx(2.0)
 
     def test_so2_triple_product_re_im_both_present(self):
         """Both Re and Im keys should be generated for each triple."""
@@ -1535,6 +1543,22 @@ class TestSO2Invariants:
 
     def test_so2_empty_input(self):
         assert compute_invariants({}, symmetry='SO2') == {}
+
+    def test_so2_invalid_symmetry_raises(self):
+        """Invalid symmetry strings should raise ValueError, not silently fall through."""
+        tensors = {'v': np.array([1., 0., 0.])}
+        with pytest.raises(ValueError, match="Invalid symmetry"):
+            compute_invariants(tensors, symmetry='so2')
+        with pytest.raises(ValueError, match="Invalid symmetry"):
+            compute_invariants(tensors, symmetry='SO2 ')
+        with pytest.raises(ValueError, match="Invalid symmetry"):
+            compute_invariants(tensors, symmetry='xyz')
+
+    def test_so2_degree1_key_collision_raises(self):
+        """Degree-1 key collision between rank-0 name and rank-1 derived key raises."""
+        tensors = {'v_z': 99.0, 'v': np.array([1., 2., 3.])}
+        with pytest.raises(ValueError, match="key collision"):
+            compute_invariants(tensors, symmetry='SO2', max_degree=1)
 
     def test_so2_scalar_only(self):
         inv = compute_invariants({'s': 3.0}, symmetry='SO2')

@@ -339,13 +339,22 @@ def _so2_degree1_scalars(
     z_names = sorted({name for (name, lbl) in so2_dec if lbl == 'z'})
     tr_names = sorted({name for (name, lbl) in so2_dec if lbl == 'tr'})
 
+    def _set(key, val):
+        if key in result:
+            raise ValueError(
+                f"SO(2) degree-1 key collision: '{key}' would be written twice. "
+                "Rename tensors so that no rank-0 name ends with '_z' or '_zz' "
+                "when a rank-1 or rank-2 tensor shares the prefix."
+            )
+        result[key] = val
+
     # rank-0 scalars
     for name in sc_names:
-        result[name] = float(so2_dec[(name, 'sc')])
+        _set(name, float(so2_dec[(name, 'sc')]))
 
     # rank-1 v_z
     for name in z_names:
-        result[f"{name}_z"] = float(so2_dec[(name, 'z')])
+        _set(f"{name}_z", float(so2_dec[(name, 'z')]))
 
     # rank-2: trace (dedup-able) + M_zz (always kept)
     for name in tr_names:
@@ -359,10 +368,10 @@ def _so2_degree1_scalars(
             and _KNOWN_TRACE_DEPS[name] in sc_names
         )
         if not skip_trace:
-            result[name] = tr_val
+            _set(name, tr_val)
 
         # M_zz = tr + tzz; always included regardless of dedup
-        result[f"{name}_zz"] = tr_val + tzz_val
+        _set(f"{name}_zz", tr_val + tzz_val)
 
     return result
 
@@ -376,7 +385,7 @@ def _so2_collect_doublets(
     Returns list of (compound_label, array) where compound_label = f"{name}_{label}".
     """
     items = [
-        (f"{name}_{lbl}", val)
+        (f"{name}_{label}", val)
         for (name, lbl), val in so2_dec.items()
         if lbl == label
     ]
@@ -413,8 +422,10 @@ def _so2_triple_products(so2_dec: dict[tuple[str, str], object]) -> dict[str, fl
     """Compute degree-3 SO(2) invariants: triple couplings of |m|=1, |m|=1, |m|=2.
 
     For doublets a (|m|=1), b (|m|=1) with ca <= cb, and c (|m|=2):
-        Re = (ax*bx - ay*by)*cx + (ax*by + ay*bx)*cy
-        Im = (ax*bx - ay*by)*cy - (ax*by + ay*bx)*cx
+        Re = (ax*bx - ay*by)*cx + (ax*by + ay*bx)*cy  = Re[conj(c) * (a*b)]
+        Im = (ax*by + ay*bx)*cx - (ax*bx - ay*by)*cy  = Im[conj(c) * (a*b)]
+
+    where a*b denotes complex multiplication: a = ax+i*ay, b = bx+i*by, c = cx+i*cy.
 
     These are genuinely new invariants not expressible as products of lower-degree terms.
     """
@@ -430,12 +441,12 @@ def _so2_triple_products(so2_dec: dict[tuple[str, str], object]) -> dict[str, fl
     result = {}
     for i, (ca, a) in enumerate(m1_doublets):
         for cb, b in m1_doublets[i:]:
-            # Compute a*b complex product components
-            re_ab = a[0] * b[0] - a[1] * b[1]  # Re(conj(b)*a) ... but we want a·b as complex
-            im_ab = a[0] * b[1] + a[1] * b[0]
+            # Complex product a*b: (ax+i*ay)*(bx+i*by)
+            re_ab = a[0] * b[0] - a[1] * b[1]  # Re(a*b)
+            im_ab = a[0] * b[1] + a[1] * b[0]  # Im(a*b)
             for cc, c in m2_doublets:
-                re_val = re_ab * c[0] + im_ab * c[1]
-                im_val = re_ab * c[1] - im_ab * c[0]
+                re_val = re_ab * c[0] + im_ab * c[1]   # Re[conj(c) * (a*b)]
+                im_val = im_ab * c[0] - re_ab * c[1]   # Im[conj(c) * (a*b)]
                 result[f"tp_re_{ca}_{cb}_{cc}"] = float(re_val)
                 result[f"tp_im_{ca}_{cb}_{cc}"] = float(im_val)
 
@@ -528,6 +539,12 @@ def compute_invariants(
     """
     if not tensors_dict:
         return {}
+
+    _VALID_SYMMETRIES = {'O3', 'SO3', 'SO2'}
+    if symmetry not in _VALID_SYMMETRIES:
+        raise ValueError(
+            f"Invalid symmetry '{symmetry}'. Must be one of {sorted(_VALID_SYMMETRIES)}."
+        )
 
     # SO(2): entirely separate decomposition and invariant pipeline
     if symmetry == 'SO2':
