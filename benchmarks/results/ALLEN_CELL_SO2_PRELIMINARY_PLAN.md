@@ -25,7 +25,7 @@ The analysis provides a first comparison of SO(2) vs SO(3) invariant feature set
 | 2 | Baseline (w/ eigen) | — | — | 86 | Previously tested |
 | 3 | SO3 Degree 1 | SO(3) | 1 | 8 | Previously tested |
 | 4 | SO3 Degree 2 | SO(3) | 2 | 39 | Previously tested |
-| 5 | SO3 Degree 3 | SO(3) | 3 | 219 | **New** |
+| 5 | SO3 Degree 3 | SO(3) | 3 | 219 | Previously tested |
 | 6 | SO2 Degree 1 | SO(2) | 1 | 18 | **New** |
 | 7 | SO2 Degree 2 | SO(2) | 2 | 94 | **New** |
 | 8 | SO2 Degree 3 | SO(2) | 3 | 754 | **New** |
@@ -89,9 +89,9 @@ Note: `--optimize` is intentionally omitted for this preliminary run.
 1. Do SO(2) invariants outperform SO(3) invariants on non-rotated data?
    SO(2) encodes z-axis orientation, which may be informative for nuclei imaged with a fixed microscope axis.
 
-2. Does SO3 Degree 3 improve over Degree 2?
-   In the optimized run, Degree 2 reached 0.783 bal. acc. at 39 features.
-   Degree 3 jumps to 219 features — it is unclear whether the additional invariants add signal or noise with default PCA=10.
+2. How do SO2 degrees compare to SO3 counterparts?
+   SO3 Degree 3 (219 features) scored 0.647 unoptimized — well below Degree 2 (0.715), likely due to PCA=10 discarding most signal.
+   With 754 features, SO2 Degree 3 faces an even steeper compression problem under default settings.
 
 3. How does SO2 Degree 2 (94 features) compare to SO3 Degree 2 (39 features)?
    Both are degree-2 polynomial invariants but under different symmetry groups.
