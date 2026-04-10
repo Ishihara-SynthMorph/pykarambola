@@ -15,6 +15,7 @@ import numpy as np
 import pytest
 from scipy.spatial.transform import Rotation
 
+from pykarambola.api import minkowski_tensors
 from pykarambola.invariants import (
     _infer_rank,
     _trace_rank2,
@@ -1572,3 +1573,146 @@ class TestSO2Invariants:
         inv = compute_invariants(simple_tensors, symmetry='SO2', max_degree=2)
         assert not any(k.startswith('tp_') for k in inv)
         assert any(k.startswith(('d1_', 'd2_')) for k in inv)
+
+# =============================================================================
+# TestSO2InvariantsMeshIntegration
+# =============================================================================
+
+def _box_mesh_so2(a, b, c):
+    """Axis-aligned box centered at the origin, 12 triangles, outward normals.
+
+    Returns (verts, faces) numpy arrays. Duplicated locally to keep this module
+    self-contained (avoids importing from another test file).
+    """
+    ha, hb, hc = a / 2.0, b / 2.0, c / 2.0
+    verts = np.array([
+        [-ha, -hb, -hc], [ ha, -hb, -hc], [ ha,  hb, -hc], [-ha,  hb, -hc],
+        [-ha, -hb,  hc], [ ha, -hb,  hc], [ ha,  hb,  hc], [-ha,  hb,  hc],
+    ], dtype=np.float64)
+    faces = np.array([
+        [0, 3, 2], [0, 2, 1],   # -z
+        [4, 5, 6], [4, 6, 7],   # +z
+        [0, 1, 5], [0, 5, 4],   # -y
+        [2, 3, 7], [2, 7, 6],   # +y
+        [0, 4, 7], [0, 7, 3],   # -x
+        [1, 2, 6], [1, 6, 5],   # +x
+    ], dtype=np.int64)
+    return verts, faces
+
+
+class TestSO2InvariantsMeshIntegration:
+    """SO(2) invariants computed from mesh-derived Minkowski tensors.
+
+    These tests exercise the full pipeline:
+        mesh → minkowski_tensors() → compute_invariants(symmetry='SO2')
+
+    All tests use an asymmetric box (3×2×1) so the invariants are non-trivial.
+    compute_eigensystems=False is required; passing eigensystem keys inflates
+    the invariant count (eigvals shape (3,) → treated as rank-1 vectors,
+    eigvecs shape (3,3) → treated as rank-2 matrices).
+    """
+
+    @pytest.fixture
+    def box_tensors(self):
+        """14 standard Minkowski tensors for the 3×2×1 box."""
+        verts, faces = _box_mesh_so2(3.0, 2.0, 1.0)
+        return minkowski_tensors(verts, faces, compute_eigensystems=False)
+
+    # ---- basic pipeline ----
+
+    def test_pipeline_runs(self, box_tensors):
+        """minkowski_tensors() output is accepted without error."""
+        inv = compute_invariants(box_tensors, symmetry='SO2')
+        assert len(inv) > 0
+
+    def test_degree1_keys_present(self, box_tensors):
+        """Spot-check that expected degree-1 keys appear in the output."""
+        inv = compute_invariants(box_tensors, symmetry='SO2', max_degree=1)
+        # rank-0 scalars
+        for name in ('w000', 'w100', 'w200', 'w300'):
+            assert name in inv, f"Missing rank-0 key '{name}'"
+        # rank-1 v_z
+        for name in ('w010_z', 'w110_z', 'w210_z', 'w310_z'):
+            assert name in inv, f"Missing v_z key '{name}'"
+        # rank-2 _zz (always kept, even for deduped tensors)
+        for name in ('w020_zz', 'w102_zz', 'w202_zz'):
+            assert name in inv, f"Missing _zz key '{name}'"
+
+    def test_invariant_count_754(self, box_tensors):
+        """Full 14-tensor mesh output produces exactly 754 SO(2) invariants."""
+        inv = compute_invariants(box_tensors, symmetry='SO2')
+        assert len(inv) == 754
+
+    # ---- deduplication with mesh data ----
+
+    def test_dedup_w102_w100(self, box_tensors):
+        """Tr(w102)/3 is proportional to w100 (both are area integrals), so the
+        w102 trace key is deduped when w100 is present.  The _zz key is kept."""
+        inv = compute_invariants(box_tensors, symmetry='SO2', max_degree=1)
+        assert 'w100' in inv      # base scalar kept
+        assert 'w102' not in inv  # trace of w102 is proportional to w100 → deduped
+        assert 'w102_zz' in inv   # _zz = M_zz always kept
+
+    def test_dedup_w202_w200(self, box_tensors):
+        """Tr(w202)/3 is proportional to w200 (both are curvature integrals)."""
+        inv = compute_invariants(box_tensors, symmetry='SO2', max_degree=1)
+        assert 'w200' in inv
+        assert 'w202' not in inv
+        assert 'w202_zz' in inv
+
+    def test_dedup_disabled_restores_both_scalars(self, box_tensors):
+        """With deduplicate_scalars=False, w102 and w202 trace keys are kept."""
+        inv = compute_invariants(box_tensors, symmetry='SO2', max_degree=1,
+                                 deduplicate_scalars=False)
+        assert 'w102' in inv
+        assert 'w202' in inv
+
+    # ---- z-rotation invariance on the actual mesh ----
+
+    @pytest.mark.parametrize("theta", [30, 90, 180])
+    def test_z_rotation_invariance(self, theta):
+        """Rotating the mesh about z produces identical SO(2) invariants."""
+        verts, faces = _box_mesh_so2(3.0, 2.0, 1.0)
+        R = Rotation.from_euler('z', theta, degrees=True).as_matrix()
+
+        tensors     = minkowski_tensors(verts,        faces, compute_eigensystems=False)
+        tensors_rot = minkowski_tensors(verts @ R.T,  faces, compute_eigensystems=False)
+
+        inv     = compute_invariants(tensors,     symmetry='SO2')
+        inv_rot = compute_invariants(tensors_rot, symmetry='SO2')
+
+        assert set(inv.keys()) == set(inv_rot.keys())
+        for k in inv:
+            assert abs(inv[k] - inv_rot[k]) < 1e-10, \
+                f"z-rotation by {theta}° broke '{k}': {inv[k]:.6g} vs {inv_rot[k]:.6g}"
+
+    # ---- non-invariance under off-axis rotation ----
+
+    def test_not_invariant_under_x_rotation(self):
+        """Rotating the mesh about x changes SO(2) invariants."""
+        verts, faces = _box_mesh_so2(3.0, 2.0, 1.0)
+        R = Rotation.from_euler('x', 45, degrees=True).as_matrix()
+
+        tensors     = minkowski_tensors(verts,       faces, compute_eigensystems=False)
+        tensors_rot = minkowski_tensors(verts @ R.T, faces, compute_eigensystems=False)
+
+        inv     = compute_invariants(tensors,     symmetry='SO2')
+        inv_rot = compute_invariants(tensors_rot, symmetry='SO2')
+
+        # The box is asymmetric in z, so matrix _zz components change under x-rotation
+        assert abs(inv['w020_zz'] - inv_rot['w020_zz']) > 1e-6, \
+            "w020_zz should change under x-rotation of an asymmetric box"
+
+    # ---- eigensystem-key pitfall ----
+
+    def test_eigensystem_keys_inflate_count(self):
+        """Passing minkowski_tensors() output WITH eigensystems produces more than
+        754 invariants because eigvals (shape (3,)) are treated as rank-1 vectors
+        and eigvecs (shape (3,3)) as rank-2 matrices.
+
+        This documents the required usage: always pass compute_eigensystems=False.
+        """
+        verts, faces = _box_mesh_so2(3.0, 2.0, 1.0)
+        tensors_with_eig = minkowski_tensors(verts, faces, compute_eigensystems=True)
+        inv = compute_invariants(tensors_with_eig, symmetry='SO2')
+        assert len(inv) > 754
