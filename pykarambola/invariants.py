@@ -1,5 +1,5 @@
 """
-SO(3) and O(3) invariant scalar construction from Minkowski tensors.
+SO(3), O(3), and SO(2) invariant scalar construction from Minkowski tensors.
 
 This module computes rotational invariants from arbitrary combinations of
 rank 0, 1, and 2 tensors. The tensor set is not fixed — users may pass any
@@ -13,6 +13,9 @@ The invariants are organized by polynomial degree:
 Note: This module labels all l=1 irreps as '1e'. Unlike e3nn which distinguishes
 '1e' (axial) from '1o' (polar), here the label indicates only the angular
 momentum quantum number. Parity is handled via the symmetry='O3'/'SO3' parameter.
+
+For symmetry='SO2', components are decomposed by their charge m under rotation
+about the z-axis: m=0 scalars, |m|=1 doublets, and |m|=2 doublets.
 
 References
 ----------
@@ -286,13 +289,166 @@ def _commutator_pseudoscalars(decomposed: dict[tuple[str, str], np.ndarray | flo
     return result
 
 
+def _decompose_so2(tensors_dict: dict[str, np.ndarray | float]) -> dict[tuple[str, str], object]:
+    """Decompose tensors into SO(2) components (charges under z-rotation).
+
+    Returns entries keyed by (name, label) where label is one of:
+    - 'sc'  : rank-0 scalar value (float)
+    - 'z'   : v_z component of rank-1 vector (float)
+    - 'xy'  : [v_x, v_y] doublet from rank-1 vector, |m|=1 (ndarray shape (2,))
+    - 'tr'  : Tr(M)/3 isotropic scalar from rank-2 matrix (float)
+    - 'tzz' : T_zz = M_zz - Tr(M)/3 traceless m=0 component (float)
+    - 'xz'  : [M_xz, M_yz] doublet, |m|=1 (ndarray shape (2,))
+    - 'm2'  : [M_xx - M_yy, 2*M_xy] doublet, |m|=2 (ndarray shape (2,))
+    """
+    result = {}
+    for name, tensor in tensors_dict.items():
+        rank = _infer_rank(tensor)
+        if rank == 0:
+            val = float(tensor) if isinstance(tensor, (int, float)) else float(np.asarray(tensor))
+            result[(name, 'sc')] = val
+        elif rank == 1:
+            v = np.asarray(tensor, dtype=float)
+            result[(name, 'z')] = float(v[2])
+            result[(name, 'xy')] = np.array([v[0], v[1]])
+        elif rank == 2:
+            M = np.asarray(tensor, dtype=float)
+            M_sym = (M + M.T) / 2.0
+            tr_over3 = np.trace(M_sym) / 3.0
+            result[(name, 'tr')] = float(tr_over3)
+            result[(name, 'tzz')] = float(M_sym[2, 2] - tr_over3)
+            result[(name, 'xz')] = np.array([M_sym[0, 2], M_sym[1, 2]])
+            result[(name, 'm2')] = np.array([M_sym[0, 0] - M_sym[1, 1], 2.0 * M_sym[0, 1]])
+    return result
+
+
+def _so2_degree1_scalars(
+    so2_dec: dict[tuple[str, str], object],
+    deduplicate: bool = True,
+) -> dict[str, float]:
+    """Collect degree-1 SO(2) invariants: m=0 scalars.
+
+    For rank-0: output key = name, value = S.
+    For rank-1: output key = {name}_z, value = v_z.
+    For rank-2: output key = name (dedup-able), value = Tr(M)/3;
+                output key = {name}_zz, value = M_zz (always kept).
+    """
+    result = {}
+
+    sc_names = sorted({name for (name, lbl) in so2_dec if lbl == 'sc'})
+    z_names = sorted({name for (name, lbl) in so2_dec if lbl == 'z'})
+    tr_names = sorted({name for (name, lbl) in so2_dec if lbl == 'tr'})
+
+    # rank-0 scalars
+    for name in sc_names:
+        result[name] = float(so2_dec[(name, 'sc')])
+
+    # rank-1 v_z
+    for name in z_names:
+        result[f"{name}_z"] = float(so2_dec[(name, 'z')])
+
+    # rank-2: trace (dedup-able) + M_zz (always kept)
+    for name in tr_names:
+        tr_val = float(so2_dec[(name, 'tr')])
+        tzz_val = float(so2_dec[(name, 'tzz')])
+
+        # Skip trace key if linearly dependent on a present rank-0 scalar
+        skip_trace = (
+            deduplicate
+            and name in _KNOWN_TRACE_DEPS
+            and _KNOWN_TRACE_DEPS[name] in sc_names
+        )
+        if not skip_trace:
+            result[name] = tr_val
+
+        # M_zz = tr + tzz; always included regardless of dedup
+        result[f"{name}_zz"] = tr_val + tzz_val
+
+    return result
+
+
+def _so2_collect_doublets(
+    so2_dec: dict[tuple[str, str], object],
+    label: str,
+) -> list[tuple[str, np.ndarray]]:
+    """Collect all doublets of a given SO(2) label, sorted by compound label.
+
+    Returns list of (compound_label, array) where compound_label = f"{name}_{label}".
+    """
+    items = [
+        (f"{name}_{lbl}", val)
+        for (name, lbl), val in so2_dec.items()
+        if lbl == label
+    ]
+    return sorted(items, key=lambda x: x[0])
+
+
+def _so2_doublet_inner_products(so2_dec: dict[tuple[str, str], object]) -> dict[str, float]:
+    """Compute degree-2 SO(2) invariants: inner products of same-charge doublets.
+
+    d1_{ci}_{cj}: dot product of two |m|=1 doublets (from rank-1 _xy and rank-2 _xz)
+    d2_{ci}_{cj}: dot product of two |m|=2 doublets (from rank-2 _m2)
+    """
+    result = {}
+
+    # |m|=1 doublets: both 'xy' (rank-1) and 'xz' (rank-2)
+    m1_doublets = sorted(
+        _so2_collect_doublets(so2_dec, 'xy') + _so2_collect_doublets(so2_dec, 'xz'),
+        key=lambda x: x[0],
+    )
+    for i, (ci, di) in enumerate(m1_doublets):
+        for cj, dj in m1_doublets[i:]:
+            result[f"d1_{ci}_{cj}"] = float(np.dot(di, dj))
+
+    # |m|=2 doublets: 'm2' from rank-2
+    m2_doublets = _so2_collect_doublets(so2_dec, 'm2')
+    for i, (ci, di) in enumerate(m2_doublets):
+        for cj, dj in m2_doublets[i:]:
+            result[f"d2_{ci}_{cj}"] = float(np.dot(di, dj))
+
+    return result
+
+
+def _so2_triple_products(so2_dec: dict[tuple[str, str], object]) -> dict[str, float]:
+    """Compute degree-3 SO(2) invariants: triple couplings of |m|=1, |m|=1, |m|=2.
+
+    For doublets a (|m|=1), b (|m|=1) with ca <= cb, and c (|m|=2):
+        Re = (ax*bx - ay*by)*cx + (ax*by + ay*bx)*cy
+        Im = (ax*bx - ay*by)*cy - (ax*by + ay*bx)*cx
+
+    These are genuinely new invariants not expressible as products of lower-degree terms.
+    """
+    m1_doublets = sorted(
+        _so2_collect_doublets(so2_dec, 'xy') + _so2_collect_doublets(so2_dec, 'xz'),
+        key=lambda x: x[0],
+    )
+    m2_doublets = _so2_collect_doublets(so2_dec, 'm2')
+
+    if not m1_doublets or not m2_doublets:
+        return {}
+
+    result = {}
+    for i, (ca, a) in enumerate(m1_doublets):
+        for cb, b in m1_doublets[i:]:
+            # Compute a*b complex product components
+            re_ab = a[0] * b[0] - a[1] * b[1]  # Re(conj(b)*a) ... but we want a·b as complex
+            im_ab = a[0] * b[1] + a[1] * b[0]
+            for cc, c in m2_doublets:
+                re_val = re_ab * c[0] + im_ab * c[1]
+                im_val = re_ab * c[1] - im_ab * c[0]
+                result[f"tp_re_{ca}_{cb}_{cc}"] = float(re_val)
+                result[f"tp_im_{ca}_{cb}_{cc}"] = float(im_val)
+
+    return result
+
+
 def compute_invariants(
     tensors_dict: dict[str, np.ndarray | float],
     max_degree: int = 3,
-    symmetry: Literal['O3', 'SO3'] = 'SO3',
+    symmetry: Literal['O3', 'SO3', 'SO2'] = 'SO3',
     deduplicate_scalars: bool = True,
 ) -> dict[str, float]:
-    """Compute SO(3) or O(3) invariants from arbitrary Minkowski tensors.
+    """Compute SO(3), O(3), or SO(2) invariants from arbitrary Minkowski tensors.
 
     This function computes a complete basis of polynomial invariants up to
     the specified degree. The tensor set is flexible — any combination of
@@ -313,15 +469,20 @@ def compute_invariants(
         - 2: Add degree-2 (dot products, Frobenius inner products)
         - 3: Add degree-3 (quadratic forms, triple traces, pseudo-scalars)
 
-    symmetry : {'O3', 'SO3'}, default='SO3'
+    symmetry : {'O3', 'SO3', 'SO2'}, default='SO3'
         Symmetry group for invariants:
         - 'O3': Only true scalars (invariant under rotations AND reflections)
         - 'SO3': Include pseudo-scalars (flip sign under reflections)
+        - 'SO2': Invariants under rotations about the z-axis only.
+          Provides more invariants than SO(3) by treating z-components
+          independently. Useful for objects near a wall or with a preferred axis.
 
     deduplicate_scalars : bool, default=True
         If True, remove degree-1 scalars that are linearly dependent on others.
         Specifically, Tr(w102)/3 is removed when w100 is present, and
         Tr(w202)/3 is removed when w200 is present.
+        For symmetry='SO2', this applies only to the trace key, never to the
+        `{name}_zz` key.
 
     Returns
     -------
@@ -335,11 +496,16 @@ def compute_invariants(
     origin/centroid. The invariants computed here will change if the mesh
     is translated, unless the tensors themselves are translation-invariant.
 
-    The invariant labels follow these patterns:
+    For symmetry='SO3'/'O3', invariant labels follow these patterns:
     - Degree 1: tensor name (e.g., 'w000', 'w020')
     - Degree 2: 'dot_{v1}_{v2}', 'frob_{T1}_{T2}'
     - Degree 3: 'qf_{v1}_{T}_{v2}', 'ttr_{T1}_{T2}_{T3}',
                 'det_{v1}_{v2}_{v3}', 'comm_{T1}_{T2}_{v}'
+
+    For symmetry='SO2', invariant labels follow these patterns:
+    - Degree 1: '{name}' (scalars/traces), '{name}_z' (v_z), '{name}_zz' (M_zz)
+    - Degree 2: 'd1_{ci}_{cj}' (|m|=1 pairs), 'd2_{ci}_{cj}' (|m|=2 pairs)
+    - Degree 3: 'tp_re_{ca}_{cb}_{cc}', 'tp_im_{ca}_{cb}_{cc}'
 
     Examples
     --------
@@ -354,11 +520,27 @@ def compute_invariants(
     True
     >>> 'dot_w010_w010' in inv
     True
+    >>> inv_so2 = compute_invariants(tensors, symmetry='SO2', max_degree=1)
+    >>> 'w010_z' in inv_so2
+    True
+    >>> 'w020_zz' in inv_so2
+    True
     """
     if not tensors_dict:
         return {}
 
-    # Decompose all tensors into irreps
+    # SO(2): entirely separate decomposition and invariant pipeline
+    if symmetry == 'SO2':
+        so2_dec = _decompose_so2(tensors_dict)
+        result = {}
+        result.update(_so2_degree1_scalars(so2_dec, deduplicate=deduplicate_scalars))
+        if max_degree >= 2:
+            result.update(_so2_doublet_inner_products(so2_dec))
+        if max_degree >= 3:
+            result.update(_so2_triple_products(so2_dec))
+        return result
+
+    # Decompose all tensors into SO(3) irreps
     decomposed = decompose_all(tensors_dict)
 
     result = {}

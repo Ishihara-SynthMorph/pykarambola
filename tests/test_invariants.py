@@ -27,6 +27,11 @@ from pykarambola.invariants import (
     _triple_traces,
     _triple_vector_dets,
     _commutator_pseudoscalars,
+    _decompose_so2,
+    _so2_degree1_scalars,
+    _so2_collect_doublets,
+    _so2_doublet_inner_products,
+    _so2_triple_products,
     compute_invariants,
 )
 
@@ -1254,3 +1259,292 @@ class TestClebschGordanConsistency:
         expected_keys = {'s', 'dot_v_v'}
         assert set(result.keys()) == expected_keys, \
             f"Unexpected invariants: {set(result.keys()) - expected_keys}"
+
+# =============================================================================
+# TestSO2Invariants
+# =============================================================================
+
+class TestSO2Invariants:
+    """Tests for SO(2) (z-rotation) invariant computation."""
+
+    # ---- fixtures ----
+
+    @pytest.fixture
+    def simple_tensors(self):
+        return {
+            'w010': np.array([1.0, 2.0, 3.0]),
+            'w020': np.diag([1.0, 2.0, 3.0]),
+        }
+
+    @pytest.fixture
+    def all_rank_tensors(self):
+        rng = np.random.default_rng(42)
+        M = rng.standard_normal((3, 3))
+        M = (M + M.T) / 2  # symmetrize
+        return {
+            'sc': 5.0,
+            'vec': rng.standard_normal(3),
+            'mat': M,
+        }
+
+    # ---- _decompose_so2 ----
+
+    def test_decompose_so2_rank0(self):
+        dec = _decompose_so2({'s': 3.7})
+        assert ('s', 'sc') in dec
+        assert dec[('s', 'sc')] == pytest.approx(3.7)
+
+    def test_decompose_so2_rank1(self):
+        v = np.array([1.0, 2.0, 3.0])
+        dec = _decompose_so2({'v': v})
+        assert dec[('v', 'z')] == pytest.approx(3.0)
+        np.testing.assert_allclose(dec[('v', 'xy')], [1.0, 2.0])
+
+    def test_decompose_so2_rank2(self):
+        M = np.diag([1.0, 2.0, 3.0])
+        dec = _decompose_so2({'M': M})
+        tr_over3 = 2.0  # (1+2+3)/3
+        assert dec[('M', 'tr')] == pytest.approx(tr_over3)
+        assert dec[('M', 'tzz')] == pytest.approx(3.0 - tr_over3)  # M_zz - Tr/3
+        np.testing.assert_allclose(dec[('M', 'xz')], [0.0, 0.0])
+        np.testing.assert_allclose(dec[('M', 'm2')], [1.0 - 2.0, 0.0])  # [Mxx-Myy, 2Mxy]
+
+    def test_decompose_so2_rank2_symmetrizes(self):
+        """Non-symmetric input should be symmetrized."""
+        M = np.array([[1., 3., 0.], [1., 2., 0.], [0., 0., 3.]])  # asymmetric
+        dec = _decompose_so2({'M': M})
+        # M_sym = [[1,2,0],[2,2,0],[0,0,3]]; M_xy=2, so m2[1] = 2*2 = 4
+        np.testing.assert_allclose(dec[('M', 'm2')][1], 4.0)
+
+    # ---- degree-1 scalars ----
+
+    def test_so2_degree1_rank0(self):
+        dec = _decompose_so2({'s': 7.0})
+        scalars = _so2_degree1_scalars(dec)
+        assert scalars['s'] == pytest.approx(7.0)
+
+    def test_so2_degree1_rank1_z(self):
+        v = np.array([1.0, 2.0, 5.0])
+        dec = _decompose_so2({'v': v})
+        scalars = _so2_degree1_scalars(dec)
+        assert 'v_z' in scalars
+        assert scalars['v_z'] == pytest.approx(5.0)
+        assert 'v' not in scalars  # no rank-0 component from vectors
+
+    def test_so2_degree1_rank2_trace_and_zz(self):
+        M = np.diag([1.0, 2.0, 3.0])
+        dec = _decompose_so2({'M': M})
+        scalars = _so2_degree1_scalars(dec)
+        assert 'M' in scalars
+        assert scalars['M'] == pytest.approx(2.0)  # Tr/3 = 2
+        assert 'M_zz' in scalars
+        assert scalars['M_zz'] == pytest.approx(3.0)  # M[2,2]
+
+    def test_so2_degree1_dedup_trace(self):
+        """Tr(w102)/3 should be removed when w100 is present."""
+        dec = _decompose_so2({'w100': 0.5, 'w102': np.diag([0.5, 0.5, 0.5])})
+        scalars = _so2_degree1_scalars(dec, deduplicate=True)
+        assert 'w100' in scalars
+        assert 'w102' not in scalars   # deduped
+        assert 'w102_zz' in scalars    # _zz always kept
+
+    def test_so2_degree1_dedup_disabled(self):
+        """With deduplicate=False both trace and base scalar appear."""
+        dec = _decompose_so2({'w100': 0.5, 'w102': np.diag([0.5, 0.5, 0.5])})
+        scalars = _so2_degree1_scalars(dec, deduplicate=False)
+        assert 'w100' in scalars
+        assert 'w102' in scalars
+        assert 'w102_zz' in scalars
+
+    def test_so2_degree1_zz_never_deduped(self):
+        """_zz key should always be present even when trace is deduped."""
+        dec = _decompose_so2({'w100': 0.5, 'w102': np.diag([1.5, 1.5, 1.5])})
+        scalars_with = _so2_degree1_scalars(dec, deduplicate=True)
+        scalars_without = _so2_degree1_scalars(dec, deduplicate=False)
+        assert 'w102_zz' in scalars_with
+        assert 'w102_zz' in scalars_without
+
+    # ---- degree-2 doublet inner products ----
+
+    def test_so2_m1_self_inner_product(self):
+        v = np.array([3.0, 4.0, 0.0])
+        dec = _decompose_so2({'v': v})
+        inv = _so2_doublet_inner_products(dec)
+        assert 'd1_v_xy_v_xy' in inv
+        assert inv['d1_v_xy_v_xy'] == pytest.approx(25.0)  # 3²+4²
+
+    def test_so2_m1_cross_type_pair(self):
+        """Cross-type |m|=1 pair: rank-1 _xy and rank-2 _xz."""
+        v = np.array([1.0, 0.0, 0.0])
+        M = np.array([[0., 0., 1.], [0., 0., 0.], [1., 0., 0.]])  # M_xz=1
+        dec = _decompose_so2({'v': v, 'M': M})
+        inv = _so2_doublet_inner_products(dec)
+        assert 'd1_M_xz_v_xy' in inv or 'd1_v_xy_M_xz' in inv
+        # The actual key depends on sort order
+        key = 'd1_M_xz_v_xy' if 'd1_M_xz_v_xy' in inv else 'd1_v_xy_M_xz'
+        assert inv[key] == pytest.approx(1.0)  # [1,0]·[1,0] = 1
+
+    def test_so2_m2_self_inner_product(self):
+        M = np.diag([2.0, -1.0, -1.0])
+        dec = _decompose_so2({'M': M})
+        inv = _so2_doublet_inner_products(dec)
+        # m2 = [2-(-1), 2*0] = [3, 0]; |m2|² = 9
+        assert 'd2_M_m2_M_m2' in inv
+        assert inv['d2_M_m2_M_m2'] == pytest.approx(9.0)
+
+    def test_so2_degree2_count(self):
+        """With 1 rank-1 vector and 1 rank-2 matrix:
+        |m|=1 doublets: v_xy + M_xz = 2 → 2*3/2 = 3 d1 pairs
+        |m|=2 doublets: M_m2 = 1 → 1 d2 pair
+        Total: 4
+        """
+        dec = _decompose_so2({'v': np.array([1., 2., 3.]), 'M': np.eye(3)})
+        inv = _so2_doublet_inner_products(dec)
+        d1_keys = [k for k in inv if k.startswith('d1_')]
+        d2_keys = [k for k in inv if k.startswith('d2_')]
+        assert len(d1_keys) == 3
+        assert len(d2_keys) == 1
+
+    # ---- degree-3 triple products ----
+
+    def test_so2_triple_product_known_value(self):
+        """Known value check: v=[1,0,0], M=diag([2,-1,-1]).
+        m2 = [2-(-1), 2*0] = [3, 0]
+        v_xy = [1, 0]
+        tp_re = (1*1-0*0)*3 + (1*0+0*1)*0 = 3
+        tp_im = (1*1-0*0)*0 - (1*0+0*1)*3 = 0
+        """
+        v = np.array([1.0, 0.0, 0.0])
+        M = np.diag([2.0, -1.0, -1.0])
+        inv = compute_invariants({'w010': v, 'w020': M}, symmetry='SO2', max_degree=3)
+        assert inv['tp_re_w010_xy_w010_xy_w020_m2'] == pytest.approx(3.0)
+        assert inv['tp_im_w010_xy_w010_xy_w020_m2'] == pytest.approx(0.0)
+
+    def test_so2_triple_product_re_im_both_present(self):
+        """Both Re and Im keys should be generated for each triple."""
+        v = np.array([1.0, 1.0, 0.0])
+        M = np.array([[0., 1., 0.], [1., 0., 0.], [0., 0., 0.]])  # off-diagonal
+        dec = _decompose_so2({'v': v, 'M': M})
+        tp = _so2_triple_products(dec)
+        re_keys = [k for k in tp if k.startswith('tp_re_')]
+        im_keys = [k for k in tp if k.startswith('tp_im_')]
+        assert len(re_keys) == len(im_keys)
+        assert len(re_keys) > 0
+
+    def test_so2_triple_product_count(self):
+        """With 1 rank-1 vector + 1 rank-2 matrix:
+        |m|=1 doublets: 2 (v_xy, M_xz) → 2*3/2=3 pairs
+        |m|=2 doublets: 1 (M_m2)
+        → 3 * 1 * 2 (Re+Im) = 6 triple invariants
+        """
+        dec = _decompose_so2({'v': np.array([1., 2., 3.]), 'M': np.eye(3)})
+        tp = _so2_triple_products(dec)
+        assert len(tp) == 6
+
+    # ---- invariance under z-rotation ----
+
+    @pytest.mark.parametrize("theta", [15, 45, 90, 137, 270])
+    def test_so2_invariance_under_z_rotation(self, theta, simple_tensors):
+        """All SO(2) invariants must be unchanged by rotation about z."""
+        inv = compute_invariants(simple_tensors, symmetry='SO2')
+        R = Rotation.from_euler('z', theta, degrees=True).as_matrix()
+        rotated = {
+            k: (R @ v if np.asarray(v).ndim == 1 else R @ np.asarray(v) @ R.T)
+            for k, v in simple_tensors.items()
+        }
+        inv_rot = compute_invariants(rotated, symmetry='SO2')
+        for k in inv:
+            assert abs(inv[k] - inv_rot[k]) < 1e-9, \
+                f"z-rotation by {theta}° broke invariant '{k}': {inv[k]} vs {inv_rot[k]}"
+
+    @pytest.mark.parametrize("seed", [0, 1, 7, 42])
+    def test_so2_invariance_random_tensors(self, seed):
+        """Random tensors: SO(2) invariants stable under z-rotation."""
+        rng = np.random.default_rng(seed)
+        M = rng.standard_normal((3, 3))
+        M = (M + M.T) / 2
+        tensors = {'v': rng.standard_normal(3), 'M': M}
+        inv = compute_invariants(tensors, symmetry='SO2')
+        theta = rng.uniform(0, 360)
+        R = Rotation.from_euler('z', theta, degrees=True).as_matrix()
+        rotated = {'v': R @ tensors['v'], 'M': R @ M @ R.T}
+        inv_rot = compute_invariants(rotated, symmetry='SO2')
+        for k in inv:
+            assert abs(inv[k] - inv_rot[k]) < 1e-8, \
+                f"seed={seed}, theta={theta:.1f}: '{k}' not invariant"
+
+    # ---- NOT invariant under arbitrary rotation ----
+
+    def test_so2_not_invariant_under_x_rotation(self, simple_tensors):
+        """SO(2) invariants should NOT be invariant under rotation about x."""
+        inv = compute_invariants(simple_tensors, symmetry='SO2')
+        R = Rotation.from_euler('x', 45, degrees=True).as_matrix()
+        rotated = {
+            k: (R @ v if np.asarray(v).ndim == 1 else R @ np.asarray(v) @ R.T)
+            for k, v in simple_tensors.items()
+        }
+        inv_rot = compute_invariants(rotated, symmetry='SO2')
+        # w010_z should change since the vector is not aligned with z
+        assert abs(inv['w010_z'] - inv_rot['w010_z']) > 1e-6, \
+            "w010_z should change under x-rotation"
+
+    # ---- invariant count for 14 standard tensors ----
+
+    def test_so2_invariant_count_14_tensors(self):
+        """Full 14-tensor set: expect 18 + 76 + 660 = 754 invariants."""
+        rng = np.random.default_rng(0)
+
+        def rand_sym(n=3):
+            M = rng.standard_normal((n, n))
+            return (M + M.T) / 2
+
+        tensors = {
+            # 4 rank-0 scalars
+            'w000': 1.0, 'w100': 0.5, 'w200': 0.3, 'w300': 1.0,
+            # 4 rank-1 vectors
+            'w010': rng.standard_normal(3),
+            'w110': rng.standard_normal(3),
+            'w210': rng.standard_normal(3),
+            'w310': rng.standard_normal(3),
+            # 6 rank-2 matrices
+            'w020': rand_sym(),
+            'w120': rand_sym(),
+            'w220': rand_sym(),
+            'w320': rand_sym(),
+            'w102': rand_sym(),
+            'w202': rand_sym(),
+        }
+
+        inv = compute_invariants(tensors, symmetry='SO2', max_degree=3)
+
+        # Degree-1: 4 scalars + 4 v_z + 4 trace (2 deduped: w102, w202) + 6 _zz = 18
+        deg1 = {k: v for k, v in inv.items() if not k.startswith(('d1_', 'd2_', 'tp_'))}
+        assert len(deg1) == 18, f"Expected 18 degree-1, got {len(deg1)}: {sorted(deg1)}"
+
+        # Degree-2: 55 d1 + 21 d2 = 76
+        deg2 = {k: v for k, v in inv.items() if k.startswith(('d1_', 'd2_'))}
+        assert len(deg2) == 76, f"Expected 76 degree-2, got {len(deg2)}"
+
+        # Degree-3: 660 triple products (Re + Im)
+        deg3 = {k: v for k, v in inv.items() if k.startswith('tp_')}
+        assert len(deg3) == 660, f"Expected 660 degree-3, got {len(deg3)}"
+
+        assert len(inv) == 754, f"Expected 754 total, got {len(inv)}"
+
+    # ---- API edge cases ----
+
+    def test_so2_empty_input(self):
+        assert compute_invariants({}, symmetry='SO2') == {}
+
+    def test_so2_scalar_only(self):
+        inv = compute_invariants({'s': 3.0}, symmetry='SO2')
+        assert inv == {'s': pytest.approx(3.0)}
+
+    def test_so2_max_degree_1(self, simple_tensors):
+        inv = compute_invariants(simple_tensors, symmetry='SO2', max_degree=1)
+        assert all(not k.startswith(('d1_', 'd2_', 'tp_')) for k in inv)
+
+    def test_so2_max_degree_2(self, simple_tensors):
+        inv = compute_invariants(simple_tensors, symmetry='SO2', max_degree=2)
+        assert not any(k.startswith('tp_') for k in inv)
+        assert any(k.startswith(('d1_', 'd2_')) for k in inv)

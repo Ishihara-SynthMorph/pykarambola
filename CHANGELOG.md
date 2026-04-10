@@ -10,11 +10,12 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
-- `pykarambola.invariants` module for computing SO(3) and O(3) rotational invariants from Minkowski tensors (#102)
+- `pykarambola.invariants` module for computing SO(3), O(3), and SO(2) rotational invariants from Minkowski tensors (#102)
   - `compute_invariants(tensors_dict, max_degree, symmetry, deduplicate_scalars)` computes a complete basis of polynomial invariants up to degree 3
   - `decompose_all(tensors_dict)` decomposes tensors into irreducible representations (trace/traceless split for rank-2)
   - Flexible input: accepts any combination of rank 0, 1, 2 tensors (not limited to the 14 standard Minkowski tensors)
-  - Supports both O(3) (true scalars) and SO(3) (includes pseudo-scalars) symmetry groups
+  - Supports O(3) (true scalars), SO(3) (includes pseudo-scalars), and SO(2) (z-rotation only) symmetry groups
+  - `symmetry='SO2'` decomposes tensors by SO(2) charge m and constructs invariants from m=0 scalars, |m|=1 doublets, and |m|=2 doublets up to degree 3; yields 754 invariants for the 14 standard Minkowski tensors
   - Automatic deduplication of linearly dependent scalars (Tr(w102)/3 = w100, Tr(w202)/3 = w200)
 
 ---
