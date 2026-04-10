@@ -1,0 +1,120 @@
+{
+  "SO3 Degree 1 + Eigenvalues": {
+    "n_features": 26,
+    "feature_names": [
+      "w000",
+      "w020",
+      "w100",
+      "w120",
+      "w200",
+      "w220",
+      "w300",
+      "w320",
+      "w020_EVal1",
+      "w020_EVal2",
+      "w020_EVal3",
+      "w102_EVal1",
+      "w102_EVal2",
+      "w102_EVal3",
+      "w120_EVal1",
+      "w120_EVal2",
+      "w120_EVal3",
+      "w202_EVal1",
+      "w202_EVal2",
+      "w202_EVal3",
+      "w220_EVal1",
+      "w220_EVal2",
+      "w220_EVal3",
+      "w320_EVal1",
+      "w320_EVal2",
+      "w320_EVal3"
+    ],
+    "balanced_accuracy": {
+      "mean": 0.7933991398452184,
+      "std": 0.005874281494273039
+    },
+    "geometric_mean": {
+      "mean": 0.7892691788922276,
+      "std": 0.006627689640300559
+    },
+    "runtime_seconds": {
+      "optimization": 16.2,
+      "evaluation": 0.5
+    }
+  },
+  "SO2 Degree 1 + Eigenvalues": {
+    "n_features": 36,
+    "feature_names": [
+      "w000",
+      "w010_z",
+      "w020",
+      "w020_zz",
+      "w100",
+      "w102_zz",
+      "w110_z",
+      "w120",
+      "w120_zz",
+      "w200",
+      "w202_zz",
+      "w210_z",
+      "w220",
+      "w220_zz",
+      "w300",
+      "w310_z",
+      "w320",
+      "w320_zz",
+      "w020_EVal1",
+      "w020_EVal2",
+      "w020_EVal3",
+      "w102_EVal1",
+      "w102_EVal2",
+      "w102_EVal3",
+      "w120_EVal1",
+      "w120_EVal2",
+      "w120_EVal3",
+      "w202_EVal1",
+      "w202_EVal2",
+      "w202_EVal3",
+      "w220_EVal1",
+      "w220_EVal2",
+      "w220_EVal3",
+      "w320_EVal1",
+      "w320_EVal2",
+      "w320_EVal3"
+    ],
+    "balanced_accuracy": {
+      "mean": 0.7991070169991739,
+      "std": 0.005442100783671563
+    },
+    "geometric_mean": {
+      "mean": 0.795395689446404,
+      "std": 0.005762517377107577
+    },
+    "runtime_seconds": {
+      "optimization": 25.5,
+      "evaluation": 0.5
+    }
+  },
+  "SO2 Degree 2 + Eigenvalues": {
+    "n_features": 112,
+    "feature_names": "112 features",
+    "balanced_accuracy": {
+      "mean": 0.7873295548540648,
+      "std": 0.0014570255191677635
+    },
+    "geometric_mean": {
+      "mean": 0.7807408348250083,
+      "std": 0.0008198469141561222
+    },
+    "runtime_seconds": {
+      "optimization": 776.2,
+      "evaluation": 1455.4
+    }
+  },
+  "_meta": {
+    "total_runtime_seconds": 2279.0,
+    "n_iter": 20,
+    "seeds": 3,
+    "linear_only": true
+  }
+}
