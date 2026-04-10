@@ -353,6 +353,7 @@ def main():
     parser.add_argument('--input', type=str, required=True, help='Path to CSV with Minkowski tensors')
     parser.add_argument('--spharm-input', type=str, action='append', default=None, help='Path to spherical harmonics CSV (repeatable)')
     parser.add_argument('--max-so3-degree', type=int, default=3, choices=[1, 2, 3], help='Maximum SO3 polynomial degree to evaluate (default: 3)')
+    parser.add_argument('--max-so2-degree', type=int, default=0, choices=[0, 1, 2, 3], help='Maximum SO2 polynomial degree to evaluate (0=disabled, default: 0)')
     parser.add_argument('--output', type=str, default='benchmarks/results', help='Output directory')
     parser.add_argument('--optimize', action='store_true', help='Run Bayesian optimization')
     parser.add_argument('--n_iter', type=int, default=50, help='Optimization iterations')
@@ -392,6 +393,11 @@ def main():
     for deg in range(1, args.max_so3_degree + 1):
         feature_sets.append(
             (f'SO3 Degree {deg}', lambda df, d=deg: build_invariant_features(df, max_degree=d))
+        )
+
+    for deg in range(1, args.max_so2_degree + 1):
+        feature_sets.append(
+            (f'SO2 Degree {deg}', lambda df, d=deg: build_invariant_features(df, max_degree=d, symmetry='SO2'))
         )
 
     for spharm_name, spharm_df in spharm_entries:
