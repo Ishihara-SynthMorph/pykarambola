@@ -25,7 +25,7 @@ The analysis provides a first comparison of SO(2) vs SO(3) invariant feature set
 | 2 | Baseline (w/ eigen) | — | — | 86 | Previously tested |
 | 3 | SO3 Degree 1 | SO(3) | 1 | 8 | Previously tested |
 | 4 | SO3 Degree 2 | SO(3) | 2 | 39 | Previously tested |
-| 5 | SO3 Degree 3 | SO(3) | 3 | 219 | Previously tested |
+| 5 | SO3 Degree 3 | SO(3) | 3 | 219 | Previously tested (unoptimized only) |
 | 6 | SO2 Degree 1 | SO(2) | 1 | 18 | **New** |
 | 7 | SO2 Degree 2 | SO(2) | 2 | 94 | **New** |
 | 8 | SO2 Degree 3 | SO(2) | 3 | 754 | **New** |
