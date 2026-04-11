@@ -488,9 +488,9 @@ def main():
             (f'SO3 Degree {deg}', lambda df, d=deg: build_invariant_features(df, max_degree=d))
         )
 
-    if args.max_so3_degree >= 1:
+    for deg in range(1, args.max_so3_degree + 1):
         feature_sets.append(
-            ('SO3 Degree 1 + Eigenvalues', lambda df: build_invariants_eigen_features(df, 'SO3', 1))
+            (f'SO3 Degree {deg} + Eigenvalues', lambda df, d=deg: build_invariants_eigen_features(df, 'SO3', d))
         )
 
     if args.max_so3_degree >= 2:
