@@ -1,0 +1,6 @@
+{
+  "SO3 Degree 3 + Eigenvalues": {
+    "classifier__estimator__C": 987.5562127306658,
+    "pca__n_components": 213
+  }
+}
