@@ -1,0 +1,26 @@
+{
+  "SPHARM lmax=6": {
+    "classifier__estimator__C": 0.10054419658381038,
+    "pca__n_components": 57
+  },
+  "SPHARM Inv lmax=6": {
+    "classifier__estimator__C": 11.014281850164073,
+    "pca__n_components": 60
+  },
+  "SPHARM lmax=7": {
+    "classifier__estimator__C": 0.23346296006549205,
+    "pca__n_components": 115
+  },
+  "SPHARM Inv lmax=7": {
+    "classifier__estimator__C": 13.300153699806186,
+    "pca__n_components": 110
+  },
+  "SPHARM lmax=8": {
+    "classifier__estimator__C": 996.3115894509345,
+    "pca__n_components": 78
+  },
+  "SPHARM Inv lmax=8": {
+    "classifier__estimator__C": 738.7966194299759,
+    "pca__n_components": 170
+  }
+}

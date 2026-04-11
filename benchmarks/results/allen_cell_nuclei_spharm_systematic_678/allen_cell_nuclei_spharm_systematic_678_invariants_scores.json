@@ -1,0 +1,104 @@
+{
+  "SPHARM lmax=6": {
+    "n_features": 98,
+    "feature_names": "98 features",
+    "balanced_accuracy": {
+      "mean": 0.6037073551779435,
+      "std": 0.0016384560756286584
+    },
+    "geometric_mean": {
+      "mean": 0.586955261476486,
+      "std": 0.0016921264056344901
+    },
+    "runtime_seconds": {
+      "optimization": 21.8,
+      "evaluation": 0.8
+    }
+  },
+  "SPHARM Inv lmax=6": {
+    "n_features": 113,
+    "feature_names": "113 features",
+    "balanced_accuracy": {
+      "mean": 0.7397587618175853,
+      "std": 0.0016367166326720153
+    },
+    "geometric_mean": {
+      "mean": 0.7263046682022646,
+      "std": 0.0010317496647964158
+    },
+    "runtime_seconds": {
+      "optimization": 213.7,
+      "evaluation": 2.9
+    }
+  },
+  "SPHARM lmax=7": {
+    "n_features": 128,
+    "feature_names": "128 features",
+    "balanced_accuracy": {
+      "mean": 0.6091870470546942,
+      "std": 0.005163818366311516
+    },
+    "geometric_mean": {
+      "mean": 0.5938258734657992,
+      "std": 0.004592284829611203
+    },
+    "runtime_seconds": {
+      "optimization": 33.7,
+      "evaluation": 1.1
+    }
+  },
+  "SPHARM Inv lmax=7": {
+    "n_features": 162,
+    "feature_names": "162 features",
+    "balanced_accuracy": {
+      "mean": 0.7644390650518101,
+      "std": 0.0010167137966148989
+    },
+    "geometric_mean": {
+      "mean": 0.7529734166403218,
+      "std": 0.0017040337438590002
+    },
+    "runtime_seconds": {
+      "optimization": 139.1,
+      "evaluation": 4.5
+    }
+  },
+  "SPHARM lmax=8": {
+    "n_features": 162,
+    "feature_names": "162 features",
+    "balanced_accuracy": {
+      "mean": 0.6056167384598757,
+      "std": 0.006492224836588945
+    },
+    "geometric_mean": {
+      "mean": 0.5883123508643529,
+      "std": 0.007338854079773375
+    },
+    "runtime_seconds": {
+      "optimization": 56.4,
+      "evaluation": 0.9
+    }
+  },
+  "SPHARM Inv lmax=8": {
+    "n_features": 224,
+    "feature_names": "224 features",
+    "balanced_accuracy": {
+      "mean": 0.7709920768744297,
+      "std": 0.013414479430304094
+    },
+    "geometric_mean": {
+      "mean": 0.7609011186377092,
+      "std": 0.014783441497574901
+    },
+    "runtime_seconds": {
+      "optimization": 331.1,
+      "evaluation": 12.2
+    }
+  },
+  "_meta": {
+    "total_runtime_seconds": 819.5,
+    "n_iter": 20,
+    "seeds": 3,
+    "linear_only": true
+  }
+}
