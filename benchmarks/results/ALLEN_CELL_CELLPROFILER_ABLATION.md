@@ -46,8 +46,19 @@ CellProfiler provides 22 features per nucleus: 8 pure shape descriptors and
 
 | Feature Set | # Feat | Balanced Accuracy | Geo. Mean | Best C | Best PCA |
 |-------------|--------|-------------------|-----------|--------|----------|
+| CellProfiler (SurfaceArea only) | 1 | 0.391 ± 0.003 | 0.000 ± 0.000 | 13.3 | 1 |
+| CellProfiler (Solidity only) | 1 | 0.451 ± 0.000 | 0.000 ± 0.000 | 423 | 1 |
 | CellProfiler (position only) | 14 | 0.609 ± 0.001 | 0.535 ± 0.003 | 225 | 14 |
+| CellProfiler (SurfaceArea + Solidity) | 2 | 0.609 ± 0.004 | 0.509 ± 0.014 | 37.5 | 2 |
 | CellProfiler (shape only) | 8 | 0.738 ± 0.008 | 0.727 ± 0.010 | 1000 | 8 |
+| CellProfiler (no SurfaceArea) | 21 | 0.728 ± 0.005 | 0.714 ± 0.005 | 1000 | 20 |
+| CellProfiler (no Solidity) | 21 | 0.738 ± 0.002 | 0.726 ± 0.002 | 1000 | 20 |
+| CellProfiler (no Volume) | 21 | 0.748 ± 0.008 | 0.738 ± 0.009 | 1000 | 14 |
+| CellProfiler (no MajorAxisLength) | 21 | 0.751 ± 0.002 | 0.742 ± 0.002 | 64.1 | 18 |
+| CellProfiler (no EquivalentDiameter) | 21 | 0.764 ± 0.003 | 0.755 ± 0.003 | 1.08 | 21 |
+| CellProfiler (no Extent) | 21 | 0.767 ± 0.002 | 0.761 ± 0.002 | 1000 | 20 |
+| CellProfiler (no MinorAxisLength) | 21 | 0.769 ± 0.003 | 0.763 ± 0.003 | 25.1 | 19 |
+| CellProfiler (no EulerNumber) | 21 | 0.772 ± 0.002 | 0.766 ± 0.002 | 225 | 21 |
 | CellProfiler (full) | 22 | **0.769 ± 0.003** | **0.761 ± 0.003** | 225 | 22 |
 
 ---
@@ -90,6 +101,60 @@ Shape-only uses C=1000 — slightly higher, likely because removing the two cent
 representations (AreaShape_Center and Location_Center, which partially overlap) eliminates
 mild redundancy from the full feature set.
 
+### Shape feature importance ranking (leave-one-out ablation)
+
+| Feature removed | Bal. Acc | Δ vs full (0.769) | Importance |
+|---|---|---|---|
+| SurfaceArea | 0.728 ± 0.005 | −4.1 pp | High |
+| Solidity | 0.738 ± 0.002 | −3.1 pp | High |
+| Volume | 0.748 ± 0.008 | −2.1 pp | Moderate |
+| MajorAxisLength | 0.751 ± 0.002 | −1.8 pp | Moderate |
+| EquivalentDiameter | 0.764 ± 0.003 | −0.5 pp | Low |
+| Extent | 0.767 ± 0.002 | −0.2 pp | Negligible |
+| MinorAxisLength | 0.769 ± 0.003 | 0.0 pp | Negligible |
+| EulerNumber | 0.772 ± 0.002 | +0.3 pp | Negligible |
+
+**SurfaceArea is the single most important feature** (−4.1 pp), followed by Solidity (−3.1 pp).
+Together they account for the majority of discriminative signal in the 8 shape descriptors.
+
+**SurfaceArea** encodes the surface complexity of the nucleus — nuclei at different mitotic stages
+differ substantially in membrane roughness and folding as they condense, elongate, and divide.
+**Solidity** (volume / convex hull volume) captures convexity defects: non-convex protrusions or
+indentations that appear as chromosomes condense and the nuclear envelope breaks down.
+
+**Volume** (−2.1 pp) and **MajorAxisLength** (−1.8 pp) are moderately important — both encode
+overall nuclear size and elongation that changes across the cell cycle.
+
+**EquivalentDiameter**, **Extent**, **MinorAxisLength**, and **EulerNumber** are effectively redundant
+(Δ ≤ 0.5 pp, within noise). EquivalentDiameter is a monotone function of Volume (diameter of
+sphere with same volume), so its marginal contribution is near zero. Extent (volume / bounding box
+volume) is correlated with Solidity. MinorAxisLength overlaps with the other axis/size features.
+EulerNumber (topological genus) shows essentially no variation across mitotic stages for these nuclei.
+
+The low C values for no-EquivalentDiameter (C=1.08) and no-MinorAxisLength (C=25) vs the full
+set (C=225) suggest these features actually introduce mild collinearity — removing them slightly
+improves feature space conditioning.
+
+### SurfaceArea and Solidity are complementary, not individually sufficient
+
+| Feature Set | # Feat | Bal. Acc | Geo. Mean |
+|---|---|---|---|
+| SurfaceArea only | 1 | 0.391 ± 0.003 | 0.000 |
+| Solidity only | 1 | 0.451 ± 0.000 | 0.000 |
+| SurfaceArea + Solidity | 2 | 0.609 ± 0.004 | 0.509 |
+| Shape only (all 8) | 8 | 0.738 ± 0.008 | 0.727 |
+
+Individually, both features are weak: Geo. Mean = 0.000 for each indicates at least one mitotic
+class is never predicted, confirming neither feature alone can separate all 6 classes. Together
+(2 features), they reach 0.609 — equivalent to the position-only set (14 features, 0.609) — but
+still 12.9 pp below the full 8-feature shape set. The two features are complementary: the jump
+from 0.451 (Solidity alone) to 0.609 (+15.8 pp) when SurfaceArea is added shows SurfaceArea
+resolves classes that Solidity cannot, and vice versa.
+
+The remaining +12.9 pp gap to shape-only (0.738) reflects that Volume, MajorAxisLength, and
+the other shape features each resolve additional class boundaries not captured by surface
+complexity + convexity alone.
+
 ### CellProfiler in the broader benchmark context
 
 | Feature Set | # Feat | Bal. Acc | Notes |
@@ -110,12 +175,47 @@ eigenvalue-augmented Minkowski set (Eigenvalues only: 0.791, +2.2 pp over CellPr
 ## Configuration
 
 ```bash
-# All three conditions
+# All three original conditions
 python benchmarks/invariants_classification.py \
     --input ../Minkowski_classifier/data/allen_cell/mitotic_cells_annotated/nuclei/minkowski_tensors_with_eigen_vals.csv \
     --cellprofiler-input ../Minkowski_classifier/data/allen_cell/mitotic_cells_annotated/nuclei/cellprofiler_features.csv \
     --output benchmarks/results/allen_cell_nuclei_cellprofiler_ablation \
     --include "CellProfiler" \
+    --optimize \
+    --n_iter 20 \
+    --linear-only \
+    --seeds 3 \
+    --n_jobs 5
+
+# Shape feature leave-one-out ablation (all 8 shape features)
+python benchmarks/invariants_classification.py \
+    --input ../Minkowski_classifier/data/allen_cell/mitotic_cells_annotated/nuclei/minkowski_tensors_with_eigen_vals.csv \
+    --cellprofiler-input ../Minkowski_classifier/data/allen_cell/mitotic_cells_annotated/nuclei/cellprofiler_features.csv \
+    --output benchmarks/results/allen_cell_nuclei_cellprofiler_ablation2 \
+    --include "CellProfiler (no Solidity)" "CellProfiler (no Extent)" \
+    --optimize \
+    --n_iter 20 \
+    --linear-only \
+    --seeds 3 \
+    --n_jobs 5
+
+python benchmarks/invariants_classification.py \
+    --input ../Minkowski_classifier/data/allen_cell/mitotic_cells_annotated/nuclei/minkowski_tensors_with_eigen_vals.csv \
+    --cellprofiler-input ../Minkowski_classifier/data/allen_cell/mitotic_cells_annotated/nuclei/cellprofiler_features.csv \
+    --output benchmarks/results/allen_cell_nuclei_cellprofiler_shape_ablation \
+    --include "CellProfiler (no EquivalentDiameter)" "CellProfiler (no EulerNumber)" "CellProfiler (no MajorAxisLength)" "CellProfiler (no MinorAxisLength)" "CellProfiler (no SurfaceArea)" "CellProfiler (no Volume)" \
+    --optimize \
+    --n_iter 20 \
+    --linear-only \
+    --seeds 3 \
+    --n_jobs 5
+
+# Top-2 shape features in isolation and combined
+python benchmarks/invariants_classification.py \
+    --input ../Minkowski_classifier/data/allen_cell/mitotic_cells_annotated/nuclei/minkowski_tensors_with_eigen_vals.csv \
+    --cellprofiler-input ../Minkowski_classifier/data/allen_cell/mitotic_cells_annotated/nuclei/cellprofiler_features.csv \
+    --output benchmarks/results/allen_cell_nuclei_cellprofiler_top2 \
+    --include "CellProfiler (SurfaceArea only)" "CellProfiler (Solidity only)" "CellProfiler (SurfaceArea + Solidity)" \
     --optimize \
     --n_iter 20 \
     --linear-only \

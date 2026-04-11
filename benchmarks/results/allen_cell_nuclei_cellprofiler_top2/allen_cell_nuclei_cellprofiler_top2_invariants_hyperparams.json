@@ -1,0 +1,14 @@
+{
+  "CellProfiler (SurfaceArea only)": {
+    "classifier__estimator__C": 13.300153699806186,
+    "pca__n_components": 1
+  },
+  "CellProfiler (Solidity only)": {
+    "classifier__estimator__C": 423.11485886255787,
+    "pca__n_components": 1
+  },
+  "CellProfiler (SurfaceArea + Solidity)": {
+    "classifier__estimator__C": 37.45729324004134,
+    "pca__n_components": 2
+  }
+}

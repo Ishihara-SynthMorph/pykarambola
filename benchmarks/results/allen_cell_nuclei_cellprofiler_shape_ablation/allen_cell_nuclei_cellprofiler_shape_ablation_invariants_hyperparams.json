@@ -1,0 +1,26 @@
+{
+  "CellProfiler (no EquivalentDiameter)": {
+    "classifier__estimator__C": 1.0801564116460842,
+    "pca__n_components": 21
+  },
+  "CellProfiler (no EulerNumber)": {
+    "classifier__estimator__C": 225.2503789114733,
+    "pca__n_components": 21
+  },
+  "CellProfiler (no MajorAxisLength)": {
+    "classifier__estimator__C": 64.13869893576378,
+    "pca__n_components": 18
+  },
+  "CellProfiler (no MinorAxisLength)": {
+    "classifier__estimator__C": 25.07218066843957,
+    "pca__n_components": 19
+  },
+  "CellProfiler (no SurfaceArea)": {
+    "classifier__estimator__C": 1000.0,
+    "pca__n_components": 20
+  },
+  "CellProfiler (no Volume)": {
+    "classifier__estimator__C": 1000.0,
+    "pca__n_components": 14
+  }
+}

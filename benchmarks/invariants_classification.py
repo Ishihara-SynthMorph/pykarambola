@@ -226,20 +226,27 @@ def build_cellprofiler_features(
     cp_df: pd.DataFrame,
     shape_only: bool = False,
     position_only: bool = False,
+    exclude: set[str] | None = None,
+    include_only: set[str] | None = None,
 ) -> tuple[np.ndarray, list[str]]:
     """Extract CellProfiler features, joined to df by image_num.
 
     shape_only=True excludes position, bounding box, count and centroid columns,
     retaining only the 8 pure shape descriptors.
+    exclude: optional set of column names to drop from the full feature set.
+    include_only: if set, keep only these columns (takes priority over other filters).
     """
     merged = df[['image_num']].merge(cp_df, on='image_num', how='left')
     meta = {'image_num', 'label', 'subfolder'}
-    if shape_only:
-        cols = [c for c in cp_df.columns if c not in meta and c not in CP_POSITION_COLS]
+    excluded = exclude or set()
+    if include_only is not None:
+        cols = [c for c in cp_df.columns if c in include_only]
+    elif shape_only:
+        cols = [c for c in cp_df.columns if c not in meta and c not in CP_POSITION_COLS and c not in excluded]
     elif position_only:
-        cols = [c for c in cp_df.columns if c not in meta and c in CP_POSITION_COLS]
+        cols = [c for c in cp_df.columns if c not in meta and c in CP_POSITION_COLS and c not in excluded]
     else:
-        cols = [c for c in cp_df.columns if c not in meta]
+        cols = [c for c in cp_df.columns if c not in meta and c not in excluded]
     X = merged[cols].values
     return X, cols
 
@@ -363,20 +370,24 @@ def optimize_hyperparams(
             'classifier__estimator__gamma': 'scale',
         }
 
+    pca_max = min(X_train.shape[1], X_train.shape[0] - 1)
+    pca_min = min(2, pca_max)
     if linear_only:
         # LinearSVC: only C and PCA to tune — much faster than SVC(kernel='linear')
         search_space = {
-            'pca__n_components': Integer(2, min(X_train.shape[1], X_train.shape[0] - 1)),
             'classifier__estimator__C': Real(1e-1, 1e3, prior='log-uniform'),
         }
+        if pca_min < pca_max:
+            search_space['pca__n_components'] = Integer(pca_min, pca_max)
         estimator = LinearSVC(dual=False, max_iter=1000)
     else:
         search_space = {
-            'pca__n_components': Integer(2, min(X_train.shape[1], X_train.shape[0] - 1)),
             'classifier__estimator__C': Real(1e-1, 1e3, prior='log-uniform'),
             'classifier__estimator__kernel': Categorical(['linear', 'rbf']),
             'classifier__estimator__gamma': Categorical(['scale', 'auto']),
         }
+        if pca_min < pca_max:
+            search_space['pca__n_components'] = Integer(pca_min, pca_max)
         estimator = SVC()
 
     # n_jobs=1 for inner classifier: BayesSearchCV already parallelises CV folds
@@ -586,6 +597,23 @@ def main():
         feature_sets.append(
             ('CellProfiler (position only)', lambda df, cp=cp_df: build_cellprofiler_features(df, cp, position_only=True))
         )
+        for _feat in ['Solidity', 'Extent', 'EquivalentDiameter', 'EulerNumber',
+                      'MajorAxisLength', 'MinorAxisLength', 'SurfaceArea', 'Volume']:
+            _col = f'Mean_FilterObjects_AreaShape_{_feat}'
+            feature_sets.append(
+                (f'CellProfiler (no {_feat})', lambda df, cp=cp_df, c=_col: build_cellprofiler_features(df, cp, exclude={c}))
+            )
+        _sa = 'Mean_FilterObjects_AreaShape_SurfaceArea'
+        _so = 'Mean_FilterObjects_AreaShape_Solidity'
+        feature_sets.append(
+            ('CellProfiler (SurfaceArea only)', lambda df, cp=cp_df, c=_sa: build_cellprofiler_features(df, cp, include_only={c}))
+        )
+        feature_sets.append(
+            ('CellProfiler (Solidity only)', lambda df, cp=cp_df, c=_so: build_cellprofiler_features(df, cp, include_only={c}))
+        )
+        feature_sets.append(
+            ('CellProfiler (SurfaceArea + Solidity)', lambda df, cp=cp_df, a=_sa, b=_so: build_cellprofiler_features(df, cp, include_only={a, b}))
+        )
 
     for lmax_val, spharm_df in spharm_entries:
         feature_sets.append(
@@ -640,6 +668,12 @@ def main():
                 'classifier__estimator__gamma': 'scale',
             }
         opt_time = time.time() - opt_start
+
+        # Clamp pca__n_components to valid range (handles single-feature sets)
+        params['pca__n_components'] = min(
+            params.get('pca__n_components', X_train.shape[1]),
+            X_train.shape[1],
+        )
 
         print(f"  Params: {params}")
         all_hyperparams[name] = params

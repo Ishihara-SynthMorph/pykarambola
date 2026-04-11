@@ -1,0 +1,63 @@
+{
+  "CellProfiler (SurfaceArea only)": {
+    "n_features": 1,
+    "feature_names": [
+      "Mean_FilterObjects_AreaShape_SurfaceArea"
+    ],
+    "balanced_accuracy": {
+      "mean": 0.3906319739653073,
+      "std": 0.0032921031468427166
+    },
+    "geometric_mean": {
+      "mean": 0.0,
+      "std": 0.0
+    },
+    "runtime_seconds": {
+      "optimization": 48.4,
+      "evaluation": 0.4
+    }
+  },
+  "CellProfiler (Solidity only)": {
+    "n_features": 1,
+    "feature_names": [
+      "Mean_FilterObjects_AreaShape_Solidity"
+    ],
+    "balanced_accuracy": {
+      "mean": 0.451185099346864,
+      "std": 0.00013983029610626719
+    },
+    "geometric_mean": {
+      "mean": 0.0,
+      "std": 0.0
+    },
+    "runtime_seconds": {
+      "optimization": 31.3,
+      "evaluation": 0.2
+    }
+  },
+  "CellProfiler (SurfaceArea + Solidity)": {
+    "n_features": 2,
+    "feature_names": [
+      "Mean_FilterObjects_AreaShape_Solidity",
+      "Mean_FilterObjects_AreaShape_SurfaceArea"
+    ],
+    "balanced_accuracy": {
+      "mean": 0.6091902556363341,
+      "std": 0.0037802558192359986
+    },
+    "geometric_mean": {
+      "mean": 0.5093565744494571,
+      "std": 0.014209958603580462
+    },
+    "runtime_seconds": {
+      "optimization": 31.4,
+      "evaluation": 0.4
+    }
+  },
+  "_meta": {
+    "total_runtime_seconds": 112.9,
+    "n_iter": 20,
+    "seeds": 3,
+    "linear_only": true
+  }
+}

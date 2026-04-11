@@ -1,0 +1,84 @@
+{
+  "CellProfiler (no Solidity)": {
+    "n_features": 21,
+    "feature_names": [
+      "Image_Count_ConvertImageToObjects",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMaximum_X",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMaximum_Y",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMaximum_Z",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMinimum_X",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMinimum_Y",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMinimum_Z",
+      "Mean_FilterObjects_AreaShape_BoundingBoxVolume",
+      "Mean_FilterObjects_AreaShape_Center_X",
+      "Mean_FilterObjects_AreaShape_Center_Y",
+      "Mean_FilterObjects_AreaShape_Center_Z",
+      "Mean_FilterObjects_AreaShape_EquivalentDiameter",
+      "Mean_FilterObjects_AreaShape_EulerNumber",
+      "Mean_FilterObjects_AreaShape_Extent",
+      "Mean_FilterObjects_AreaShape_MajorAxisLength",
+      "Mean_FilterObjects_AreaShape_MinorAxisLength",
+      "Mean_FilterObjects_AreaShape_SurfaceArea",
+      "Mean_FilterObjects_AreaShape_Volume",
+      "Mean_FilterObjects_Location_Center_X",
+      "Mean_FilterObjects_Location_Center_Y",
+      "Mean_FilterObjects_Location_Center_Z"
+    ],
+    "balanced_accuracy": {
+      "mean": 0.738471414819454,
+      "std": 0.002177561426992593
+    },
+    "geometric_mean": {
+      "mean": 0.7264437435464002,
+      "std": 0.0015205516464529075
+    },
+    "runtime_seconds": {
+      "optimization": 61.0,
+      "evaluation": 1.3
+    }
+  },
+  "CellProfiler (no Extent)": {
+    "n_features": 21,
+    "feature_names": [
+      "Image_Count_ConvertImageToObjects",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMaximum_X",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMaximum_Y",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMaximum_Z",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMinimum_X",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMinimum_Y",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMinimum_Z",
+      "Mean_FilterObjects_AreaShape_BoundingBoxVolume",
+      "Mean_FilterObjects_AreaShape_Center_X",
+      "Mean_FilterObjects_AreaShape_Center_Y",
+      "Mean_FilterObjects_AreaShape_Center_Z",
+      "Mean_FilterObjects_AreaShape_EquivalentDiameter",
+      "Mean_FilterObjects_AreaShape_EulerNumber",
+      "Mean_FilterObjects_AreaShape_MajorAxisLength",
+      "Mean_FilterObjects_AreaShape_MinorAxisLength",
+      "Mean_FilterObjects_AreaShape_Solidity",
+      "Mean_FilterObjects_AreaShape_SurfaceArea",
+      "Mean_FilterObjects_AreaShape_Volume",
+      "Mean_FilterObjects_Location_Center_X",
+      "Mean_FilterObjects_Location_Center_Y",
+      "Mean_FilterObjects_Location_Center_Z"
+    ],
+    "balanced_accuracy": {
+      "mean": 0.7670561954875681,
+      "std": 0.0016460488816216888
+    },
+    "geometric_mean": {
+      "mean": 0.760806452733486,
+      "std": 0.0020785524749316986
+    },
+    "runtime_seconds": {
+      "optimization": 49.9,
+      "evaluation": 1.3
+    }
+  },
+  "_meta": {
+    "total_runtime_seconds": 114.2,
+    "n_iter": 20,
+    "seeds": 3,
+    "linear_only": true
+  }
+}

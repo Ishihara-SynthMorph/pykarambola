@@ -1,0 +1,236 @@
+{
+  "CellProfiler (no EquivalentDiameter)": {
+    "n_features": 21,
+    "feature_names": [
+      "Image_Count_ConvertImageToObjects",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMaximum_X",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMaximum_Y",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMaximum_Z",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMinimum_X",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMinimum_Y",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMinimum_Z",
+      "Mean_FilterObjects_AreaShape_BoundingBoxVolume",
+      "Mean_FilterObjects_AreaShape_Center_X",
+      "Mean_FilterObjects_AreaShape_Center_Y",
+      "Mean_FilterObjects_AreaShape_Center_Z",
+      "Mean_FilterObjects_AreaShape_EulerNumber",
+      "Mean_FilterObjects_AreaShape_Extent",
+      "Mean_FilterObjects_AreaShape_MajorAxisLength",
+      "Mean_FilterObjects_AreaShape_MinorAxisLength",
+      "Mean_FilterObjects_AreaShape_Solidity",
+      "Mean_FilterObjects_AreaShape_SurfaceArea",
+      "Mean_FilterObjects_AreaShape_Volume",
+      "Mean_FilterObjects_Location_Center_X",
+      "Mean_FilterObjects_Location_Center_Y",
+      "Mean_FilterObjects_Location_Center_Z"
+    ],
+    "balanced_accuracy": {
+      "mean": 0.763542067341087,
+      "std": 0.002547390663088195
+    },
+    "geometric_mean": {
+      "mean": 0.7553961341233896,
+      "std": 0.0034523651172315385
+    },
+    "runtime_seconds": {
+      "optimization": 74.8,
+      "evaluation": 1.4
+    }
+  },
+  "CellProfiler (no EulerNumber)": {
+    "n_features": 21,
+    "feature_names": [
+      "Image_Count_ConvertImageToObjects",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMaximum_X",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMaximum_Y",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMaximum_Z",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMinimum_X",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMinimum_Y",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMinimum_Z",
+      "Mean_FilterObjects_AreaShape_BoundingBoxVolume",
+      "Mean_FilterObjects_AreaShape_Center_X",
+      "Mean_FilterObjects_AreaShape_Center_Y",
+      "Mean_FilterObjects_AreaShape_Center_Z",
+      "Mean_FilterObjects_AreaShape_EquivalentDiameter",
+      "Mean_FilterObjects_AreaShape_Extent",
+      "Mean_FilterObjects_AreaShape_MajorAxisLength",
+      "Mean_FilterObjects_AreaShape_MinorAxisLength",
+      "Mean_FilterObjects_AreaShape_Solidity",
+      "Mean_FilterObjects_AreaShape_SurfaceArea",
+      "Mean_FilterObjects_AreaShape_Volume",
+      "Mean_FilterObjects_Location_Center_X",
+      "Mean_FilterObjects_Location_Center_Y",
+      "Mean_FilterObjects_Location_Center_Z"
+    ],
+    "balanced_accuracy": {
+      "mean": 0.7717449783626255,
+      "std": 0.002169304928123369
+    },
+    "geometric_mean": {
+      "mean": 0.7658153412966439,
+      "std": 0.0023302334967668144
+    },
+    "runtime_seconds": {
+      "optimization": 69.3,
+      "evaluation": 3.9
+    }
+  },
+  "CellProfiler (no MajorAxisLength)": {
+    "n_features": 21,
+    "feature_names": [
+      "Image_Count_ConvertImageToObjects",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMaximum_X",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMaximum_Y",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMaximum_Z",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMinimum_X",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMinimum_Y",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMinimum_Z",
+      "Mean_FilterObjects_AreaShape_BoundingBoxVolume",
+      "Mean_FilterObjects_AreaShape_Center_X",
+      "Mean_FilterObjects_AreaShape_Center_Y",
+      "Mean_FilterObjects_AreaShape_Center_Z",
+      "Mean_FilterObjects_AreaShape_EquivalentDiameter",
+      "Mean_FilterObjects_AreaShape_EulerNumber",
+      "Mean_FilterObjects_AreaShape_Extent",
+      "Mean_FilterObjects_AreaShape_MinorAxisLength",
+      "Mean_FilterObjects_AreaShape_Solidity",
+      "Mean_FilterObjects_AreaShape_SurfaceArea",
+      "Mean_FilterObjects_AreaShape_Volume",
+      "Mean_FilterObjects_Location_Center_X",
+      "Mean_FilterObjects_Location_Center_Y",
+      "Mean_FilterObjects_Location_Center_Z"
+    ],
+    "balanced_accuracy": {
+      "mean": 0.7512547115488292,
+      "std": 0.0024582304059228032
+    },
+    "geometric_mean": {
+      "mean": 0.7416132761779997,
+      "std": 0.0022488083524389345
+    },
+    "runtime_seconds": {
+      "optimization": 84.4,
+      "evaluation": 1.5
+    }
+  },
+  "CellProfiler (no MinorAxisLength)": {
+    "n_features": 21,
+    "feature_names": [
+      "Image_Count_ConvertImageToObjects",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMaximum_X",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMaximum_Y",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMaximum_Z",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMinimum_X",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMinimum_Y",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMinimum_Z",
+      "Mean_FilterObjects_AreaShape_BoundingBoxVolume",
+      "Mean_FilterObjects_AreaShape_Center_X",
+      "Mean_FilterObjects_AreaShape_Center_Y",
+      "Mean_FilterObjects_AreaShape_Center_Z",
+      "Mean_FilterObjects_AreaShape_EquivalentDiameter",
+      "Mean_FilterObjects_AreaShape_EulerNumber",
+      "Mean_FilterObjects_AreaShape_Extent",
+      "Mean_FilterObjects_AreaShape_MajorAxisLength",
+      "Mean_FilterObjects_AreaShape_Solidity",
+      "Mean_FilterObjects_AreaShape_SurfaceArea",
+      "Mean_FilterObjects_AreaShape_Volume",
+      "Mean_FilterObjects_Location_Center_X",
+      "Mean_FilterObjects_Location_Center_Y",
+      "Mean_FilterObjects_Location_Center_Z"
+    ],
+    "balanced_accuracy": {
+      "mean": 0.769353240431672,
+      "std": 0.003446592020956373
+    },
+    "geometric_mean": {
+      "mean": 0.7627950694351441,
+      "std": 0.00347656233384908
+    },
+    "runtime_seconds": {
+      "optimization": 67.5,
+      "evaluation": 2.0
+    }
+  },
+  "CellProfiler (no SurfaceArea)": {
+    "n_features": 21,
+    "feature_names": [
+      "Image_Count_ConvertImageToObjects",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMaximum_X",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMaximum_Y",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMaximum_Z",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMinimum_X",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMinimum_Y",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMinimum_Z",
+      "Mean_FilterObjects_AreaShape_BoundingBoxVolume",
+      "Mean_FilterObjects_AreaShape_Center_X",
+      "Mean_FilterObjects_AreaShape_Center_Y",
+      "Mean_FilterObjects_AreaShape_Center_Z",
+      "Mean_FilterObjects_AreaShape_EquivalentDiameter",
+      "Mean_FilterObjects_AreaShape_EulerNumber",
+      "Mean_FilterObjects_AreaShape_Extent",
+      "Mean_FilterObjects_AreaShape_MajorAxisLength",
+      "Mean_FilterObjects_AreaShape_MinorAxisLength",
+      "Mean_FilterObjects_AreaShape_Solidity",
+      "Mean_FilterObjects_AreaShape_Volume",
+      "Mean_FilterObjects_Location_Center_X",
+      "Mean_FilterObjects_Location_Center_Y",
+      "Mean_FilterObjects_Location_Center_Z"
+    ],
+    "balanced_accuracy": {
+      "mean": 0.727991858996761,
+      "std": 0.004740814642190504
+    },
+    "geometric_mean": {
+      "mean": 0.7142626859899913,
+      "std": 0.004951178265972971
+    },
+    "runtime_seconds": {
+      "optimization": 65.5,
+      "evaluation": 3.2
+    }
+  },
+  "CellProfiler (no Volume)": {
+    "n_features": 21,
+    "feature_names": [
+      "Image_Count_ConvertImageToObjects",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMaximum_X",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMaximum_Y",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMaximum_Z",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMinimum_X",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMinimum_Y",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMinimum_Z",
+      "Mean_FilterObjects_AreaShape_BoundingBoxVolume",
+      "Mean_FilterObjects_AreaShape_Center_X",
+      "Mean_FilterObjects_AreaShape_Center_Y",
+      "Mean_FilterObjects_AreaShape_Center_Z",
+      "Mean_FilterObjects_AreaShape_EquivalentDiameter",
+      "Mean_FilterObjects_AreaShape_EulerNumber",
+      "Mean_FilterObjects_AreaShape_Extent",
+      "Mean_FilterObjects_AreaShape_MajorAxisLength",
+      "Mean_FilterObjects_AreaShape_MinorAxisLength",
+      "Mean_FilterObjects_AreaShape_Solidity",
+      "Mean_FilterObjects_AreaShape_SurfaceArea",
+      "Mean_FilterObjects_Location_Center_X",
+      "Mean_FilterObjects_Location_Center_Y",
+      "Mean_FilterObjects_Location_Center_Z"
+    ],
+    "balanced_accuracy": {
+      "mean": 0.7483499335215021,
+      "std": 0.007500597399454695
+    },
+    "geometric_mean": {
+      "mean": 0.7382851789865228,
+      "std": 0.008528175871035661
+    },
+    "runtime_seconds": {
+      "optimization": 82.3,
+      "evaluation": 1.7
+    }
+  },
+  "_meta": {
+    "total_runtime_seconds": 458.7,
+    "n_iter": 20,
+    "seeds": 3,
+    "linear_only": true
+  }
+}

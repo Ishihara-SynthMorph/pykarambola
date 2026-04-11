@@ -1,0 +1,10 @@
+{
+  "CellProfiler (no Solidity)": {
+    "classifier__estimator__C": 1000.0,
+    "pca__n_components": 20
+  },
+  "CellProfiler (no Extent)": {
+    "classifier__estimator__C": 1000.0,
+    "pca__n_components": 20
+  }
+}
