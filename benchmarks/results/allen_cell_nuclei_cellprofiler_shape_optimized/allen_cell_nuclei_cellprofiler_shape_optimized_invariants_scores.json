@@ -1,0 +1,72 @@
+{
+  "CellProfiler": {
+    "n_features": 22,
+    "feature_names": [
+      "Image_Count_ConvertImageToObjects",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMaximum_X",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMaximum_Y",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMaximum_Z",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMinimum_X",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMinimum_Y",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMinimum_Z",
+      "Mean_FilterObjects_AreaShape_BoundingBoxVolume",
+      "Mean_FilterObjects_AreaShape_Center_X",
+      "Mean_FilterObjects_AreaShape_Center_Y",
+      "Mean_FilterObjects_AreaShape_Center_Z",
+      "Mean_FilterObjects_AreaShape_EquivalentDiameter",
+      "Mean_FilterObjects_AreaShape_EulerNumber",
+      "Mean_FilterObjects_AreaShape_Extent",
+      "Mean_FilterObjects_AreaShape_MajorAxisLength",
+      "Mean_FilterObjects_AreaShape_MinorAxisLength",
+      "Mean_FilterObjects_AreaShape_Solidity",
+      "Mean_FilterObjects_AreaShape_SurfaceArea",
+      "Mean_FilterObjects_AreaShape_Volume",
+      "Mean_FilterObjects_Location_Center_X",
+      "Mean_FilterObjects_Location_Center_Y",
+      "Mean_FilterObjects_Location_Center_Z"
+    ],
+    "balanced_accuracy": {
+      "mean": 0.7686579691481653,
+      "std": 0.0027607713111416038
+    },
+    "geometric_mean": {
+      "mean": 0.7614410483635967,
+      "std": 0.0029405418252026663
+    },
+    "runtime_seconds": {
+      "optimization": 13.6,
+      "evaluation": 0.4
+    }
+  },
+  "CellProfiler (shape only)": {
+    "n_features": 8,
+    "feature_names": [
+      "Mean_FilterObjects_AreaShape_EquivalentDiameter",
+      "Mean_FilterObjects_AreaShape_EulerNumber",
+      "Mean_FilterObjects_AreaShape_Extent",
+      "Mean_FilterObjects_AreaShape_MajorAxisLength",
+      "Mean_FilterObjects_AreaShape_MinorAxisLength",
+      "Mean_FilterObjects_AreaShape_Solidity",
+      "Mean_FilterObjects_AreaShape_SurfaceArea",
+      "Mean_FilterObjects_AreaShape_Volume"
+    ],
+    "balanced_accuracy": {
+      "mean": 0.7376823825353238,
+      "std": 0.008156370872384596
+    },
+    "geometric_mean": {
+      "mean": 0.7266410538219971,
+      "std": 0.00986061390492034
+    },
+    "runtime_seconds": {
+      "optimization": 6.0,
+      "evaluation": 0.2
+    }
+  },
+  "_meta": {
+    "total_runtime_seconds": 20.3,
+    "n_iter": 20,
+    "seeds": 3,
+    "linear_only": true
+  }
+}

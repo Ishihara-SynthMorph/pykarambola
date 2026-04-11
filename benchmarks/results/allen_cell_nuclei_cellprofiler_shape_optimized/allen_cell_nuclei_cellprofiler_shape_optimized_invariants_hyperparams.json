@@ -1,0 +1,10 @@
+{
+  "CellProfiler": {
+    "classifier__estimator__C": 225.2503789114733,
+    "pca__n_components": 22
+  },
+  "CellProfiler (shape only)": {
+    "classifier__estimator__C": 1000.0,
+    "pca__n_components": 8
+  }
+}
