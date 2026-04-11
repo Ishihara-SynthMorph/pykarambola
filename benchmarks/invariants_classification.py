@@ -197,6 +197,12 @@ def build_invariants_eigen_features(
     return np.array(results), feature_names
 
 
+def build_eigen_only_features(df: pd.DataFrame) -> tuple[np.ndarray, list[str]]:
+    """Eigenvalues of rank-2 tensors only (18 features)."""
+    cols = sorted(c for c in df.columns if 'EVal' in c)
+    return df[cols].values, cols
+
+
 def build_cellprofiler_features(
     df: pd.DataFrame,
     cp_df: pd.DataFrame,
@@ -482,6 +488,7 @@ def main():
     feature_sets = [
         ('Baseline (tensors)', lambda df: build_baseline_features(df, include_eigen=False)),
         ('Baseline (w/ eigen)', lambda df: build_baseline_features(df, include_eigen=True)),
+        ('Eigenvalues only', lambda df: build_eigen_only_features(df)),
     ]
     for deg in range(1, args.max_so3_degree + 1):
         feature_sets.append(
