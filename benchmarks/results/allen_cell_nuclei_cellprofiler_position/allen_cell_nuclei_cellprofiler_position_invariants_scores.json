@@ -1,0 +1,39 @@
+{
+  "CellProfiler (position only)": {
+    "n_features": 14,
+    "feature_names": [
+      "Image_Count_ConvertImageToObjects",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMaximum_X",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMaximum_Y",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMaximum_Z",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMinimum_X",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMinimum_Y",
+      "Mean_FilterObjects_AreaShape_BoundingBoxMinimum_Z",
+      "Mean_FilterObjects_AreaShape_BoundingBoxVolume",
+      "Mean_FilterObjects_AreaShape_Center_X",
+      "Mean_FilterObjects_AreaShape_Center_Y",
+      "Mean_FilterObjects_AreaShape_Center_Z",
+      "Mean_FilterObjects_Location_Center_X",
+      "Mean_FilterObjects_Location_Center_Y",
+      "Mean_FilterObjects_Location_Center_Z"
+    ],
+    "balanced_accuracy": {
+      "mean": 0.6086155897430406,
+      "std": 0.0010245157747997328
+    },
+    "geometric_mean": {
+      "mean": 0.5351657476787675,
+      "std": 0.0028971416043484426
+    },
+    "runtime_seconds": {
+      "optimization": 38.4,
+      "evaluation": 0.7
+    }
+  },
+  "_meta": {
+    "total_runtime_seconds": 39.5,
+    "n_iter": 20,
+    "seeds": 3,
+    "linear_only": true
+  }
+}

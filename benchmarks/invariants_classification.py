@@ -225,6 +225,7 @@ def build_cellprofiler_features(
     df: pd.DataFrame,
     cp_df: pd.DataFrame,
     shape_only: bool = False,
+    position_only: bool = False,
 ) -> tuple[np.ndarray, list[str]]:
     """Extract CellProfiler features, joined to df by image_num.
 
@@ -235,6 +236,8 @@ def build_cellprofiler_features(
     meta = {'image_num', 'label', 'subfolder'}
     if shape_only:
         cols = [c for c in cp_df.columns if c not in meta and c not in CP_POSITION_COLS]
+    elif position_only:
+        cols = [c for c in cp_df.columns if c not in meta and c in CP_POSITION_COLS]
     else:
         cols = [c for c in cp_df.columns if c not in meta]
     X = merged[cols].values
@@ -579,6 +582,9 @@ def main():
         )
         feature_sets.append(
             ('CellProfiler (shape only)', lambda df, cp=cp_df: build_cellprofiler_features(df, cp, shape_only=True))
+        )
+        feature_sets.append(
+            ('CellProfiler (position only)', lambda df, cp=cp_df: build_cellprofiler_features(df, cp, position_only=True))
         )
 
     for lmax_val, spharm_df in spharm_entries:
