@@ -255,11 +255,21 @@ def build_spharm_invariant_features(
 def build_spharm_features(
     df: pd.DataFrame,
     spharm_df: pd.DataFrame,
+    lmax: int | None = None,
     exclude_watertight: bool = True,
 ) -> tuple[np.ndarray, list[str]]:
-    """Extract spherical harmonics features, joined to df by image_num."""
+    """Extract spherical harmonics features, joined to df by image_num.
+
+    lmax filters to coefficients with L <= lmax AND M <= lmax, matching the
+    aics-shparam storage convention where each L stores M=0..lmax_stored.
+    """
+    import re
     merged = df[['image_num']].merge(spharm_df, on='image_num', how='left')
     cols = [c for c in spharm_df.columns if c.startswith('shcoeffs_')]
+    if lmax is not None:
+        cols = [c for c in cols
+                if int(re.search(r'L(\d+)', c).group(1)) <= lmax
+                and int(re.search(r'M(\d+)', c).group(1)) <= lmax]
     if not exclude_watertight:
         wt = [c for c in spharm_df.columns if c == 'watertight_components']
         cols = cols + wt
@@ -475,6 +485,8 @@ def main():
     parser = argparse.ArgumentParser(description='Benchmark SO(3) invariants for classification')
     parser.add_argument('--input', type=str, required=True, help='Path to CSV with Minkowski tensors')
     parser.add_argument('--spharm-input', type=str, action='append', default=None, help='Path to spherical harmonics CSV (repeatable)')
+    parser.add_argument('--spharm-lmax', type=int, nargs='+', default=None, metavar='LMAX',
+                        help='lmax values to test (default: lmax from CSV filename). E.g. --spharm-lmax 1 2 3 4 5')
     parser.add_argument('--cellprofiler-input', type=str, default=None, help='Path to CellProfiler features CSV')
     parser.add_argument('--max-so3-degree', type=int, default=3, choices=[1, 2, 3], help='Maximum SO3 polynomial degree to evaluate (default: 3)')
     parser.add_argument('--max-so2-degree', type=int, default=0, choices=[0, 1, 2, 3], help='Maximum SO2 polynomial degree to evaluate (0=disabled, default: 0)')
@@ -503,13 +515,15 @@ def main():
     print(f"Class distribution (train): {np.bincount(y_train)}")
 
     # Load spherical harmonics data if provided (one entry per --spharm-input)
-    spharm_entries = []  # list of (name, df)
+    spharm_entries = []  # list of (lmax_val, df)
     for spharm_path in (args.spharm_input or []):
-        stem = Path(spharm_path).stem  # e.g. spherical_harmonics_lmax_5
-        lmax = next((p.split('_')[-1] for p in stem.split('_') if p.isdigit()), stem)
-        name = f'SPHARM lmax={lmax}'
-        print(f"Loading {name} from {spharm_path}...")
-        spharm_entries.append((name, pd.read_csv(spharm_path)))
+        stem = Path(spharm_path).stem  # e.g. spherical_harmonics_lmax_16
+        file_lmax = int(next((p for p in stem.split('_') if p.isdigit()), 5))
+        lmax_values = args.spharm_lmax if args.spharm_lmax else [file_lmax]
+        print(f"Loading SPHARM from {spharm_path} (testing lmax={lmax_values})...")
+        spharm_df = pd.read_csv(spharm_path)
+        for lmax_val in lmax_values:
+            spharm_entries.append((lmax_val, spharm_df))
 
     # Define feature sets to evaluate
     feature_sets = [
@@ -552,10 +566,9 @@ def main():
             ('CellProfiler (shape only)', lambda df, cp=cp_df: build_cellprofiler_features(df, cp, shape_only=True))
         )
 
-    for spharm_name, spharm_df in spharm_entries:
-        lmax_val = int(spharm_name.split('=')[-1])
+    for lmax_val, spharm_df in spharm_entries:
         feature_sets.append(
-            (spharm_name, lambda df, s=spharm_df: build_spharm_features(df, s))
+            (f'SPHARM lmax={lmax_val}', lambda df, s=spharm_df, l=lmax_val: build_spharm_features(df, s, lmax=l))
         )
         feature_sets.append(
             (f'SPHARM Inv lmax={lmax_val}', lambda df, s=spharm_df, l=lmax_val: build_spharm_invariant_features(df, s, l))
