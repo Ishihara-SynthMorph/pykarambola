@@ -1,0 +1,6 @@
+{
+  "Eigen + Beta": {
+    "classifier__estimator__C": 225.2503789114733,
+    "pca__n_components": 24
+  }
+}

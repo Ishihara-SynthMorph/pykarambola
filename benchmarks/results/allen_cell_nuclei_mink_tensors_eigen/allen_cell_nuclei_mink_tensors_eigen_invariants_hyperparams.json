@@ -1,0 +1,6 @@
+{
+  "Minkowski (tensors+eigen)": {
+    "classifier__estimator__C": 977.1437709090646,
+    "pca__n_components": 66
+  }
+}

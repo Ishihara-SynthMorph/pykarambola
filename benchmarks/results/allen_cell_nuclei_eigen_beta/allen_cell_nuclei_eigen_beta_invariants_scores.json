@@ -1,0 +1,49 @@
+{
+  "Eigen + Beta": {
+    "n_features": 24,
+    "feature_names": [
+      "beta_w020",
+      "beta_w102",
+      "beta_w120",
+      "beta_w202",
+      "beta_w220",
+      "beta_w320",
+      "w020_EVal1",
+      "w020_EVal2",
+      "w020_EVal3",
+      "w102_EVal1",
+      "w102_EVal2",
+      "w102_EVal3",
+      "w120_EVal1",
+      "w120_EVal2",
+      "w120_EVal3",
+      "w202_EVal1",
+      "w202_EVal2",
+      "w202_EVal3",
+      "w220_EVal1",
+      "w220_EVal2",
+      "w220_EVal3",
+      "w320_EVal1",
+      "w320_EVal2",
+      "w320_EVal3"
+    ],
+    "balanced_accuracy": {
+      "mean": 0.8076957719114581,
+      "std": 0.0006587771253542395
+    },
+    "geometric_mean": {
+      "mean": 0.8043644325445007,
+      "std": 0.0006685633902798271
+    },
+    "runtime_seconds": {
+      "optimization": 7.9,
+      "evaluation": 0.3
+    }
+  },
+  "_meta": {
+    "total_runtime_seconds": 8.3,
+    "n_iter": 20,
+    "seeds": 3,
+    "linear_only": true
+  }
+}

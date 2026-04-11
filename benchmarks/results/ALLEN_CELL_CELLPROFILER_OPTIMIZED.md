@@ -49,22 +49,26 @@ directly comparable to all previous optimized runs.
 |------|-------------|------------|-------------------|-----------|--------|----------|
 | 1 | Minkowski (tensors+eigen+beta) | 86 | 0.818 ± 0.004 | 0.815 ± 0.004 | 1.08 | 84 |
 | 1 | SO3 Degree 2 + Eigenvalues | 57 | 0.817 ± 0.003 | 0.814 ± 0.003 | 980 | 53 |
-| 3 | SO2 Degree 1 + Eigenvalues | 36 | 0.799 ± 0.005 | 0.795 ± 0.006 | 13.3 | 25 |
-| 4 | SO3 Degree 3 + Eigenvalues | 237 | 0.804 ± 0.005 | 0.797 ± 0.005 | 988 | 213 |
-| 5 | SO3 Degree 3 | 219 | 0.795 ± 0.004 | 0.786 ± 0.005 | 14.9 | 195 |
-| 6 | SO3 Degree 1 + Eigenvalues | 26 | 0.793 ± 0.006 | 0.789 ± 0.007 | 1000 | 26 |
-| 7 | Eigenvalues only | 18 | 0.791 ± 0.003 | 0.784 ± 0.005 | 37.2 | 16 |
-| 8 | SO2 Degree 2 + Eigenvalues | 112 | 0.787 ± 0.001 | 0.781 ± 0.001 | 225 | 111 |
-| 9 | SO3 Degree 2 + SO2 z-scalars | 49 | 0.784 ± 0.007 | 0.778 ± 0.008 | 225 | 49 |
-| 9 | SO3 Degree 2 | 39 | 0.783 ± 0.002 | 0.778 ± 0.002 | 225 | 39 |
-| 11 | **CellProfiler** | **22** | **0.769 ± 0.003** | **0.761 ± 0.003** | **225** | **22** |
-| 12 | SO2 Degree 2 | 94 | 0.757 ± 0.008 | 0.751 ± 0.009 | 1000 | 94 |
-| 13 | Minkowski (tensors) | 62 | 0.746 ± 0.006 | 0.737 ± 0.006 | 1000 | 54 |
-| 14 | **CellProfiler (shape only)** | **8** | **0.738 ± 0.008** | **0.727 ± 0.010** | **1000** | **8** |
-| 15 | SPHARM Inv lmax=5 | 75 | 0.726 ± 0.004 | 0.713 ± 0.006 | 739 | 57 |
-| 16 | SO2 Degree 1 | 18 | 0.674 ± 0.006 | 0.649 ± 0.009 | 21.8 | 16 |
-| 17 | SO3 Degree 1 | 8 | 0.667 ± 0.004 | 0.636 ± 0.005 | 995 | 8 |
-| 18 | SPHARM lmax=5 | 72 | 0.597 ± 0.003 | 0.584 ± 0.004 | 0.39 | 57 |
+| 3 | **Eigen + Beta** | **24** | **0.808 ± 0.001** | **0.804 ± 0.001** | **225** | **24** |
+| 4 | Minkowski (tensors+eigen) | 80 | 0.806 ± 0.007 | 0.802 ± 0.008 | 977 | 66 |
+| 5 | SO3 Degree 3 + Eigenvalues | 237 | 0.804 ± 0.005 | 0.797 ± 0.005 | 988 | 213 |
+| 6 | SO2 Degree 1 + Eigenvalues | 36 | 0.799 ± 0.005 | 0.795 ± 0.006 | 13.3 | 25 |
+| 7 | Minkowski (tensors+beta) | 68 | 0.796 ± 0.001 | 0.792 ± 0.001 | 1.08 | 67 |
+| 8 | SO3 Degree 3 | 219 | 0.795 ± 0.004 | 0.786 ± 0.005 | 14.9 | 195 |
+| 9 | SO3 Degree 1 + Eigenvalues | 26 | 0.793 ± 0.006 | 0.789 ± 0.007 | 1000 | 26 |
+| 10 | Eigenvalues only | 18 | 0.791 ± 0.003 | 0.784 ± 0.005 | 37.2 | 16 |
+| 11 | SO2 Degree 2 + Eigenvalues | 112 | 0.787 ± 0.001 | 0.781 ± 0.001 | 225 | 111 |
+| 12 | SO3 Degree 2 + SO2 z-scalars | 49 | 0.784 ± 0.007 | 0.778 ± 0.008 | 225 | 49 |
+| 12 | SO3 Degree 2 | 39 | 0.783 ± 0.002 | 0.778 ± 0.002 | 225 | 39 |
+| 14 | **CellProfiler** | **22** | **0.769 ± 0.003** | **0.761 ± 0.003** | **225** | **22** |
+| 15 | SO2 Degree 2 | 94 | 0.757 ± 0.008 | 0.751 ± 0.009 | 1000 | 94 |
+| 16 | Minkowski (tensors) | 62 | 0.746 ± 0.006 | 0.737 ± 0.006 | 1000 | 54 |
+| 17 | **CellProfiler (shape only)** | **8** | **0.738 ± 0.008** | **0.727 ± 0.010** | **1000** | **8** |
+| 18 | SPHARM Inv lmax=5 | 75 | 0.726 ± 0.004 | 0.713 ± 0.006 | 739 | 57 |
+| 19 | SO2 Degree 1 | 18 | 0.674 ± 0.006 | 0.649 ± 0.009 | 21.8 | 16 |
+| 20 | SO3 Degree 1 | 8 | 0.667 ± 0.004 | 0.636 ± 0.005 | 995 | 8 |
+| 21 | SPHARM lmax=5 | 72 | 0.597 ± 0.003 | 0.584 ± 0.004 | 0.39 | 57 |
+| 22 | Beta only | 6 | 0.588 ± 0.003 | 0.543 ± 0.008 | 225 | 6 |
 
 ---
 
@@ -72,7 +76,7 @@ directly comparable to all previous optimized runs.
 
 ### CellProfiler is competitive despite a fundamentally different feature type
 
-At 0.769, CellProfiler ranks 8th out of 14 conditions and outperforms:
+At 0.769, CellProfiler ranks 14th out of 22 conditions and outperforms:
 - Minkowski (tensors) (0.746) — raw Minkowski tensor components without eigenvalues
 - SPHARM Inv lmax=5 (0.726) — rotation-invariant spherical harmonics power spectrum
 - All degree-1 invariant-only sets (SO3/SO2 Degree 1: 0.667–0.674)
@@ -89,6 +93,38 @@ This shows that the raw Minkowski tensor components, without eigenvalue decompos
 less informative than a compact set of directly interpretable 3D shape measurements.
 The Minkowski baseline only overtakes CellProfiler once eigenvalues are added: Minkowski
 (tensors+eigen+beta) reaches 0.818 (+4.9 pp over CellProfiler).
+
+### Beta ablation: betas are information-dense but eigenvalues dominate
+
+Full ablation of beta (anisotropy index β = (λ_max − λ_min) / Tr(W)) and eigenvalue contributions:
+
+| Feature Set | # Feat | Bal. Acc | Δ from tensors |
+|---|---|---|---|
+| Beta only | 6 | 0.588 | — |
+| Eigenvalues only | 18 | 0.791 | — |
+| **Eigen + Beta** | **24** | **0.808** | — |
+| Minkowski (tensors) | 62 | 0.746 | — |
+| Minkowski (tensors+beta) | 68 | 0.796 | +5.0 pp |
+| Minkowski (tensors+eigen) | 80 | 0.806 | +6.0 pp |
+| Minkowski (tensors+eigen+beta) | 86 | 0.818 | +7.2 pp |
+
+Key findings:
+- **Eigen + Beta (24 features, 0.808)** outperforms both Minkowski (tensors+beta) (68 features,
+  0.796) and Minkowski (tensors+eigen) (80 features, 0.806). Dropping the 62 raw tensor
+  components and keeping only the 24 derived features (18 eigenvalues + 6 betas) yields
+  better performance with 3–4× fewer features. The raw tensor components add noise that
+  the classifier must regularise away.
+- **Beta only (0.588)**: 6 anisotropy scalars alone carry real signal (well above chance),
+  but far less than 18 eigenvalues (0.791). Beta is a compressed, normalised ratio that
+  loses the absolute scale information eigenvalues retain.
+- **tensors+beta (0.796) vs tensors+eigen (0.806)**: betas add +5.0 pp vs eigenvalues +6.0 pp
+  to raw tensors. Eigenvalues win overall despite needing 12 more features (80 vs 68).
+  The C value (1.08 for tensors+beta vs 977 for tensors+eigen) shows betas are well-conditioned
+  with raw tensors, while eigenvalues require heavy regularisation to avoid overfitting their
+  collinear interaction with raw tensor components.
+- **Full combination (0.818)**: adding tensors to eigen+beta gives only +1.0 pp at the cost
+  of 62 extra features. The raw tensor components contribute marginally once eigenvalues and
+  betas are already present.
 
 ### CellProfiler vs SO3 Degree 2
 

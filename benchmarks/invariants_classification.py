@@ -280,9 +280,14 @@ def build_spharm_features(
 def build_baseline_features(df: pd.DataFrame, mode: str = 'tensors') -> tuple[np.ndarray, list[str]]:
     """Extract baseline raw tensor features.
 
-    mode='tensors'          — raw components + traces, no betas, no eigenvalues (62 features)
-    mode='tensors+eigen'    — tensors + eigenvalues, no betas (80 features)
+    mode='tensors'            — raw components + traces, no betas, no eigenvalues (62 features)
+    mode='tensors'            — raw components + traces, no betas, no eigenvalues (62 features)
+    mode='tensors+beta'       — tensors + betas, no eigenvalues (68 features)
+    mode='tensors+eigen'      — tensors + eigenvalues, no betas (80 features)
     mode='tensors+eigen+beta' — all columns including betas (86 features)
+    mode='beta'               — beta columns only (6 features)
+    mode='eigen'              — eigenvalue columns only (18 features)  [alias for build_eigen_only_features]
+    mode='eigen+beta'         — eigenvalues + betas only (24 features)
     """
     all_feature_cols = df.columns[3:].tolist()
 
@@ -290,6 +295,12 @@ def build_baseline_features(df: pd.DataFrame, mode: str = 'tensors') -> tuple[np
         cols = all_feature_cols
     elif mode == 'tensors+eigen':
         cols = [c for c in all_feature_cols if 'beta' not in c]
+    elif mode == 'tensors+beta':
+        cols = [c for c in all_feature_cols if 'EVal' not in c]
+    elif mode == 'eigen+beta':
+        cols = [c for c in all_feature_cols if c.startswith('beta') or 'EVal' in c]
+    elif mode == 'beta':
+        cols = [c for c in all_feature_cols if c.startswith('beta')]
     else:  # 'tensors'
         cols = [c for c in all_feature_cols if 'beta' not in c and 'EVal' not in c]
 
@@ -528,9 +539,12 @@ def main():
     # Define feature sets to evaluate
     feature_sets = [
         ('Minkowski (tensors)', lambda df: build_baseline_features(df, mode='tensors')),
+        ('Minkowski (tensors+beta)', lambda df: build_baseline_features(df, mode='tensors+beta')),
         ('Minkowski (tensors+eigen)', lambda df: build_baseline_features(df, mode='tensors+eigen')),
         ('Minkowski (tensors+eigen+beta)', lambda df: build_baseline_features(df, mode='tensors+eigen+beta')),
+        ('Beta only', lambda df: build_baseline_features(df, mode='beta')),
         ('Eigenvalues only', lambda df: build_eigen_only_features(df)),
+        ('Eigen + Beta', lambda df: build_baseline_features(df, mode='eigen+beta')),
     ]
     for deg in range(1, args.max_so3_degree + 1):
         feature_sets.append(

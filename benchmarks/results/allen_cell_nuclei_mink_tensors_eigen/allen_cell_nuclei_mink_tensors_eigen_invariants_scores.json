@@ -1,0 +1,24 @@
+{
+  "Minkowski (tensors+eigen)": {
+    "n_features": 80,
+    "feature_names": "80 features",
+    "balanced_accuracy": {
+      "mean": 0.8058543567121998,
+      "std": 0.006720289986200063
+    },
+    "geometric_mean": {
+      "mean": 0.8020157898855548,
+      "std": 0.00791671224060035
+    },
+    "runtime_seconds": {
+      "optimization": 129.8,
+      "evaluation": 9.6
+    }
+  },
+  "_meta": {
+    "total_runtime_seconds": 139.4,
+    "n_iter": 20,
+    "seeds": 3,
+    "linear_only": true
+  }
+}

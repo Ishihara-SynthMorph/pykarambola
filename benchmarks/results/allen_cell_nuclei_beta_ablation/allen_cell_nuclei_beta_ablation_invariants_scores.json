@@ -1,0 +1,47 @@
+{
+  "Minkowski (tensors+beta)": {
+    "n_features": 68,
+    "feature_names": "68 features",
+    "balanced_accuracy": {
+      "mean": 0.7962242067634224,
+      "std": 0.0008698427784679181
+    },
+    "geometric_mean": {
+      "mean": 0.7922186287599856,
+      "std": 0.0009396515692646908
+    },
+    "runtime_seconds": {
+      "optimization": 65.7,
+      "evaluation": 2.0
+    }
+  },
+  "Beta only": {
+    "n_features": 6,
+    "feature_names": [
+      "beta_w020",
+      "beta_w102",
+      "beta_w120",
+      "beta_w202",
+      "beta_w220",
+      "beta_w320"
+    ],
+    "balanced_accuracy": {
+      "mean": 0.5882019369764467,
+      "std": 0.002564195440405204
+    },
+    "geometric_mean": {
+      "mean": 0.5427071416141508,
+      "std": 0.007751494679739526
+    },
+    "runtime_seconds": {
+      "optimization": 3.4,
+      "evaluation": 0.1
+    }
+  },
+  "_meta": {
+    "total_runtime_seconds": 71.3,
+    "n_iter": 20,
+    "seeds": 3,
+    "linear_only": true
+  }
+}
