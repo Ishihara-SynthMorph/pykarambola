@@ -1,0 +1,57 @@
+{
+  "SO3 Degree 1 + Eigenvalues + Beta": {
+    "n_features": 32,
+    "feature_names": [
+      "w000",
+      "w020",
+      "w100",
+      "w120",
+      "w200",
+      "w220",
+      "w300",
+      "w320",
+      "w020_EVal1",
+      "w020_EVal2",
+      "w020_EVal3",
+      "w102_EVal1",
+      "w102_EVal2",
+      "w102_EVal3",
+      "w120_EVal1",
+      "w120_EVal2",
+      "w120_EVal3",
+      "w202_EVal1",
+      "w202_EVal2",
+      "w202_EVal3",
+      "w220_EVal1",
+      "w220_EVal2",
+      "w220_EVal3",
+      "w320_EVal1",
+      "w320_EVal2",
+      "w320_EVal3",
+      "beta_w020",
+      "beta_w102",
+      "beta_w120",
+      "beta_w202",
+      "beta_w220",
+      "beta_w320"
+    ],
+    "balanced_accuracy": {
+      "mean": 0.8141148644825115,
+      "std": 0.0030548532676640617
+    },
+    "geometric_mean": {
+      "mean": 0.811762360448998,
+      "std": 0.0030698410726872614
+    },
+    "runtime_seconds": {
+      "optimization": 49.5,
+      "evaluation": 1.8
+    }
+  },
+  "_meta": {
+    "total_runtime_seconds": 55.2,
+    "n_iter": 20,
+    "seeds": 3,
+    "linear_only": true
+  }
+}

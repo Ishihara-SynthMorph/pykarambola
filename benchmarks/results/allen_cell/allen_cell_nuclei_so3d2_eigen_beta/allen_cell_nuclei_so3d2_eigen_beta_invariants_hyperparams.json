@@ -1,0 +1,6 @@
+{
+  "SO3 Degree 2 + Eigenvalues + Beta": {
+    "classifier__estimator__C": 738.7966194299759,
+    "pca__n_components": 48
+  }
+}

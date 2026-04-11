@@ -1,0 +1,24 @@
+{
+  "SO3 Degree 2 + Eigenvalues + Beta": {
+    "n_features": 63,
+    "feature_names": "63 features",
+    "balanced_accuracy": {
+      "mean": 0.8265295614560321,
+      "std": 0.009090925303516543
+    },
+    "geometric_mean": {
+      "mean": 0.8244214991796758,
+      "std": 0.009877872463078582
+    },
+    "runtime_seconds": {
+      "optimization": 278.5,
+      "evaluation": 11.9
+    }
+  },
+  "_meta": {
+    "total_runtime_seconds": 292.4,
+    "n_iter": 20,
+    "seeds": 3,
+    "linear_only": true
+  }
+}
