@@ -118,6 +118,30 @@ def build_invariant_features(
     return X, feature_names
 
 
+def build_invariants_eigen_beta_features(
+    df: pd.DataFrame,
+    symmetry: str,
+    degree: int,
+) -> tuple[np.ndarray, list[str]]:
+    """Polynomial invariants (symmetry, degree) + eigenvalues + beta anisotropy indices."""
+    eval_cols = sorted(c for c in df.columns if 'EVal' in c)
+    beta_cols = sorted(c for c in df.columns if c.startswith('beta'))
+    results = []
+    inv_keys = None
+
+    for _, row in df.iterrows():
+        tensors = reconstruct_tensors(row)
+        inv = compute_invariants(tensors, max_degree=degree, symmetry=symmetry)
+
+        if inv_keys is None:
+            inv_keys = sorted(inv.keys())
+
+        results.append([inv[k] for k in inv_keys] + [row[c] for c in eval_cols] + [row[c] for c in beta_cols])
+
+    feature_names = inv_keys + eval_cols + beta_cols
+    return np.array(results), feature_names
+
+
 def build_so3d2_so2d1_extra_features(df: pd.DataFrame) -> tuple[np.ndarray, list[str]]:
     """SO3 Degree 2 + SO2 Degree 1 z-axis scalars not already in SO3 Degree 2.
 
@@ -570,6 +594,11 @@ def main():
             (f'SO3 Degree {deg} + Eigenvalues', lambda df, d=deg: build_invariants_eigen_features(df, 'SO3', d))
         )
 
+    for deg in range(1, args.max_so3_degree + 1):
+        feature_sets.append(
+            (f'SO3 Degree {deg} + Eigenvalues + Beta', lambda df, d=deg: build_invariants_eigen_beta_features(df, 'SO3', d))
+        )
+
     if args.max_so3_degree >= 2:
         feature_sets.append(
             ('SO3 Degree 2 + SO2 z-scalars', lambda df: build_so3d2_so2d1_extra_features(df))
@@ -612,7 +641,7 @@ def main():
             ('CellProfiler (Solidity only)', lambda df, cp=cp_df, c=_so: build_cellprofiler_features(df, cp, include_only={c}))
         )
         feature_sets.append(
-            ('CellProfiler (SurfaceArea + Solidity)', lambda df, cp=cp_df, a=_sa, b=_so: build_cellprofiler_features(df, cp, include_only={a, b}))
+            ('CellProfiler (SurfaceArea + Solidity only)', lambda df, cp=cp_df, a=_sa, b=_so: build_cellprofiler_features(df, cp, include_only={a, b}))
         )
 
     for lmax_val, spharm_df in spharm_entries:
