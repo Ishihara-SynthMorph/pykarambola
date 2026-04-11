@@ -46,10 +46,8 @@ CellProfiler provides 22 features per nucleus: 8 pure shape descriptors and
 
 | Feature Set | # Feat | Non-zero var | Rank | Balanced Accuracy | Geo. Mean | Best C | Best PCA |
 |-------------|--------|-------------|------|-------------------|-----------|--------|----------|
-| CellProfiler (SurfaceArea only) | 1 | 1 | 1 | 0.391 ± 0.003 | 0.000 ± 0.000 | 13.3 | 1 |
-| CellProfiler (Solidity only) | 1 | 1 | 1 | 0.451 ± 0.000 | 0.000 ± 0.000 | 423 | 1 |
 | CellProfiler (position only) | 14 | 14 | 11 | 0.609 ± 0.001 | 0.535 ± 0.003 | 225 | 14 |
-| CellProfiler (SurfaceArea + Solidity) | 2 | 2 | 2 | 0.609 ± 0.004 | 0.509 ± 0.014 | 37.5 | 2 |
+| CellProfiler (SurfaceArea + Solidity only) | 2 | 2 | 2 | 0.609 ± 0.004 | 0.509 ± 0.014 | 37.5 | 2 |
 | CellProfiler (shape only) | 8 | 8 | 8 | 0.738 ± 0.008 | 0.727 ± 0.010 | 1000 | 8 |
 | CellProfiler (no SurfaceArea) | 21 | 21 | 18 | 0.728 ± 0.005 | 0.714 ± 0.005 | 1000 | 20 |
 | CellProfiler (no Solidity) | 21 | 21 | 18 | 0.738 ± 0.002 | 0.726 ± 0.002 | 1000 | 20 |
@@ -135,21 +133,15 @@ The low C values for no-EquivalentDiameter (C=1.08) and no-MinorAxisLength (C=25
 set (C=225) suggest these features actually introduce mild collinearity — removing them slightly
 improves feature space conditioning.
 
-### SurfaceArea and Solidity are complementary, not individually sufficient
+### SurfaceArea and Solidity are complementary
 
 | Feature Set | # Feat | Bal. Acc | Geo. Mean |
 |---|---|---|---|
-| SurfaceArea only | 1 | 0.391 ± 0.003 | 0.000 |
-| Solidity only | 1 | 0.451 ± 0.000 | 0.000 |
-| SurfaceArea + Solidity | 2 | 0.609 ± 0.004 | 0.509 |
+| SurfaceArea + Solidity only | 2 | 0.609 ± 0.004 | 0.509 |
 | Shape only (all 8) | 8 | 0.738 ± 0.008 | 0.727 |
 
-Individually, both features are weak: Geo. Mean = 0.000 for each indicates at least one mitotic
-class is never predicted, confirming neither feature alone can separate all 6 classes. Together
-(2 features), they reach 0.609 — equivalent to the position-only set (14 features, 0.609) — but
-still 12.9 pp below the full 8-feature shape set. The two features are complementary: the jump
-from 0.451 (Solidity alone) to 0.609 (+15.8 pp) when SurfaceArea is added shows SurfaceArea
-resolves classes that Solidity cannot, and vice versa.
+Together (2 features), SurfaceArea + Solidity reaches 0.609 — equivalent to the position-only
+set (14 features, 0.609) — but still 12.9 pp below the full 8-feature shape set.
 
 The remaining +12.9 pp gap to shape-only (0.738) reflects that Volume, MajorAxisLength, and
 the other shape features each resolve additional class boundaries not captured by surface
@@ -210,12 +202,12 @@ python benchmarks/invariants_classification.py \
     --seeds 3 \
     --n_jobs 5
 
-# Top-2 shape features in isolation and combined
+# Top-2 shape features combined
 python benchmarks/invariants_classification.py \
     --input ../Minkowski_classifier/data/allen_cell/mitotic_cells_annotated/nuclei/minkowski_tensors_with_eigen_vals.csv \
     --cellprofiler-input ../Minkowski_classifier/data/allen_cell/mitotic_cells_annotated/nuclei/cellprofiler_features.csv \
     --output benchmarks/results/allen_cell/allen_cell_nuclei_cellprofiler_top2 \
-    --include "CellProfiler (SurfaceArea only)" "CellProfiler (Solidity only)" "CellProfiler (SurfaceArea + Solidity)" \
+    --include "CellProfiler (SurfaceArea + Solidity only)" \
     --optimize \
     --n_iter 20 \
     --linear-only \
