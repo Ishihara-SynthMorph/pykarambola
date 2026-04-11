@@ -75,6 +75,15 @@ regularise heavily to handle. Adding more bands just introduces more correlated 
 This confirms raw SPHARM coefficients are a poor choice for linear classification unless
 the dataset is perfectly rotation-normalised.
 
+### The invariant transformation fundamentally changes feature geometry
+
+The C values reveal a ~1900× difference between SPHARM Inv (C=739 at lmax=5) and raw
+SPHARM (C=0.39 at lmax=5). This is not a hyperparameter artefact — it reflects a
+fundamental difference in feature geometry: raw SPHARM coefficients form a highly collinear
+space (rotation of the same shape scatters coefficients across the space, requiring heavy
+regularisation), whereas the power spectrum + bispectrum maps rotation-equivalent shapes
+to nearby points, enabling a high-margin classifier with weak regularisation.
+
 ### SPHARM Inv consistently and increasingly outperforms raw SPHARM
 
 At every lmax, SPHARM Inv > raw SPHARM. The gap widens with lmax:

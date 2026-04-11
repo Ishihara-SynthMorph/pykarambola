@@ -73,14 +73,27 @@ conditioned representation — +0.9 pp.
 
 At 57 features and 0.817, SO3 Degree 2 + Eigenvalues is the best-performing polynomial
 invariant set:
-- Better than SO3 Degree 3 + Eigenvalues (237 features, 0.804) — degree-3 adds collinear
-  cubic terms that the classifier must regularise away (C=14.9 for SO3D3 vs C=980 for SO3D2+E)
+- Better than SO3 Degree 3 + Eigenvalues (237 features, 0.804) — **degree-3 cubic terms
+  hurt by 1.3 pp** when eigenvalues are already present; 180 extra cubic features add
+  dimensionality without proportional signal, diluting the eigenvalue subspace
 - Better than SO2 Degree 1/2 + Eigenvalues — full SO3 invariance encodes richer cross-tensor
   quadratic products than axial SO2 invariance
 
 The sudden drop from C=225 (SO3 D2) to C=14.9 (SO3 D3) without eigenvalues signals that
 the cubic terms are highly collinear; with eigenvalues the classifier recovers to C=988,
 confirming the eigenvalue subspace is clean.
+
+The +3.4 pp gain from adding eigenvalues to SO3 D2 (vs +12.6 pp at D1) breaks down as:
+cross-tensor quadratic products Tr(WᵢWⱼ) contribute ~2.6 pp over eigenvalues alone, while
+eigenvalues contribute ~0.8 pp on top of SO3 D2. Per-tensor shape dominates; cross-tensor
+correlations add modest but real signal.
+
+### SO3 Degree 1 + Eigenvalues ≈ Eigenvalues only
+
+SO3 Degree 1 + Eigenvalues (26 features, 0.793) adds only +0.2 pp over Eigenvalues only
+(18 features, 0.791). The SO3 Degree 1 traces are I₁ = Tr(W) per tensor, which equals the
+sum of that tensor's eigenvalues — already implicit in the eigenvalue set. Adding explicit
+traces provides no new information for a linear classifier.
 
 ### SO3 outperforms SO2 at the same degree
 
@@ -94,6 +107,16 @@ information about nuclear orientation along the imaging axis.
 At degree 2, SO3 dominates (+2.6 pp without eigen, +3.0 pp with eigen): the quadratic
 Tr(WᵢWⱼ) cross-tensor products under full SO(3) invariance encode richer shape correlations
 than the restricted z-axis-preserving SO2 products.
+
+The regularisation contrast between SO3 D1+E (C=1000) and SO2 D1+E (C=13.3) is notable:
+SO2 z-axis scalars (v_z, M_zz) partially overlap with eigenvalue projections along the z
+direction, causing mild collinearity that forces lower C. SO3 D1 traces, being algebraically
+redundant with eigenvalues, introduce no additional collinearity.
+
+SO2 Degree 2 + Eigenvalues (112 features, 0.787) underperforms SO2 Degree 1 + Eigenvalues
+(36 features, 0.799) by 1.2 pp despite 76 extra features. The degree-2 SO2 invariants and
+eigenvalues span partially overlapping directions without the clean complementarity seen in
+the SO3 case.
 
 ### Feature count vs performance: diminishing returns above 57 features
 
@@ -117,6 +140,18 @@ than the restricted z-axis-preserving SO2 products.
 
 Performance peaks at 57 features (SO3 D2+E) and then declines or plateaus as features are
 added. All sets above 57 features perform worse despite 4–5× the feature count.
+
+### Effective dimensionality of degree-3 invariants is much lower than nominal
+
+Degree-3 polynomial invariants include many near-redundant terms under typical mesh data.
+When mesh centroids are zero (as is standard), w010 = 0 for all samples, making ~46
+degree-3 features zero-variance. Additionally, surface curvature is relatively uniform
+across medical imaging data, causing the four curvature-weighted tensors (w020, w120,
+w220, w320) to be highly correlated (r > 0.95 for many pairs). The effective number of
+linearly independent degree-3 features is ~135 of the nominal 219, and ~120 when
+data-specific near-redundancies are removed. This explains why SO3 Degree 3 (219 features)
+performs only marginally above SO3 Degree 2 (39 features) despite the large nominal
+feature count increase.
 
 ### Where Minkowski baselines sit
 
