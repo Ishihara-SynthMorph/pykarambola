@@ -203,13 +203,40 @@ def build_eigen_only_features(df: pd.DataFrame) -> tuple[np.ndarray, list[str]]:
     return df[cols].values, cols
 
 
+CP_POSITION_COLS = {
+    'Image_Count_ConvertImageToObjects',
+    'Mean_FilterObjects_AreaShape_BoundingBoxMaximum_X',
+    'Mean_FilterObjects_AreaShape_BoundingBoxMaximum_Y',
+    'Mean_FilterObjects_AreaShape_BoundingBoxMaximum_Z',
+    'Mean_FilterObjects_AreaShape_BoundingBoxMinimum_X',
+    'Mean_FilterObjects_AreaShape_BoundingBoxMinimum_Y',
+    'Mean_FilterObjects_AreaShape_BoundingBoxMinimum_Z',
+    'Mean_FilterObjects_AreaShape_Center_X',
+    'Mean_FilterObjects_AreaShape_Center_Y',
+    'Mean_FilterObjects_AreaShape_Center_Z',
+    'Mean_FilterObjects_Location_Center_X',
+    'Mean_FilterObjects_Location_Center_Y',
+    'Mean_FilterObjects_Location_Center_Z',
+    'Mean_FilterObjects_AreaShape_BoundingBoxVolume',
+}
+
+
 def build_cellprofiler_features(
     df: pd.DataFrame,
     cp_df: pd.DataFrame,
+    shape_only: bool = False,
 ) -> tuple[np.ndarray, list[str]]:
-    """Extract CellProfiler features, joined to df by image_num."""
+    """Extract CellProfiler features, joined to df by image_num.
+
+    shape_only=True excludes position, bounding box, count and centroid columns,
+    retaining only the 8 pure shape descriptors.
+    """
     merged = df[['image_num']].merge(cp_df, on='image_num', how='left')
-    cols = [c for c in cp_df.columns if c not in ('image_num', 'label', 'subfolder')]
+    meta = {'image_num', 'label', 'subfolder'}
+    if shape_only:
+        cols = [c for c in cp_df.columns if c not in meta and c not in CP_POSITION_COLS]
+    else:
+        cols = [c for c in cp_df.columns if c not in meta]
     X = merged[cols].values
     return X, cols
 
@@ -520,6 +547,9 @@ def main():
         cp_df = pd.read_csv(args.cellprofiler_input)
         feature_sets.append(
             ('CellProfiler', lambda df, cp=cp_df: build_cellprofiler_features(df, cp))
+        )
+        feature_sets.append(
+            ('CellProfiler (shape only)', lambda df, cp=cp_df: build_cellprofiler_features(df, cp, shape_only=True))
         )
 
     for spharm_name, spharm_df in spharm_entries:
