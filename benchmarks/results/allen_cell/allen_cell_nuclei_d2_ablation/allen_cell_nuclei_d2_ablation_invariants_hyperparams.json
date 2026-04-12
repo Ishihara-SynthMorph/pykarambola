@@ -1,4 +1,12 @@
 {
+  "SO3 D1+E+B + frob_self": {
+    "classifier__estimator__C": 1000.0,
+    "pca__n_components": 38
+  },
+  "SO3 D1+E+B + frob_cross": {
+    "classifier__estimator__C": 12.294873916635868,
+    "pca__n_components": 45
+  },
   "SO3 D1+E+B + frob_all": {
     "classifier__estimator__C": 1000.0,
     "pca__n_components": 50

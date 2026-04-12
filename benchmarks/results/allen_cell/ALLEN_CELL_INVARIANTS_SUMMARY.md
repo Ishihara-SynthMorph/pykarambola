@@ -30,10 +30,10 @@ against Minkowski tensor baselines, with and without explicit eigenvalue augment
 |-------------|--------|-------------|------|-------------------|-----------|--------|----------|---|
 | SO3 Degree 1 | 8 | 8 | 8 | 0.667 ± 0.004 | 0.636 ± 0.005 | 995 | 8 | — |
 | SO3 Degree 1 + Eigenvalues | 26 | 26 | 22 | 0.793 ± 0.006 | 0.789 ± 0.007 | 1000 | 26 | **+12.6 pp** vs D1 |
-| SO3 Degree 1 + Eigenvalues + Beta | 32 | 32 | — | 0.814 ± 0.003 | 0.812 ± 0.003 | 739 | 25 | **+2.1 pp** vs D1+E |
+| SO3 Degree 1 + Eigenvalues + Beta | 32 | 32 | 32 | 0.814 ± 0.003 | 0.812 ± 0.003 | 739 | 25 | **+2.1 pp** vs D1+E |
 | SO3 Degree 2 | 39 | 38 | 38 | 0.783 ± 0.002 | 0.778 ± 0.002 | 225 | 39 | — |
 | SO3 Degree 2 + Eigenvalues | 57 | 56 | 52 | 0.817 ± 0.003 | 0.814 ± 0.003 | 980 | 53 | **+3.4 pp** vs D2 |
-| SO3 Degree 2 + Eigenvalues + Beta | 63 | 62 | — | **0.827 ± 0.009** | **0.824 ± 0.010** | 739 | 48 | **+1.0 pp** vs D2+E |
+| SO3 Degree 2 + Eigenvalues + Beta | 63 | 62 | 56 | **0.827 ± 0.009** | **0.824 ± 0.010** | 739 | 48 | **+1.0 pp** vs D2+E |
 | SO3 Degree 3 | 219 | 212 | 212 | 0.795 ± 0.004 | 0.786 ± 0.005 | 14.9 | 195 | — |
 | SO3 Degree 3 + Eigenvalues | 237 | 230 | 226 | 0.804 ± 0.005 | 0.797 ± 0.005 | 988 | 213 | **+0.9 pp** vs D3 |
 
@@ -114,14 +114,14 @@ groups:
 To identify which group is responsible for the +1.3 pp gain (D1+E+B 0.814 → D2+E+B 0.827),
 each group was added independently on top of D1+E+B:
 
-| Feature Set | # Feat | Bal. Acc | Δ vs D1+E+B |
-|---|---|---|---|
-| D1+E+B (baseline) | 32 | 0.814 ± 0.003 | — |
-| D1+E+B + dots | 38 | 0.811 ± 0.006 | −0.3 pp |
-| D1+E+B + frob_cross | 47 | 0.820 ± 0.008 | +0.6 pp |
-| D1+E+B + frob_self | 38 | 0.826 ± 0.003 | +1.2 pp |
-| D1+E+B + frob_all | 53 | **0.830 ± 0.005** | +1.6 pp |
-| D2+E+B (ceiling) | 63 | 0.827 ± 0.009 | +1.3 pp |
+| Feature Set | # Feat | Rank | Bal. Acc | Δ vs D1+E+B | Best C | Best PCA |
+|---|---|---|---|---|---|---|
+| D1+E+B (baseline) | 32 | 32 | 0.814 ± 0.003 | — | 739 | 25 |
+| D1+E+B + dots | 38 | 38 | 0.811 ± 0.006 | −0.3 pp | 1000 | 33 |
+| D1+E+B + frob_cross | 47 | 41 | 0.820 ± 0.008 | +0.6 pp | 12.3 | 45 |
+| D1+E+B + frob_self | 38 | 32 | 0.826 ± 0.003 | +1.2 pp | 1000 | 38 |
+| D1+E+B + frob_all | 53 | 47 | **0.830 ± 0.005** | +1.6 pp | 1000 | 50 |
+| D2+E+B (ceiling) | 63 | 56 | 0.827 ± 0.009 | +1.3 pp | 739 | 48 |
 
 **frob_self dominates** (+1.2 pp from 6 features), **frob_cross adds modest complementary
 signal** (+0.6 pp from 15 features), and **dots are useless or mildly harmful** (−0.3 pp).

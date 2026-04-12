@@ -1,4 +1,123 @@
 {
+  "SO3 D1+E+B + frob_self": {
+    "n_features": 38,
+    "feature_names": [
+      "w000",
+      "w020",
+      "w100",
+      "w120",
+      "w200",
+      "w220",
+      "w300",
+      "w320",
+      "w020_EVal1",
+      "w020_EVal2",
+      "w020_EVal3",
+      "w102_EVal1",
+      "w102_EVal2",
+      "w102_EVal3",
+      "w120_EVal1",
+      "w120_EVal2",
+      "w120_EVal3",
+      "w202_EVal1",
+      "w202_EVal2",
+      "w202_EVal3",
+      "w220_EVal1",
+      "w220_EVal2",
+      "w220_EVal3",
+      "w320_EVal1",
+      "w320_EVal2",
+      "w320_EVal3",
+      "beta_w020",
+      "beta_w102",
+      "beta_w120",
+      "beta_w202",
+      "beta_w220",
+      "beta_w320",
+      "frob_w020_w020",
+      "frob_w102_w102",
+      "frob_w120_w120",
+      "frob_w202_w202",
+      "frob_w220_w220",
+      "frob_w320_w320"
+    ],
+    "balanced_accuracy": {
+      "mean": 0.8261858242250399,
+      "std": 0.002861113310764525
+    },
+    "geometric_mean": {
+      "mean": 0.8247122750268169,
+      "std": 0.003172162940220448
+    },
+    "runtime_seconds": {
+      "optimization": 50.6,
+      "evaluation": 4.0
+    }
+  },
+  "SO3 D1+E+B + frob_cross": {
+    "n_features": 47,
+    "feature_names": [
+      "w000",
+      "w020",
+      "w100",
+      "w120",
+      "w200",
+      "w220",
+      "w300",
+      "w320",
+      "w020_EVal1",
+      "w020_EVal2",
+      "w020_EVal3",
+      "w102_EVal1",
+      "w102_EVal2",
+      "w102_EVal3",
+      "w120_EVal1",
+      "w120_EVal2",
+      "w120_EVal3",
+      "w202_EVal1",
+      "w202_EVal2",
+      "w202_EVal3",
+      "w220_EVal1",
+      "w220_EVal2",
+      "w220_EVal3",
+      "w320_EVal1",
+      "w320_EVal2",
+      "w320_EVal3",
+      "beta_w020",
+      "beta_w102",
+      "beta_w120",
+      "beta_w202",
+      "beta_w220",
+      "beta_w320",
+      "frob_w020_w102",
+      "frob_w020_w120",
+      "frob_w020_w202",
+      "frob_w020_w220",
+      "frob_w020_w320",
+      "frob_w102_w120",
+      "frob_w102_w202",
+      "frob_w102_w220",
+      "frob_w102_w320",
+      "frob_w120_w202",
+      "frob_w120_w220",
+      "frob_w120_w320",
+      "frob_w202_w220",
+      "frob_w202_w320",
+      "frob_w220_w320"
+    ],
+    "balanced_accuracy": {
+      "mean": 0.8199674400654793,
+      "std": 0.007883196421912831
+    },
+    "geometric_mean": {
+      "mean": 0.817564716374353,
+      "std": 0.008401812549092181
+    },
+    "runtime_seconds": {
+      "optimization": 114.9,
+      "evaluation": 4.5
+    }
+  },
   "SO3 D1+E+B + frob_all": {
     "n_features": 53,
     "feature_names": "53 features",
@@ -11,8 +130,8 @@
       "std": 0.00552651319452901
     },
     "runtime_seconds": {
-      "optimization": 329.0,
-      "evaluation": 13.7
+      "optimization": 185.6,
+      "evaluation": 11.6
     }
   },
   "SO3 D1+E+B + dots": {
@@ -66,12 +185,12 @@
       "std": 0.00643587123873893
     },
     "runtime_seconds": {
-      "optimization": 58.3,
-      "evaluation": 5.2
+      "optimization": 60.1,
+      "evaluation": 3.8
     }
   },
   "_meta": {
-    "total_runtime_seconds": 411.5,
+    "total_runtime_seconds": 442.3,
     "n_iter": 20,
     "seeds": 3,
     "linear_only": true
