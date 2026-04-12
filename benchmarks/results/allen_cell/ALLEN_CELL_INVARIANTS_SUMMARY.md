@@ -9,6 +9,7 @@ against Minkowski tensor baselines, with and without explicit eigenvalue augment
 **Dataset**: Non-rotated nuclei only (`nuclei/`)
 **Optimization**: BayesSearchCV, n_iter=20, 5-fold stratified CV
 **Evaluation**: 3 seeds, balanced accuracy + geometric mean
+**Input**: minkowski_tensors_with_eigen_vals.csv, spherical_harmonics_lmax_16.csv, cellprofiler_features.csv
 
 ---
 
@@ -282,3 +283,13 @@ feature count increase.
 | 7th | Eigenvalues only | 18 | 0.791 | Minimal viable feature set |
 | Avoid | SO3 Degree 3 (+E) | 219–237 | 0.795–0.804 | No gain over D2+E, 4× feature count |
 | Avoid | Minkowski (tensors) | 62 | 0.746 | Dominated by any eigen-augmented set |
+
+---
+
+## Configuration
+
+All runs used identical optimization settings. For per-study shell commands and output paths, see:
+
+- [ALLEN_CELL_EIGEN_BETA_ABLATION.md](ALLEN_CELL_EIGEN_BETA_ABLATION.md)
+- [ALLEN_CELL_CELLPROFILER_ABLATION.md](ALLEN_CELL_CELLPROFILER_ABLATION.md)
+- [ALLEN_CELL_SPHARM_SYSTEMATIC.md](ALLEN_CELL_SPHARM_SYSTEMATIC.md)

@@ -117,13 +117,6 @@ information contained in 18 eigenvalues.
 
 ---
 
-## Runtime
-
-- lmax=1–5: ~6 min (10 feature sets, n_iter=20, 5-fold CV, 3 seeds, LinearSVC, n_jobs=5, Apple Silicon)
-- lmax=6–8: ~14 min (6 feature sets, same settings)
-
----
-
 ## Configuration
 
 ```bash
@@ -132,7 +125,7 @@ python benchmarks/invariants_classification.py \
     --input ../Minkowski_classifier/data/allen_cell/mitotic_cells_annotated/nuclei/minkowski_tensors_with_eigen_vals.csv \
     --spharm-input ../Minkowski_classifier/data/allen_cell/mitotic_cells_annotated/nuclei/spherical_harmonics_lmax_16.csv \
     --spharm-lmax 1 2 3 4 5 \
-    --output benchmarks/results/allen_cell/allen_cell_nuclei_spharm_systematic \
+    --output benchmarks/results/allen_cell/spharm/lmax_1_5 \
     --include "SPHARM" \
     --optimize \
     --n_iter 20 \
@@ -145,7 +138,7 @@ python benchmarks/invariants_classification.py \
     --input ../Minkowski_classifier/data/allen_cell/mitotic_cells_annotated/nuclei/minkowski_tensors_with_eigen_vals.csv \
     --spharm-input ../Minkowski_classifier/data/allen_cell/mitotic_cells_annotated/nuclei/spherical_harmonics_lmax_16.csv \
     --spharm-lmax 6 7 8 \
-    --output benchmarks/results/allen_cell/allen_cell_nuclei_spharm_systematic_678 \
+    --output benchmarks/results/allen_cell/spharm/lmax_6_8 \
     --include "SPHARM" \
     --optimize \
     --n_iter 20 \
@@ -153,3 +146,10 @@ python benchmarks/invariants_classification.py \
     --seeds 3 \
     --n_jobs 5
 ```
+
+---
+
+## Runtime
+
+- lmax=1–5: ~6 min (10 feature sets, n_iter=20, 5-fold CV, 3 seeds, LinearSVC, n_jobs=5, Apple Silicon)
+- lmax=6–8: ~14 min (6 feature sets, same settings)

@@ -139,7 +139,7 @@ For practitioners choosing between these options:
 ```bash
 python benchmarks/invariants_classification.py \
     --input ../Minkowski_classifier/data/allen_cell/mitotic_cells_annotated/nuclei/minkowski_tensors_with_eigen_vals.csv \
-    --output benchmarks/results/allen_cell/allen_cell_nuclei_eigen_beta_ablation \
+    --output benchmarks/results/allen_cell/eigenvalues/eigen_beta \
     --include "Beta only" "Eigenvalues only" "Eigen + Beta" "Minkowski (tensors)" "Minkowski (tensors+beta)" "Minkowski (tensors+eigen)" "Minkowski (tensors+eigen+beta)" \
     --optimize \
     --n_iter 20 \
