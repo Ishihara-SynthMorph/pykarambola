@@ -1,9 +1,9 @@
-# Allen Cell Nuclei: Systematic SPHARM Benchmark — lmax 1–10
+# Allen Cell Nuclei: Systematic SPHARM Benchmark — lmax 1–11
 
 ## Overview
 
 Bayesian-optimized classification results for raw SPHARM coefficients and
-rotation-invariant SPHARM features (power spectrum + bispectrum) at lmax=1–10,
+rotation-invariant SPHARM features (power spectrum + bispectrum) at lmax=1–11,
 using the lmax=16 CSV truncated at each lmax value.
 
 **Classifier**: LinearSVC (liblinear)
@@ -30,6 +30,7 @@ using the lmax=16 CSV truncated at each lmax value.
 | 8 | 162 | 81 | 81 | 0.606 ± 0.006 | 0.588 ± 0.007 | 997 | 78 |
 | 9 | 200 | 100 | 100 | 0.625 ± 0.012 | 0.609 ± 0.013 | 0.107 | 165 |
 | 10 | 242 | 121 | 121 | 0.615 ± 0.012 | 0.598 ± 0.014 | 0.104 | 159 |
+| 11 | 288 | 144 | 144 | 0.614 ± 0.008 | 0.592 ± 0.010 | 956 | 249 |
 
 ### SPHARM Invariants (rotation-invariant power spectrum + bispectrum)
 
@@ -45,14 +46,15 @@ using the lmax=16 CSV truncated at each lmax value.
 | 8 | 224 | 134 | 64 | 0.771 ± 0.013 | 0.761 ± 0.015 | 739 | 170 |
 | 9 | 300 | 175 | 80 | **0.785 ± 0.004** | **0.778 ± 0.005** | 656 | 300 |
 | 10 | 392 | 227 | 102 | 0.768 ± 0.009 | 0.761 ± 0.010 | 13.3 | 266 |
+| 11 | 501 | 285 | 124 | 0.752 ± 0.013 | 0.743 ± 0.015 | 0.233 | 449 |
 
 ---
 
 ## Interpretation
 
-### SPHARM Inv peaks at lmax=9; lmax=10 drops back
+### SPHARM Inv peaks at lmax=9; performance degrades from lmax=10 onward
 
-SPHARM Inv increases at every step through lmax=9, then falls at lmax=10:
+SPHARM Inv increases through lmax=9 then falls monotonically:
 
 | Step | Δ Bal. Acc |
 |------|-----------|
@@ -65,16 +67,19 @@ SPHARM Inv increases at every step through lmax=9, then falls at lmax=10:
 | lmax 7→8 | +0.7 pp |
 | lmax 8→9 | +1.4 pp |
 | lmax 9→10 | −1.7 pp |
+| lmax 10→11 | −1.6 pp |
 
-The lmax=9 gain of +1.4 pp is real (±0.004 std). The lmax=10 drop of −1.7 pp (±0.009 std)
-likely reflects noise from inflating feature count to 392 without proportional information
-gain — the bispectrum grows rapidly with lmax (O(lmax³) terms), and PCA compression at
-lmax=10 (266 of 392 components retained) no longer sufficiently controls for near-redundant
-high-frequency terms. lmax=9 with C=656 and all 300 components retained shows a cleaner
-feature geometry.
+**lmax=9 (300 features, rank 80, 0.785) is the definitive peak.** The key signal is the
+regularization C: it drops from 656 (lmax=9) to 13.3 (lmax=10) to 0.233 (lmax=11) — a
+~2800× collapse. This reflects rapidly worsening collinearity as bispectrum feature count
+grows as O(lmax³) while rank grows only as O(lmax). At lmax=11, 501 features share only
+124 independent directions (rank/nz = 0.435), and the classifier requires extreme
+regularization that destroys discriminative power.
 
-**lmax=9 (300 features, 0.785) is the observed peak**, but the curve is noisy near its ceiling.
-The true saturation point is likely between lmax=8 and lmax=10.
+The odd-lmax structural efficiency advantage (higher rank/nz than the preceding even lmax,
+observed up to lmax=9 vs lmax=8) breaks at lmax=11: rank/nz = 0.435 is now below lmax=10's
+0.449. The parity effect modulates the rate of degradation but cannot overcome the
+fundamental O(lmax³) feature explosion.
 
 ### Raw SPHARM plateaus around 0.600 from lmax=4 onward
 
@@ -198,3 +203,4 @@ python benchmarks/invariants_classification.py \
 - lmax=6–8: ~14 min (6 feature sets, same settings, Apple M2)
 - lmax=9: ~8 min (2 feature sets, pykarambola-bench env, Apple M5)
 - lmax=10: ~8 min (2 feature sets, pykarambola-bench env, Apple M5)
+- lmax=11: ~9 min (2 feature sets, pykarambola-bench env, Apple M5)

@@ -1,0 +1,41 @@
+{
+  "SPHARM lmax=11": {
+    "n_features": 288,
+    "feature_names": "288 features",
+    "balanced_accuracy": {
+      "mean": 0.6136534819132858,
+      "std": 0.007546432543940769
+    },
+    "geometric_mean": {
+      "mean": 0.5915267938252573,
+      "std": 0.010485817343936483
+    },
+    "runtime_seconds": {
+      "optimization": 71.4,
+      "evaluation": 4.7
+    }
+  },
+  "SPHARM Inv lmax=11": {
+    "n_features": 501,
+    "feature_names": "501 features",
+    "balanced_accuracy": {
+      "mean": 0.7519902812794969,
+      "std": 0.01272093945902037
+    },
+    "geometric_mean": {
+      "mean": 0.7429764705230083,
+      "std": 0.015046188351636644
+    },
+    "runtime_seconds": {
+      "optimization": 472.2,
+      "evaluation": 13.6
+    }
+  },
+  "_meta": {
+    "total_runtime_seconds": 563.0,
+    "n_iter": 20,
+    "seeds": 3,
+    "linear_only": true,
+    "classifier": "svm"
+  }
+}
