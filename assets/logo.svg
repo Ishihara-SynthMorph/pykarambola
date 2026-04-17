@@ -1,0 +1,68 @@
+<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" width="400" height="400">
+  <title>pykarambola</title>
+  <defs>
+    <!-- Yellow at top → yellow-green mid → rich green at bottom -->
+    <linearGradient id="g" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#FFD700"/>
+      <stop offset="32%"  stop-color="#C2DE2C"/>
+      <stop offset="68%"  stop-color="#72C635"/>
+      <stop offset="100%" stop-color="#239B36"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Star body: outer star (R=170, r=75) with inner star-shaped hole (R=63, r=28)
+       Both centred at (200,200), same tip orientation (top tip at 0°).
+       evenodd fill punches the hole through.
+       Outer tips:  (200,30) (362,148) (300,338) (100,338) (38,148)
+       Outer cusps: (244,139) (271,223) (200,275) (129,223) (156,139)
+       Hole tips:   (200,137) (260,181) (237,251) (163,251) (140,181)
+       Hole cusps:  (216,177) (227,209) (200,228) (173,209) (184,177) -->
+  <path fill-rule="evenodd"
+        fill="url(#g)"
+        stroke="#1B5E20" stroke-width="3.5" stroke-linejoin="round"
+        d="M200,30 L244,139 L362,148 L271,223 L300,338 L200,275 L100,338 L129,223 L38,148 L156,139 Z
+           M200,137 L216,177 L260,181 L227,209 L237,251 L200,228 L163,251 L173,209 L140,181 L184,177 Z"/>
+
+  <!-- Subtle highlight on the top arm -->
+  <polygon points="200,30 244,139 156,139" fill="white" opacity="0.15"/>
+
+  <!-- Triangulation lines: centre → outer tips (stronger) -->
+  <g stroke="#1B5E20" stroke-width="1.8" opacity="0.45" fill="none">
+    <line x1="200" y1="200" x2="200" y2="30"/>
+    <line x1="200" y1="200" x2="362" y2="148"/>
+    <line x1="200" y1="200" x2="300" y2="338"/>
+    <line x1="200" y1="200" x2="100" y2="338"/>
+    <line x1="200" y1="200" x2="38"  y2="148"/>
+  </g>
+
+  <!-- Triangulation lines: centre → inner cusps (lighter) -->
+  <g stroke="#1B5E20" stroke-width="1.0" opacity="0.28" fill="none">
+    <line x1="200" y1="200" x2="244" y2="139"/>
+    <line x1="200" y1="200" x2="271" y2="223"/>
+    <line x1="200" y1="200" x2="200" y2="275"/>
+    <line x1="200" y1="200" x2="129" y2="223"/>
+    <line x1="200" y1="200" x2="156" y2="139"/>
+  </g>
+
+  <!-- Pentagon connecting the five inner cusps -->
+  <polygon points="244,139 271,223 200,275 129,223 156,139"
+           fill="none" stroke="#1B5E20" stroke-width="0.9" opacity="0.35"/>
+
+  <!-- Five seed/leaf shapes inside the centre hole -->
+  <g fill="#2A8530" stroke="#165020" stroke-width="0.6">
+    <ellipse cx="200" cy="175" rx="7.5" ry="18"/>
+    <ellipse cx="200" cy="175" rx="7.5" ry="18" transform="rotate(72,200,200)"/>
+    <ellipse cx="200" cy="175" rx="7.5" ry="18" transform="rotate(144,200,200)"/>
+    <ellipse cx="200" cy="175" rx="7.5" ry="18" transform="rotate(216,200,200)"/>
+    <ellipse cx="200" cy="175" rx="7.5" ry="18" transform="rotate(288,200,200)"/>
+  </g>
+
+  <!-- Vertex dots at outer tips -->
+  <g fill="#1B5E20">
+    <circle cx="200" cy="30"  r="6.5"/>
+    <circle cx="362" cy="148" r="6.5"/>
+    <circle cx="300" cy="338" r="6.5"/>
+    <circle cx="100" cy="338" r="6.5"/>
+    <circle cx="38"  cy="148" r="6.5"/>
+  </g>
+</svg>

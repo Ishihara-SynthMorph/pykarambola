@@ -1,5 +1,9 @@
 # pykarambola
 
+<p align="center">
+  <img src="assets/logo.svg" alt="pykarambola logo" width="160"/>
+</p>
+
 Python implementation of [karambola](https://github.com/morphometry/karambola) — a package for computing **Minkowski tensors** on 3D triangulated surfaces.
 
 Minkowski tensors (scalars, vectors, and rank-2 tensors) characterize the geometry and morphology of 3D shapes. The scalar quantities — volume, surface area, integrated mean curvature, and Euler characteristic — are sometimes called Minkowski functionals; the full family also includes Minkowski vectors and higher-rank tensors. They are widely used in structural analysis, materials science, and computational physics.
