@@ -186,6 +186,8 @@ Run `python -m pykarambola --help` for the full list of options.
 ## Computed quantities
 
 All quantities below are returned by `compute='standard'` unless noted `(compute='all')`.
+For the full reference — mathematical notation, analytical integral definitions, discrete
+computational formulas, and physical interpretations — see [`docs/minkowski_tensors.md`](docs/minkowski_tensors.md).
 
 | Name | Type | Description |
 |------|------|-------------|
