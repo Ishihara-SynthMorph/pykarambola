@@ -37,10 +37,15 @@ the contribution:
 | 2 | **edges** | $\tfrac{1}{6}\ell_e\,\alpha_e$ | moment of position along edge | edge-normal tensor |
 | 3 | **vertices** | $\tfrac{1}{3}\delta_v$ | $r_v^{\otimes r}$ | — (Gauss–Bonnet: no normal) |
 
-The $1/3$ and $1/6$ prefactors are the binomial normalizations $1/\binom{3,\nu}$ from the Steiner
-formula (see demo notebook §1). Using this pattern, the individual formulas below can
-be read as: *"sum the appropriate weight over the appropriate element type, accumulating
-position and/or normal factors at the appropriate rank."*
+The face weight $1/3 = 1/\binom{3}{1}$ is purely the Steiner normalization (see demo notebook §1).
+The edge weight $1/6$ is **not** $1/\binom{3}{2} = 1/3$; it combines two separate factors:
+$$\frac{1}{6} = \underbrace{\frac{1}{\binom{3}{2}}}_{\text{Steiner}} \times \underbrace{\frac{1}{2}}_{\text{discrete curvature: }H_e = \tfrac{1}{2}\alpha_e\ell_e}$$
+The vertex weight $1/3$ in $w_{300} = \tfrac{1}{3}\sum_v \delta_v$ likewise does not come from $1/\binom{3}{3}=1$;
+it comes from the Hadwiger convention $W_3 = \tfrac{1}{3}\int K_G\,dA$.
+
+Using this pattern, the individual formulas below can be read as: *"sum the appropriate weight
+over the appropriate element type, accumulating position and/or normal factors at the
+appropriate rank."*
 
 For $\nu=1$ (face sums), the position moment over a triangle of rank $r=1$ is $c_f$ and
 of rank $r=2$ is the surface second moment $\frac{1}{A_f}\int_f x_i x_j\, dA$.

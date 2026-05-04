@@ -207,7 +207,6 @@ Run `python -m pykarambola --help` for the full list of options.
 
 All quantities below are returned by `compute='standard'` unless noted `(compute='all')`.
 
-
 | Name | Type | Description |
 |------|------|-------------|
 | `w000` | scalar | Volume |
