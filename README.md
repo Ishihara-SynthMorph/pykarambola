@@ -1,5 +1,6 @@
 # pykarambola
-[![CI](https://github.com/Ishihara-SynthMorph/pykarambola/actions/workflows/ci.yml/badge.svg)](https://github.com/Ishihara-SynthMorph/pykarambola/actions/workflows/ci.yml)
+<!-- CI badge disabled: GitHub Actions disabled at org level -->
+<!-- [![CI](https://github.com/Ishihara-SynthMorph/pykarambola/actions/workflows/ci.yml/badge.svg)](https://github.com/Ishihara-SynthMorph/pykarambola/actions/workflows/ci.yml) -->
 [![PyPI version](https://img.shields.io/pypi/v/pykarambola)](https://pypi.org/project/pykarambola/)
 [![Python versions](https://img.shields.io/pypi/pyversions/pykarambola)](https://pypi.org/project/pykarambola/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
@@ -214,13 +215,11 @@ If you use pykarambola in published work, please cite both pykarambola and the o
 
 > Ishihara, K., & Khurana, Y.
 > *pykarambola: Minkowski tensor morphometry of 3D structures* (v0.3.0).
-> https://doi.org/10.5281/zenodo.XXXXXXX
+> https://doi.org/10.5281/zenodo.19935286
 
 > Schaller, F. M., Kapfer, S. C., & Schröder-Turk, G. E.
 > *karambola — 3D Minkowski Tensor Package* (v2.0).
 > https://github.com/morphometry/karambola
-
-**Note:** Version, DOI, and release year will be updated after v1.0.0 is released (see [`CITATION.cff`](CITATION.cff) for machine-readable metadata).
 
 ## Contributing
 

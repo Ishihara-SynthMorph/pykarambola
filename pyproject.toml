@@ -34,8 +34,8 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/Pitt-IshiharaLab/pykarambola"
-"Bug Tracker" = "https://github.com/Pitt-IshiharaLab/pykarambola/issues"
+Homepage = "https://github.com/Ishihara-SynthMorph/pykarambola"
+"Bug Tracker" = "https://github.com/Ishihara-SynthMorph/pykarambola/issues"
 
 [project.optional-dependencies]
 dev = ["pytest", "scikit-image>=0.19"]
