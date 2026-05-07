@@ -35,6 +35,7 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/Ishihara-SynthMorph/pykarambola"
+Documentation = "https://github.com/Ishihara-SynthMorph/pykarambola#readme"
 "Bug Tracker" = "https://github.com/Ishihara-SynthMorph/pykarambola/issues"
 
 [project.optional-dependencies]
