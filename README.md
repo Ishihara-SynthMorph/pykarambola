@@ -17,8 +17,7 @@ Minkowski tensors are widely applicable to analyzing 3D structures in biomedical
 
 Compared to the original C++ karambola, this Python port adds:
 
-- **OBJ, GLB, and STL parsers** — read Wavefront OBJ, binary glTF (`.glb`), and STL meshes directly, in addition to the original `.poly` and `.off` formats.
-  - **STL parser** — read `.stl` files (ASCII and binary) directly via `parse_stl_file()`.
+- **OBJ, GLB, and STL parsers** — read Wavefront OBJ, binary glTF (`.glb`), and STL (ASCII and binary) meshes directly via `parse_stl_file()`, in addition to the original `.poly` and `.off` formats.
 - **High-level API** — `minkowski_tensors()` accepts NumPy arrays and returns a plain dict, making it easy to integrate into pipelines without dealing with the lower-level triangulation types.
 - **`labels='auto'`** — pass `labels='auto'` to detect connected mesh components automatically and compute tensors for each body separately, without supplying a face-label array.
 - **`return_count=True`** — append the number of connected objects to the return value as a `(results, n_objects)` tuple.
