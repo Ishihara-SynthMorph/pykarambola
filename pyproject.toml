@@ -41,6 +41,7 @@ Homepage = "https://github.com/Ishihara-SynthMorph/pykarambola"
 dev = ["pytest", "scikit-image>=0.19"]
 accel = ["cython>=3.0"]
 glb = ["trimesh"]
+stl = ["numpy-stl"]
 notebooks = ["scikit-image>=0.19", "matplotlib", "seaborn", "pandas", "medmnist"]
 
 [tool.setuptools.packages.find]
