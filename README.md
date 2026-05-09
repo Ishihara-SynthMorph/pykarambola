@@ -17,7 +17,7 @@ Minkowski tensors are widely applicable to analyzing 3D structures in biomedical
 
 Compared to the original C++ karambola, this Python port adds:
 
-- **OBJ and GLB parsers** — read Wavefront OBJ and binary glTF (`.glb`) meshes directly, in addition to the original `.poly` and `.off` formats.
+- **OBJ, GLB, and STL parsers** — read Wavefront OBJ, binary glTF (`.glb`), and STL (ASCII and binary) meshes directly via `parse_stl_file()`, in addition to the original `.poly` and `.off` formats.
 - **High-level API** — `minkowski_tensors()` accepts NumPy arrays and returns a plain dict, making it easy to integrate into pipelines without dealing with the lower-level triangulation types.
 - **`labels='auto'`** — pass `labels='auto'` to detect connected mesh components automatically and compute tensors for each body separately, without supplying a face-label array.
 - **`return_count=True`** — append the number of connected objects to the return value as a `(results, n_objects)` tuple.
@@ -35,6 +35,7 @@ Compared to the original C++ karambola, this Python port adds:
 - [Cython](https://cython.org/) ≥ 3.0 — compiled C acceleration (`pip install "pykarambola[accel]"`)
 - [scikit-image](https://scikit-image.org/) — label-image API (`pip install "pykarambola[dev]"`)
 - [trimesh](https://trimesh.org/) — GLB/glTF file support (`pip install "pykarambola[glb]"`)
+- [numpy-stl](https://github.com/WoLpH/numpy-stl) — STL file support (`pip install "pykarambola[stl]"`)
 
 ## Installation
 
@@ -160,6 +161,7 @@ surface = pk.parse_poly_file("my_surface.poly")   # karambola native
 surface = pk.parse_off_file("my_surface.off")     # Object File Format
 surface = pk.parse_obj_file("my_surface.obj")     # Wavefront OBJ  (new)
 surface = pk.parse_glb_file("my_surface.glb")     # binary glTF    (new, requires trimesh)
+surface = pk.parse_stl_file("my_surface.stl")     # STL ASCII/binary (new, requires numpy-stl)
 
 result = pk.minkowski_tensors(surface)
 ```
@@ -170,6 +172,7 @@ result = pk.minkowski_tensors(surface)
 | `.off`    | Object File Format |
 | `.obj`    | Wavefront OBJ |
 | `.glb`    | GL Transmission Format (binary glTF) — requires `trimesh` |
+| `.stl`    | STereoLithography (ASCII and binary) — requires `numpy-stl` |
 
 ## Command-line interface
 

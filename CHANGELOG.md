@@ -9,6 +9,9 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- `parse_stl_file()`: load ASCII and binary STL files directly into a `Triangulation`, enabling `minkowski_tensors()` to accept STL meshes without manual parsing. Vertex deduplication is performed automatically. Requires the optional `numpy-stl` extra (`pip install "pykarambola[stl]"`). (#119)
+
 ---
 
 ## [0.3.0] - 2026-04-30
