@@ -219,7 +219,7 @@ Rank-2 tensors additionally yield `{name}_eigvals` and `{name}_eigvecs` entries.
 If you use pykarambola in published work, please cite both pykarambola and the original karambola package.
 
 > Ishihara, K., & Khurana, Y.
-> *pykarambola: Minkowski tensor morphometry of 3D structures* (v0.3.0).
+> *pykarambola: Minkowski tensor morphometry of 3D structures* (v0.4.0).
 > https://doi.org/10.5281/zenodo.19935286
 
 > Schaller, F. M., Kapfer, S. C., & Schröder-Turk, G. E.
