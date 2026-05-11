@@ -6,7 +6,7 @@ date-released: 2026-04-30
 repository-code: "https://github.com/Ishihara-SynthMorph/pykarambola"
 identifiers:
   - type: doi
-    value: "10.5281/zenodo.19935286"
+    value: "10.5281/zenodo.20127022"
 license: GPL-3.0-or-later
 authors:
   - family-names: "Ishihara"
