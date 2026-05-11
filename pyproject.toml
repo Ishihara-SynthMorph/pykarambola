@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pykarambola"
-version = "0.3.0"
-description = "Python implementation of Karambola – Minkowski tensors on 3D triangulated surfaces"
+version = "0.4.0"
+description = "Python implementation of Karambola – Minkowski tensor morphometry of 3D structures"
 readme = "README.md"
 license = {file = "LICENSE"}
 requires-python = ">=3.9"
@@ -34,14 +34,16 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/Pitt-IshiharaLab/pykarambola"
-"Bug Tracker" = "https://github.com/Pitt-IshiharaLab/pykarambola/issues"
+Homepage = "https://github.com/Ishihara-SynthMorph/pykarambola"
+Documentation = "https://github.com/Ishihara-SynthMorph/pykarambola#readme"
+"Bug Tracker" = "https://github.com/Ishihara-SynthMorph/pykarambola/issues"
 
 [project.optional-dependencies]
 dev = ["pytest", "scikit-image>=0.19"]
 accel = ["cython>=3.0"]
 glb = ["trimesh"]
-notebooks = ["scikit-image>=0.19", "matplotlib", "seaborn", "pandas", "medmnist", "tifffile", "scikit-learn", "pooch", "ipywidgets"]
+stl = ["numpy-stl"]
+notebooks = ["scikit-image>=0.19", "matplotlib", "seaborn", "pandas", "medmnist", "tifffile", "scikit-learn", "pooch"]
 
 [tool.setuptools.packages.find]
 include = ["pykarambola*"]

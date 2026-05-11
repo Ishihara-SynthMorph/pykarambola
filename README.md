@@ -1,15 +1,16 @@
 # pykarambola
-<!--
-[![CI](https://github.com/Ishihara-SynthMorph/pykarambola/actions/workflows/ci.yml/badge.svg)](https://github.com/Ishihara-SynthMorph/pykarambola/actions/workflows/ci.yml)
+<!-- CI badge disabled: GitHub Actions disabled at org level -->
+<!-- [![CI](https://github.com/Ishihara-SynthMorph/pykarambola/actions/workflows/ci.yml/badge.svg)](https://github.com/Ishihara-SynthMorph/pykarambola/actions/workflows/ci.yml) -->
 [![PyPI version](https://img.shields.io/pypi/v/pykarambola)](https://pypi.org/project/pykarambola/)
 [![Python versions](https://img.shields.io/pypi/pyversions/pykarambola)](https://pypi.org/project/pykarambola/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
--->
-<p align="center">
-  <img src="assets/banner.png" alt="pykarambola" width="75%"/>
-</p>
 
 **pykarambola** computes Minkowski tensors for 3D objects represented as triangulated meshes — a family of shape descriptors rooted in integral geometry that rigorously quantify size, shape, and orientation.
+
+<p align="center">
+  <img src="assets/banner.png" alt="pykarambola — Minkowski tensor morphometry of 3D triangulated surfaces" width="75%"/>
+</p>
+
 Given a mesh, it returns scalar, vector, and tensor quantities including volume, surface area, integrated mean curvature, and Euler characteristic (the Minkowski functionals), as well as higher-rank tensors that capture anisotropy and preferred orientation independently of coordinate frame.
 pykarambola is a Python implementation of [karambola](https://github.com/morphometry/karambola), the reference C++ package for Minkowski tensor computation on 3D triangulated surfaces.
 Minkowski tensors are widely applicable to analyzing 3D structures in biomedical imaging, computational physics, and materials science.
@@ -18,7 +19,7 @@ Minkowski tensors are widely applicable to analyzing 3D structures in biomedical
 
 Compared to the original C++ karambola, this Python port adds:
 
-- **OBJ and GLB parsers** — read Wavefront OBJ and binary glTF (`.glb`) meshes directly, in addition to the original `.poly` and `.off` formats.
+- **OBJ, GLB, and STL parsers** — read Wavefront OBJ, binary glTF (`.glb`), and STL (ASCII and binary) meshes directly via `parse_stl_file()`, in addition to the original `.poly` and `.off` formats.
 - **High-level API** — `minkowski_tensors()` accepts NumPy arrays and returns a plain dict, making it easy to integrate into pipelines without dealing with the lower-level triangulation types.
 - **`labels='auto'`** — pass `labels='auto'` to detect connected mesh components automatically and compute tensors for each body separately, without supplying a face-label array.
 - **`return_count=True`** — append the number of connected objects to the return value as a `(results, n_objects)` tuple.
@@ -36,6 +37,7 @@ Compared to the original C++ karambola, this Python port adds:
 - [Cython](https://cython.org/) ≥ 3.0 — compiled C acceleration (`pip install "pykarambola[accel]"`)
 - [scikit-image](https://scikit-image.org/) — label-image API (`pip install "pykarambola[dev]"`)
 - [trimesh](https://trimesh.org/) — GLB/glTF file support (`pip install "pykarambola[glb]"`)
+- [numpy-stl](https://github.com/WoLpH/numpy-stl) — STL file support (`pip install "pykarambola[stl]"`)
 
 ## Installation
 
@@ -161,6 +163,7 @@ surface = pk.parse_poly_file("my_surface.poly")   # karambola native
 surface = pk.parse_off_file("my_surface.off")     # Object File Format
 surface = pk.parse_obj_file("my_surface.obj")     # Wavefront OBJ  (new)
 surface = pk.parse_glb_file("my_surface.glb")     # binary glTF    (new, requires trimesh)
+surface = pk.parse_stl_file("my_surface.stl")     # STL ASCII/binary (new, requires numpy-stl)
 
 result = pk.minkowski_tensors(surface)
 ```
@@ -171,6 +174,7 @@ result = pk.minkowski_tensors(surface)
 | `.off`    | Object File Format |
 | `.obj`    | Wavefront OBJ |
 | `.glb`    | GL Transmission Format (binary glTF) — requires `trimesh` |
+| `.stl`    | STereoLithography (ASCII and binary) — requires `numpy-stl` |
 
 ## Command-line interface
 
@@ -215,14 +219,12 @@ Rank-2 tensors additionally yield `{name}_eigvals` and `{name}_eigvecs` entries.
 If you use pykarambola in published work, please cite both pykarambola and the original karambola package.
 
 > Ishihara, K., & Khurana, Y.
-> *pykarambola: Minkowski tensor morphometry of 3D structures* (v0.3.0).
-> https://doi.org/10.5281/zenodo.XXXXXXX
+> *pykarambola: Minkowski tensor morphometry of 3D structures* (v0.4.0).
+> https://doi.org/10.5281/zenodo.20127022
 
 > Schaller, F. M., Kapfer, S. C., & Schröder-Turk, G. E.
 > *karambola — 3D Minkowski Tensor Package* (v2.0).
 > https://github.com/morphometry/karambola
-
-**Note:** Version, DOI, and release year will be updated after v1.0.0 is released (see [`CITATION.cff`](CITATION.cff) for machine-readable metadata).
 
 ## Contributing
 
