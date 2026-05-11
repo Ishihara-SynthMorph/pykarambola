@@ -41,7 +41,7 @@ Homepage = "https://github.com/Pitt-IshiharaLab/pykarambola"
 dev = ["pytest", "scikit-image>=0.19"]
 accel = ["cython>=3.0"]
 glb = ["trimesh"]
-notebooks = ["scikit-image>=0.19", "matplotlib", "seaborn", "pandas", "medmnist", "tifffile", "scikit-learn", "pooch"]
+notebooks = ["scikit-image>=0.19", "matplotlib", "seaborn", "pandas", "medmnist", "tifffile", "scikit-learn", "pooch", "ipywidgets"]
 
 [tool.setuptools.packages.find]
 include = ["pykarambola*"]
