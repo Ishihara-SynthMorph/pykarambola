@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
-title: "pykarambola: Minkowski tensors on 3D triangulated surfaces"
+title: "pykarambola: Minkowski tensor morphometry of 3D structures"
 version: 0.3.0
 date-released: 2026-04-30
 repository-code: "https://github.com/Ishihara-SynthMorph/pykarambola"
