@@ -39,7 +39,9 @@ the contribution:
 
 The face weight $1/3 = 1/\binom{3}{1}$ is purely the Steiner normalization (see demo notebook §1).
 The edge weight $1/6$ is **not** $1/\binom{3}{2} = 1/3$; it combines two separate factors:
+
 $$\frac{1}{6} = \underbrace{\frac{1}{\binom{3}{2}}}_{\text{Steiner}} \times \underbrace{\frac{1}{2}}_{\text{discrete curvature: }H_e = \tfrac{1}{2}\alpha_e\ell_e}$$
+
 The vertex weight $1/3$ in $w_{300} = \tfrac{1}{3}\sum_v \delta_v$ likewise does not come from $1/\binom{3}{3}=1$;
 it comes from the Hadwiger convention $W_3 = \tfrac{1}{3}\int K_G\,dA$.
 
@@ -170,8 +172,14 @@ weights as the scalars. All return `{key}_eigvals`, `{key}_eigvecs`, and (with
 |---|---|
 | **pykarambola key** | `w120` |
 | **Analytical** | $(W_1^{2,0})_{ij} = \dfrac{1}{3}\int_{\partial K} x_i\, x_j\, dA$ |
-| **Computational** | $w_{120,ij} = \displaystyle\sum_f \frac{A_f}{18}\Bigl(v_{1i}v_{1j} + v_{2i}v_{2j} + v_{3i}v_{3j} + \tfrac{1}{2}(v_{1i}v_{2j} + v_{2i}v_{3j} + v_{3i}v_{1j}) + \tfrac{1}{2}(v_{1j}v_{2i} + v_{2j}v_{3i} + v_{3j}v_{1i})\Bigr)$ (face weight $\tfrac{1}{3}A_f$, position factor = second moment of the triangle $= \tfrac{1}{6A_f}\int_f x_i x_j\, dA$) |
+| **Computational** | Face weight $\tfrac{1}{3}A_f$; position factor = second moment of the triangle (see formula below). |
 | **Interpretation** | Inertia tensor of the surface shell. `w120_beta` = anisotropy of the surface shape. $\text{Tr}(w_{120})/w_{100}$ = mean squared distance of the surface from the reference point. |
+
+$$
+w_{120,ij} = \sum_f \frac{A_f}{18}\Bigl(v_{1i}v_{1j} + v_{2i}v_{2j} + v_{3i}v_{3j}
+  + \tfrac{1}{2}(v_{1i}v_{2j} + v_{2i}v_{3j} + v_{3i}v_{1j})
+  + \tfrac{1}{2}(v_{1j}v_{2i} + v_{2j}v_{3i} + v_{3j}v_{1i})\Bigr)
+$$
 
 ### w220 — $W_2^{2,0}$ — Wire (curvature-weighted) moment tensor
 
@@ -215,8 +223,17 @@ Note: `{key}_trace_ratio` is **not** defined for normal-weighted tensors (no nat
 |---|---|
 | **pykarambola key** | `w202` |
 | **Analytical** | $(W_2^{0,2})_{ij} = \dfrac{1}{3}\int_{\partial K} H\, n_i\, n_j\, dA$ |
-| **Computational** | $w_{202,ij} = \displaystyle\sum_e \left[\frac{\ell_e(\alpha_e + \sin\alpha_e)}{24}\,\bar{n}_{e,i}\bar{n}_{e,j} + \frac{\ell_e(\alpha_e - \sin\alpha_e)}{24}\,n_{\perp,e,i}\,n_{\perp,e,j}\right]$, where $\bar{n}_e = (n_{f_1}+n_{f_2})/\lvert n_{f_1}+n_{f_2}\rvert$ is the average unit normal at edge $e$ and $n_{\perp,e} = \hat{e}\times\bar{n}_e$. (The $\alpha \pm \sin\alpha$ split follows from the exact integral of $n \otimes n$ over the cylindrical patch at the edge.) |
+| **Computational** | Edge sum with $\alpha \pm \sin\alpha$ split (see formula below); $\bar{n}_e = (n_{f_1}+n_{f_2})/\lvert n_{f_1}+n_{f_2}\rvert$, $n_{\perp,e} = \hat{e}\times\bar{n}_e$. |
 | **Interpretation** | Curvature-weighted normal distribution; sensitive to both orientation and bending magnitude. `w202_beta` = anisotropy of curvature-weighted normals. |
+
+$$
+w_{202,ij} = \sum_e \left[
+  \frac{\ell_e(\alpha_e + \sin\alpha_e)}{24}\,\bar{n}_{e,i}\bar{n}_{e,j}
+  + \frac{\ell_e(\alpha_e - \sin\alpha_e)}{24}\,n_{\perp,e,i}\,n_{\perp,e,j}
+\right]
+$$
+
+The $\alpha \pm \sin\alpha$ split follows from the exact integral of $n \otimes n$ over the cylindrical patch at the edge.
 
 ---
 
@@ -237,8 +254,13 @@ Note: `{key}_trace_ratio` is **not** defined for normal-weighted tensors (no nat
 |---|---|
 | **pykarambola key** | `w104` |
 | **Analytical** | $(W_1^{0,4})_{ijkl} = \dfrac{1}{3}\int_{\partial K} n_i\, n_j\, n_k\, n_l\, dA$ |
-| **Computational** | $w_{104} = \dfrac{1}{3}\displaystyle\sum_f A_f\, \mathbf{t}_f \mathbf{t}_f^\top$ (face weight $\tfrac{1}{3}A_f$; stored as symmetric $6\times6$ matrix in Voigt notation with $\mathbf{t}_f = [n_x^2,\, n_y^2,\, n_z^2,\, \sqrt{2}n_yn_z,\, \sqrt{2}n_xn_z,\, \sqrt{2}n_xn_y]^\top$) |
+| **Computational** | Face weight $\tfrac{1}{3}A_f$; stored as symmetric $6\times6$ matrix in Voigt notation (see formula below). |
 | **Interpretation** | Fourth-order symmetric tensor of normal orientations; related to the Minkowski structure metrics (MSM) used in materials science to characterise crystallographic texture and fabric. |
+
+$$
+w_{104} = \frac{1}{3}\sum_f A_f\, \mathbf{t}_f \mathbf{t}_f^\top, \qquad
+\mathbf{t}_f = \bigl[n_x^2,\; n_y^2,\; n_z^2,\; \sqrt{2}\,n_yn_z,\; \sqrt{2}\,n_xn_z,\; \sqrt{2}\,n_xn_y\bigr]^\top
+$$
 
 ---
 
