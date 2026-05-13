@@ -111,7 +111,7 @@ when divided by the corresponding scalar.
 |---|---|
 | **pykarambola key** | `w010` |
 | **Analytical** | $(W_0^{1,0})_i = \int_K x_i\, dV$ |
-| **Computational** | Divergence theorem: $(w_{010})_i = \tfrac{1}{2}\int_{\partial K} x_i^2\, n_i\, dA$ (no Einstein sum on $i$), evaluated face-by-face per triangle. |
+| **Computational** | Divergence theorem: $(w_{010})\_i = \tfrac{1}{2}\int\_{\partial K} x_i^2\, n_i\, dA$ (no Einstein sum on $i$), evaluated face-by-face per triangle. |
 | **Interpretation** | $w_{010} / w_{000}$ = centroid (center of mass) of the solid body. Zero for a body centered at the origin. |
 
 Discrete triangle formula (from `pykarambola/minkowski.py`), with $\mathbf{v}=c_2-c_1$, $\mathbf{w}=c_3-c_1$, indices cyclic mod 3:
@@ -127,7 +127,7 @@ $$
 | | |
 |---|---|
 | **pykarambola key** | `w110` |
-| **Analytical** | $(W_1^{1,0})_i = \dfrac{1}{3}\int_{\partial K} x_i\, dA$ |
+| **Analytical** | $(W\_1^{1,0})\_i = \dfrac{1}{3}\int\_{\partial K} x_i\, dA$ |
 | **Computational** | $w_{110} = \dfrac{1}{3}\displaystyle\sum_f A_f\, c_f$ (face weight $\tfrac{1}{3}A_f$, position factor = face centroid $c_f$) |
 | **Interpretation** | $w_{110} / w_{100}$ = area-weighted centroid of the surface. Differs from $w_{010}/w_{000}$ for hollow or non-uniform shells. |
 
@@ -136,7 +136,7 @@ $$
 | | |
 |---|---|
 | **pykarambola key** | `w210` |
-| **Analytical** | $(W_2^{1,0})_i = \dfrac{1}{3}\int_{\partial K} H\, x_i\, dA$ |
+| **Analytical** | $(W\_2^{1,0})\_i = \dfrac{1}{3}\int\_{\partial K} H\, x_i\, dA$ |
 | **Computational** | $w_{210} = \dfrac{1}{6}\displaystyle\sum_e \alpha_e\, \ell_e\, c_e$ (edge weight $\tfrac{1}{6}\ell_e\alpha_e$, position factor = edge midpoint $c_e$; code accumulates as $\tfrac{\alpha\ell}{24}(e_1+e_2)$ per edge-slot, doubled by the two adjacent triangles) |
 | **Interpretation** | $w_{210} / w_{200}$ = mean-curvature-weighted centroid; highlights regions of high bending. |
 
@@ -145,7 +145,7 @@ $$
 | | |
 |---|---|
 | **pykarambola key** | `w310` |
-| **Analytical** | $(W_3^{1,0})_i = \dfrac{1}{3}\int_{\partial K} K_G\, x_i\, dA$ |
+| **Analytical** | $(W\_3^{1,0})\_i = \dfrac{1}{3}\int\_{\partial K} K_G\, x_i\, dA$ |
 | **Computational** | $w_{310} = \dfrac{1}{3}\displaystyle\sum_v \delta_v\, r_v$ (vertex weight $\tfrac{1}{3}\delta_v$, position factor = vertex position $r_v$) |
 | **Interpretation** | $w_{310} / w_{300}$ = Gaussian-curvature-weighted centroid; concentrates weight at topological features (corners, saddle points). |
 
@@ -163,7 +163,7 @@ weights as the scalars. All return `{key}_eigvals`, `{key}_eigvecs`, and (with
 |---|---|
 | **pykarambola key** | `w020` |
 | **Analytical** | $(W_0^{2,0})_{ij} = \int_K x_i\, x_j\, dV$ |
-| **Computational** | Divergence theorem: $(w_{020})_{ij} = \tfrac{1}{3}\int_{\partial K} x_i\, x_j\, x_k\, n_k\, dA$ (sum over $k$), evaluated face-by-face using the closed-form triangle integral. Diagonal entries use prefactor $1/60$, off-diagonal $1/120$, times $2A_f n_{f,k}$ for the appropriate normal component $k$. |
+| **Computational** | Divergence theorem: $(w\_{020})\_{ij} = \tfrac{1}{3}\int\_{\partial K} x_i\, x_j\, x_k\, n_k\, dA$ (sum over $k$), evaluated face-by-face using the closed-form triangle integral. Diagonal entries use prefactor $1/60$, off-diagonal $1/120$, times $2A_f n_{f,k}$ for the appropriate normal component $k$. |
 | **Interpretation** | Inertia-like tensor of the filled solid. Eigenvalues give principal shape extents. $\text{Tr}(w_{020})/w_{000}$ = mean squared distance from the reference point. `w020_beta` = anisotropy index ($0$ = rod-like, $1$ = isotropic). |
 
 ### w120 — $W_1^{2,0}$ — Hollow (surface) moment tensor
@@ -171,14 +171,12 @@ weights as the scalars. All return `{key}_eigvals`, `{key}_eigvecs`, and (with
 | | |
 |---|---|
 | **pykarambola key** | `w120` |
-| **Analytical** | $(W_1^{2,0})_{ij} = \dfrac{1}{3}\int_{\partial K} x_i\, x_j\, dA$ |
+| **Analytical** | $(W\_1^{2,0})\_{ij} = \dfrac{1}{3}\int\_{\partial K} x_i\, x_j\, dA$ |
 | **Computational** | Face weight $\tfrac{1}{3}A_f$; position factor = second moment of the triangle (see formula below). |
 | **Interpretation** | Inertia tensor of the surface shell. `w120_beta` = anisotropy of the surface shape. $\text{Tr}(w_{120})/w_{100}$ = mean squared distance of the surface from the reference point. |
 
 $$
-w_{120,ij} = \sum_f \frac{A_f}{18}\Bigl(v_{1i}v_{1j} + v_{2i}v_{2j} + v_{3i}v_{3j}
-  + \tfrac{1}{2}(v_{1i}v_{2j} + v_{2i}v_{3j} + v_{3i}v_{1j})
-  + \tfrac{1}{2}(v_{1j}v_{2i} + v_{2j}v_{3i} + v_{3j}v_{1i})\Bigr)
+w_{120,ij} = \sum_f \frac{A_f}{18}\Bigl(v_{1i}v_{1j} + v_{2i}v_{2j} + v_{3i}v_{3j} + \tfrac{1}{2}(v_{1i}v_{2j} + v_{2i}v_{3j} + v_{3i}v_{1j}) + \tfrac{1}{2}(v_{1j}v_{2i} + v_{2j}v_{3i} + v_{3j}v_{1i})\Bigr)
 $$
 
 ### w220 — $W_2^{2,0}$ — Wire (curvature-weighted) moment tensor
@@ -186,7 +184,7 @@ $$
 | | |
 |---|---|
 | **pykarambola key** | `w220` |
-| **Analytical** | $(W_2^{2,0})_{ij} = \dfrac{1}{3}\int_{\partial K} H\, x_i\, x_j\, dA$ |
+| **Analytical** | $(W\_2^{2,0})\_{ij} = \dfrac{1}{3}\int_{\partial K} H\, x_i\, x_j\, dA$ |
 | **Computational** | $w_{220,ij} = \dfrac{1}{6}\displaystyle\sum_e \alpha_e\,\ell_e \cdot \tfrac{1}{3}\Bigl(e_{1i}e_{1j} + \tfrac{1}{2}(e_{1i}e_{2j}+e_{1j}e_{2i}) + e_{2i}e_{2j}\Bigr)$ (edge weight $\tfrac{1}{6}\ell_e\alpha_e$, position factor = second moment of the edge $\int_0^1 x(t)_i x(t)_j\, dt$; code accumulates as $\tfrac{\alpha\ell}{36}(\cdot)$ per edge-slot, doubled by two adjacent triangles) |
 | **Interpretation** | Mean-curvature-weighted moment tensor. `w220_beta` = anisotropy of where bending is concentrated spatially. |
 
@@ -195,7 +193,7 @@ $$
 | | |
 |---|---|
 | **pykarambola key** | `w320` |
-| **Analytical** | $(W_3^{2,0})_{ij} = \dfrac{1}{3}\int_{\partial K} K_G\, x_i\, x_j\, dA$ |
+| **Analytical** | $(W\_3^{2,0})\_{ij} = \dfrac{1}{3}\int_{\partial K} K_G\, x_i\, x_j\, dA$ |
 | **Computational** | $w_{320,ij} = \dfrac{1}{3}\displaystyle\sum_v \delta_v\, r_{vi}\, r_{vj}$ (vertex weight $\tfrac{1}{3}\delta_v$, position factor = $r_v \otimes r_v$) |
 | **Interpretation** | Gaussian-curvature-weighted moment tensor; mass at topological vertices. `w320_beta` = anisotropy of topological structure. $\text{Tr}(w_{320})/w_{300}$ = mean squared distance of topological features from the reference point. |
 
@@ -213,8 +211,8 @@ Note: `{key}_trace_ratio` is **not** defined for normal-weighted tensors (no nat
 | | |
 |---|---|
 | **pykarambola key** | `w102` |
-| **Analytical** | $(W_1^{0,2})_{ij} = \dfrac{1}{3}\int_{\partial K} n_i\, n_j\, dA$ |
-| **Computational** | $w_{102,ij} = \dfrac{1}{3}\displaystyle\sum_f A_f\, \hat{n}_{f,i}\, \hat{n}_{f,j}$ (face weight $\tfrac{1}{3}A_f$, normal factor $\hat{n}_f \otimes \hat{n}_f$) |
+| **Analytical** | $(W\_1^{0,2})\_{ij} = \dfrac{1}{3}\int_{\partial K} n_i\, n_j\, dA$ |
+| **Computational** | $w\_{102,ij} = \dfrac{1}{3}\displaystyle\sum\_f A\_f\, \hat{n}\_{f,i}\, \hat{n}\_{f,j}$ (face weight $\tfrac{1}{3}A_f$, normal factor $\hat{n}_f \otimes \hat{n}_f$) |
 | **Interpretation** | Distribution of surface normal orientations. For a sphere: $w_{102} = (A/9)\,I$ (isotropic). $\text{Tr}(w_{102}) = w_{100}$ exactly (since $\lvert\hat{n}\rvert^2=1$). `w102_beta` = anisotropy of normals ($0$ = all normals aligned, $1$ = isotropic). |
 
 ### w202 — $W_2^{0,2}$ — Curvature-weighted normal tensor
@@ -222,15 +220,12 @@ Note: `{key}_trace_ratio` is **not** defined for normal-weighted tensors (no nat
 | | |
 |---|---|
 | **pykarambola key** | `w202` |
-| **Analytical** | $(W_2^{0,2})_{ij} = \dfrac{1}{3}\int_{\partial K} H\, n_i\, n_j\, dA$ |
-| **Computational** | Edge sum with $\alpha \pm \sin\alpha$ split (see formula below); $\bar{n}_e = (n_{f_1}+n_{f_2})/\lvert n_{f_1}+n_{f_2}\rvert$, $n_{\perp,e} = \hat{e}\times\bar{n}_e$. |
+| **Analytical** | $(W\_2^{0,2})\_{ij} = \dfrac{1}{3}\int_{\partial K} H\, n_i\, n_j\, dA$ |
+| **Computational** | Edge sum with $\alpha \pm \sin\alpha$ split (see formula below); $\bar{n}\_e = (n\_{f\_1}+n\_{f\_2})/\lvert n\_{f\_1}+n\_{f\_2}\rvert$, $n\_{\perp,e} = \hat{e}\times\bar{n}\_e$. |
 | **Interpretation** | Curvature-weighted normal distribution; sensitive to both orientation and bending magnitude. `w202_beta` = anisotropy of curvature-weighted normals. |
 
 $$
-w_{202,ij} = \sum_e \left[
-  \frac{\ell_e(\alpha_e + \sin\alpha_e)}{24}\,\bar{n}_{e,i}\bar{n}_{e,j}
-  + \frac{\ell_e(\alpha_e - \sin\alpha_e)}{24}\,n_{\perp,e,i}\,n_{\perp,e,j}
-\right]
+w_{202,ij} = \sum_e \left[ \frac{\ell_e(\alpha_e + \sin\alpha_e)}{24}\,\bar{n}_{e,i}\bar{n}_{e,j} + \frac{\ell_e(\alpha_e - \sin\alpha_e)}{24}\,n_{\perp,e,i}\,n_{\perp,e,j} \right]
 $$
 
 The $\alpha \pm \sin\alpha$ split follows from the exact integral of $n \otimes n$ over the cylindrical patch at the edge.
@@ -244,8 +239,8 @@ The $\alpha \pm \sin\alpha$ split follows from the exact integral of $n \otimes 
 | | |
 |---|---|
 | **pykarambola key** | `w103` |
-| **Analytical** | $(W_1^{0,3})_{ijk} = \dfrac{1}{3}\int_{\partial K} n_i\, n_j\, n_k\, dA$ |
-| **Computational** | $w_{103,ijk} = \dfrac{1}{3}\displaystyle\sum_f A_f\, \hat{n}_{f,i}\, \hat{n}_{f,j}\, \hat{n}_{f,k}$ (face weight $\tfrac{1}{3}A_f$, triple normal product; stored as $3\times3\times3$ array) |
+| **Analytical** | $(W\_1^{0,3})\_{ijk} = \dfrac{1}{3}\int_{\partial K} n_i\, n_j\, n_k\, dA$ |
+| **Computational** | $w\_{103,ijk} = \dfrac{1}{3}\displaystyle\sum\_f A\_f\, \hat{n}\_{f,i}\, \hat{n}\_{f,j}\, \hat{n}\_{f,k}$ (face weight $\tfrac{1}{3}A_f$, triple normal product; stored as $3\times3\times3$ array) |
 | **Interpretation** | Third-order symmetric tensor of normal orientations. Vanishes for centrosymmetric shapes (every $\hat{n}$ paired with $-\hat{n}$). Non-zero components indicate a preferred normal handedness. |
 
 ### w104 — $W_1^{0,4}$ — Rank-4 normal tensor
@@ -253,7 +248,7 @@ The $\alpha \pm \sin\alpha$ split follows from the exact integral of $n \otimes 
 | | |
 |---|---|
 | **pykarambola key** | `w104` |
-| **Analytical** | $(W_1^{0,4})_{ijkl} = \dfrac{1}{3}\int_{\partial K} n_i\, n_j\, n_k\, n_l\, dA$ |
+| **Analytical** | $(W\_1^{0,4})\_{ijkl} = \dfrac{1}{3}\int_{\partial K} n_i\, n_j\, n_k\, n_l\, dA$ |
 | **Computational** | Face weight $\tfrac{1}{3}A_f$; stored as symmetric $6\times6$ matrix in Voigt notation (see formula below). |
 | **Interpretation** | Fourth-order symmetric tensor of normal orientations; related to the Minkowski structure metrics (MSM) used in materials science to characterise crystallographic texture and fabric. |
 
