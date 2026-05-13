@@ -1,186 +1,489 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 710" width="880" height="710">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 1052" width="1100" height="1052">
   <defs>
     <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5"
-            markerWidth="6" markerHeight="6" orient="auto">
-      <path d="M0,0 L10,5 L0,10 z" fill="#6b7280"/>
+            markerWidth="5" markerHeight="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#555"/>
+    </marker>
+    <marker id="arr_red" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="5" markerHeight="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#c03830"/>
     </marker>
     <style>
-      text { font-family: 'Helvetica Neue', Arial, sans-serif; }
+      text { font-family: Arial, 'Helvetica Neue', sans-serif; }
+      .hdr  { font-size: 12px; font-weight: bold; fill: #fff; }
+      .sub  { font-size: 10.5px; font-weight: bold; fill: #333; }
+      .body { font-size: 10px; fill: #333; }
+      .note { font-size: 9.5px; fill: #555; font-style: italic; }
+      .W    { font-size: 14px; fill: #222; }
+      .Wrs  { font-size: 9px;  fill: #222; }
+      .desc { font-size: 10px; fill: #333; text-anchor: middle; }
     </style>
   </defs>
 
-  <!-- Background -->
-  <rect width="880" height="710" fill="#f9fafb"/>
+  <!-- ═══════════════════════════════════════════════════════
+       BACKGROUND
+  ═══════════════════════════════════════════════════════ -->
+  <rect width="1100" height="1052" fill="#f7f7f9"/>
 
-  <!-- Title -->
-  <text x="440" y="18" text-anchor="middle" font-size="14"
-        font-weight="bold" fill="#111827">
-    pykarambola — Minkowski Tensor Computation Pipeline
-  </text>
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 1 — INPUT  (y 0–272)
+  ═══════════════════════════════════════════════════════ -->
+  <rect x="0" y="0" width="1100" height="32" fill="#2d3748"/>
+  <text x="550" y="21" text-anchor="middle" class="hdr" font-size="13">Input</text>
 
-  <!-- ================================================================
-       ROW 1: INPUTS
-  ================================================================ -->
+  <!-- Left path background -->
+  <rect x="14" y="36" width="516" height="230" rx="6"
+        fill="#f0faf0" stroke="#4a7c3f" stroke-width="1"/>
 
-  <!-- Label Image box -->
-  <rect x="40" y="28" width="235" height="80" rx="7"
-        fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
-  <text x="157" y="52" text-anchor="middle" font-size="13"
-        font-weight="bold" fill="#1e40af">Label Image</text>
-  <text x="157" y="70" text-anchor="middle" font-size="11"
-        fill="#1e3a8a">3D integer array  (Z × Y × X)</text>
-  <text x="157" y="88" text-anchor="middle" font-size="11"
-        fill="#1e3a8a">nonzero value = one labeled object</text>
+  <!-- "Mesh Input" chip -->
+  <rect x="162" y="44" width="172" height="26" rx="13"
+        fill="#ddf4d7" stroke="#4a7c3f" stroke-width="1"/>
+  <text x="248" y="62" text-anchor="middle" font-size="11.5"
+        font-weight="bold" fill="#2a5c1e">Mesh Input</text>
 
-  <!-- Mesh File box -->
-  <rect x="605" y="28" width="235" height="80" rx="7"
-        fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
-  <text x="722" y="52" text-anchor="middle" font-size="13"
-        font-weight="bold" fill="#1e40af">Mesh File</text>
-  <text x="722" y="70" text-anchor="middle" font-size="11"
-        fill="#1e3a8a">.poly  /  .off  /  .obj</text>
-  <text x="722" y="88" text-anchor="middle" font-size="11"
-        fill="#1e3a8a">.glb  /  .gltf</text>
+  <!-- Parse file box -->
+  <rect x="30" y="84" width="208" height="70" rx="5"
+        fill="#f7fef6" stroke="#b3d9a8" stroke-width="1"/>
+  <text x="134" y="103" text-anchor="middle" font-size="11"
+        font-weight="bold" fill="#2a5c1e">Parse file</text>
+  <text x="134" y="119" text-anchor="middle" font-size="9.5"
+        fill="#444">.poly  .off  .obj</text>
+  <text x="134" y="133" text-anchor="middle" font-size="9.5"
+        fill="#444">.glb  .stl</text>
 
-  <!-- ================================================================
-       ARROWS: inputs → processing rows
-  ================================================================ -->
-  <line x1="157" y1="108" x2="157" y2="146"
-        stroke="#6b7280" stroke-width="1.5" marker-end="url(#arr)"/>
-  <line x1="722" y1="108" x2="722" y2="146"
-        stroke="#6b7280" stroke-width="1.5" marker-end="url(#arr)"/>
+  <!-- Arrow → parse → triangulation -->
+  <line x1="238" y1="119" x2="260" y2="119"
+        stroke="#4a7c3f" stroke-width="1.4" marker-end="url(#arr)"/>
 
-  <!-- ================================================================
-       ROW 2: ENTRY PROCESSING
-  ================================================================ -->
+  <!-- Triangulation box (mesh path) -->
+  <rect x="264" y="84" width="246" height="70" rx="5"
+        fill="#f7fef6" stroke="#b3d9a8" stroke-width="1"/>
+  <text x="387" y="103" text-anchor="middle" font-size="11"
+        font-weight="bold" fill="#2a5c1e">Triangulation</text>
+  <text x="387" y="119" text-anchor="middle" font-size="9.5"
+        fill="#444">faces · edges · vertices</text>
+  <text x="387" y="133" text-anchor="middle" font-size="9.5"
+        fill="#444">(per-face labels)</text>
 
-  <!-- Left: minkowski_tensors_from_label_image box -->
-  <rect x="20" y="152" width="375" height="168" rx="7"
-        fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
-  <text x="207" y="174" text-anchor="middle" font-size="11.5"
-        font-weight="bold" fill="#5b21b6">
-    minkowski_tensors_from_label_image()
-  </text>
-  <line x1="36" y1="181" x2="379" y2="181"
-        stroke="#7c3aed" stroke-width="0.8"/>
-  <text x="44" y="198" font-size="10.5" fill="#374151">① pad array 1 voxel on all sides</text>
-  <text x="44" y="216" font-size="10.5" fill="#374151">② marching cubes (skimage) → mesh per label</text>
-  <text x="44" y="234" font-size="10.5" fill="#374151">③ orient normals outward  (_ensure_outward_normals)</text>
-  <text x="44" y="252" font-size="10.5" fill="#374151">④ (optional) center mesh  (centroid_mesh / centroid_voxel)</text>
-  <text x="44" y="270" font-size="10.5" fill="#374151">⑤ call minkowski_tensors() per label</text>
-  <text x="207" y="303" text-anchor="middle" font-size="10"
-        fill="#7c3aed" font-style="italic">→ vertices + faces per label  →  Triangulation</text>
+  <!-- Arrow ↓ mesh path → core -->
+  <path d="M387,154 L387,228 L540,264 L540,274"
+        stroke="#4a7c3f" stroke-width="1.4" fill="none"
+        marker-end="url(#arr)"/>
 
-  <!-- Right: parse_*_file() box -->
-  <rect x="485" y="152" width="375" height="85" rx="7"
-        fill="#d1fae5" stroke="#059669" stroke-width="1.5"/>
-  <text x="672" y="174" text-anchor="middle" font-size="11.5"
-        font-weight="bold" fill="#065f46">parse_poly / off / obj / glb_file()</text>
-  <line x1="501" y1="181" x2="844" y2="181"
-        stroke="#059669" stroke-width="0.8"/>
-  <text x="672" y="199" text-anchor="middle" font-size="10.5"
-        fill="#374151">reads mesh  →  Triangulation (verts, faces, labels)</text>
-  <text x="672" y="219" text-anchor="middle" font-size="10"
-        fill="#6b7280" font-style="italic">or: pass a Triangulation object directly</text>
+  <!-- Right path background -->
+  <rect x="546" y="36" width="540" height="230" rx="6"
+        fill="#e8f3fc" stroke="#3060a0" stroke-width="1"/>
 
-  <!-- ================================================================
-       ARROWS: processing boxes → shared core
-  ================================================================ -->
-  <!-- Left path -->
-  <line x1="207" y1="320" x2="307" y2="388"
-        stroke="#6b7280" stroke-width="1.5" marker-end="url(#arr)"/>
-  <!-- Right path -->
-  <line x1="672" y1="237" x2="572" y2="388"
-        stroke="#6b7280" stroke-width="1.5" marker-end="url(#arr)"/>
+  <!-- "Labelled Image Input" chip -->
+  <rect x="640" y="44" width="252" height="26" rx="13"
+        fill="#c9e5f8" stroke="#3060a0" stroke-width="1"/>
+  <text x="766" y="62" text-anchor="middle" font-size="11.5"
+        font-weight="bold" fill="#1a3c6e">Labelled Image Input</text>
 
-  <!-- ================================================================
-       ROW 3: SHARED CORE
-  ================================================================ -->
-  <rect x="185" y="394" width="510" height="132" rx="7"
-        fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
-  <text x="440" y="416" text-anchor="middle" font-size="13"
-        font-weight="bold" fill="#92400e">minkowski_tensors( tri )</text>
-  <line x1="203" y1="423" x2="677" y2="423"
-        stroke="#d97706" stroke-width="0.8"/>
-  <text x="440" y="440" text-anchor="middle" font-size="10.5"
-        fill="#374151">Triangulation.from_arrays(verts, faces, labels)</text>
-  <text x="440" y="457" text-anchor="middle" font-size="10.5"
-        fill="#374151">per-triangle: normals · areas · centroids · edge lengths</text>
-  <text x="440" y="474" text-anchor="middle" font-size="10.5"
-        fill="#374151">dihedral angles · triangle–triangle adjacency  (Cython _accel)</text>
-  <text x="440" y="491" text-anchor="middle" font-size="10.5"
-        fill="#374151">per-vertex angle sums  (Gaussian curvature)</text>
-  <text x="440" y="511" text-anchor="middle" font-size="11"
-        font-weight="bold" fill="#b45309">
-    → compute Minkowski functionals  (minkowski.py)
-  </text>
+  <!-- "Minkowski Tensors from Label Image" container -->
+  <rect x="562" y="76" width="508" height="182" rx="5"
+        fill="#d6eaf8" stroke="#3060a0" stroke-width="1"/>
+  <text x="816" y="96" text-anchor="middle" font-size="10.5"
+        font-weight="bold" fill="#1a3c6e">Minkowski Tensors from Label Image</text>
 
-  <!-- ================================================================
-       ARROWS: core → outputs
-  ================================================================ -->
-  <line x1="318" y1="526" x2="152" y2="572"
-        stroke="#6b7280" stroke-width="1.5" marker-end="url(#arr)"/>
-  <line x1="440" y1="526" x2="440" y2="572"
-        stroke="#6b7280" stroke-width="1.5" marker-end="url(#arr)"/>
-  <line x1="562" y1="526" x2="728" y2="572"
-        stroke="#6b7280" stroke-width="1.5" marker-end="url(#arr)"/>
+  <!-- Marching Cubes box -->
+  <rect x="576" y="108" width="216" height="70" rx="5"
+        fill="#f0f8ff" stroke="#6090c8" stroke-width="1"/>
+  <text x="684" y="128" text-anchor="middle" font-size="11"
+        font-weight="bold" fill="#1a3c6e">Marching Cubes</text>
+  <text x="684" y="144" text-anchor="middle" font-size="9.5"
+        fill="#444">skimage marching_cubes</text>
+  <text x="684" y="158" text-anchor="middle" font-size="9.5"
+        fill="#444">binary mask → mesh per label</text>
 
-  <!-- ================================================================
-       ROW 4: OUTPUTS
-  ================================================================ -->
+  <!-- Arrow → marching cubes → triangulation right -->
+  <line x1="792" y1="143" x2="814" y2="143"
+        stroke="#3060a0" stroke-width="1.4" marker-end="url(#arr)"/>
 
-  <!-- Scalars -->
-  <rect x="16" y="578" width="272" height="118" rx="7"
-        fill="#fce7f3" stroke="#db2777" stroke-width="1.5"/>
-  <text x="152" y="600" text-anchor="middle" font-size="12"
-        font-weight="bold" fill="#9d174d">Scalars  (w_r00)</text>
-  <line x1="30" y1="607" x2="272" y2="607"
-        stroke="#db2777" stroke-width="0.8"/>
-  <text x="152" y="623" text-anchor="middle" font-size="10"
-        fill="#374151">w000 — enclosed volume</text>
-  <text x="152" y="639" text-anchor="middle" font-size="10"
-        fill="#374151">w100 — surface area</text>
-  <text x="152" y="655" text-anchor="middle" font-size="10"
-        fill="#374151">w200 — integral mean curvature</text>
-  <text x="152" y="671" text-anchor="middle" font-size="10"
-        fill="#374151">w300 — Gaussian curv. / Euler χ</text>
-  <text x="152" y="688" text-anchor="middle" font-size="10"
-        font-weight="bold" fill="#be185d">1 float per label</text>
+  <!-- Triangulation box (label path) -->
+  <rect x="818" y="108" width="238" height="70" rx="5"
+        fill="#f0f8ff" stroke="#6090c8" stroke-width="1"/>
+  <text x="937" y="128" text-anchor="middle" font-size="11"
+        font-weight="bold" fill="#1a3c6e">Triangulation</text>
+  <text x="937" y="144" text-anchor="middle" font-size="9.5"
+        fill="#444">faces · edges · vertices</text>
+  <text x="937" y="158" text-anchor="middle" font-size="9.5"
+        fill="#444">(per-face labels)</text>
 
-  <!-- Vectors -->
-  <rect x="304" y="578" width="272" height="118" rx="7"
-        fill="#fce7f3" stroke="#db2777" stroke-width="1.5"/>
-  <text x="440" y="600" text-anchor="middle" font-size="12"
-        font-weight="bold" fill="#9d174d">Vectors  (w_r10)</text>
-  <line x1="318" y1="607" x2="560" y2="607"
-        stroke="#db2777" stroke-width="0.8"/>
-  <text x="440" y="623" text-anchor="middle" font-size="10"
-        fill="#374151">w010 — volume-weighted moment</text>
-  <text x="440" y="639" text-anchor="middle" font-size="10"
-        fill="#374151">w110 — area-weighted position</text>
-  <text x="440" y="655" text-anchor="middle" font-size="10"
-        fill="#374151">w210 — mean-curvature × position</text>
-  <text x="440" y="671" text-anchor="middle" font-size="10"
-        fill="#374151">w310 — Gauss-curv. × position</text>
-  <text x="440" y="688" text-anchor="middle" font-size="10"
-        font-weight="bold" fill="#be185d">3-vector per label</text>
+  <!-- Arrow ↓ label path → core -->
+  <path d="M816,258 L816,268 L560,268 L560,274"
+        stroke="#3060a0" stroke-width="1.4" fill="none"
+        marker-end="url(#arr)"/>
 
-  <!-- Rank-2 Tensors -->
-  <rect x="592" y="578" width="272" height="118" rx="7"
-        fill="#fce7f3" stroke="#db2777" stroke-width="1.5"/>
-  <text x="728" y="600" text-anchor="middle" font-size="12"
-        font-weight="bold" fill="#9d174d">Rank-2 Tensors  (w_r20/02)</text>
-  <line x1="606" y1="607" x2="848" y2="607"
-        stroke="#db2777" stroke-width="0.8"/>
-  <text x="728" y="623" text-anchor="middle" font-size="10"
-        fill="#374151">w020 / w120 / w220 / w320</text>
-  <text x="728" y="639" text-anchor="middle" font-size="10"
-        fill="#374151">w102 / w202  — normal tensor  n⊗n</text>
-  <text x="728" y="655" text-anchor="middle" font-size="10"
-        fill="#374151">+ eigenvalues + eigenvectors</text>
-  <text x="728" y="671" text-anchor="middle" font-size="10"
-        fill="#374151">+ trace · trace_ratio · beta (anisotropy)</text>
-  <text x="728" y="688" text-anchor="middle" font-size="10"
-        font-weight="bold" fill="#be185d">3×3 symmetric matrix per label</text>
+  <!-- Convergence label -->
+  <text x="550" y="270" text-anchor="middle" font-size="9"
+        fill="#666" font-style="italic">both paths produce a Triangulation object</text>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 2 — CORE FUNCTION  (y 278–490)
+  ═══════════════════════════════════════════════════════ -->
+
+  <!-- Core box -->
+  <rect x="14" y="278" width="740" height="208" rx="6"
+        fill="#fdf0d9" stroke="#b87333" stroke-width="1.2"/>
+  <!-- Core header bar -->
+  <rect x="14" y="278" width="740" height="32" rx="6"
+        fill="#b87333"/>
+  <rect x="14" y="294" width="740" height="16" fill="#b87333"/>
+  <text x="384" y="299" text-anchor="middle" font-size="12"
+        font-weight="bold" fill="#fff">Core Function: Minkowski Tensors</text>
+
+  <!-- Bullet points in core -->
+  <text x="38" y="328" font-size="9.5" fill="#6b3c0a">●</text>
+  <text x="54" y="328" font-size="10.5" fill="#333">Computes per face: normals, areas, centroids, dihedral angles, edge lengths</text>
+  <text x="38" y="354" font-size="9.5" fill="#6b3c0a">●</text>
+  <text x="54" y="354" font-size="10.5" fill="#333">Builds neighbour table (triangle–triangle adjacency via edge hashing)</text>
+  <text x="54" y="368" font-size="10.5" fill="#333">— Cython-accelerated via <tspan font-weight="bold">_accel</tspan>; per-vertex angle sums for Gaussian curvature</text>
+  <text x="38" y="394" font-size="9.5" fill="#6b3c0a">●</text>
+  <text x="54" y="394" font-size="10.5" fill="#333">Vectorised over all faces in</text>
+  <text x="188" y="394" font-size="10.5" font-weight="bold" fill="#6b3c0a"> minkowski.py</text>
+  <text x="38" y="420" font-size="9.5" fill="#6b3c0a">●</text>
+  <text x="54" y="420" font-size="10.5" fill="#333">Entry point:</text>
+  <text x="120" y="420" font-size="10.5" font-weight="bold" fill="#6b3c0a"> minkowski_tensors(tri)</text>
+  <text x="280" y="420" font-size="10.5" fill="#333"> — accepts a Triangulation directly</text>
+  <text x="38" y="444" font-size="9.5" fill="#6b3c0a">●</text>
+  <text x="54" y="444" font-size="10.5" fill="#333">Builds</text>
+  <text x="88" y="444" font-size="10.5" font-weight="bold" fill="#6b3c0a"> Triangulation.from_arrays(verts, faces, labels)</text>
+
+  <!-- Triangle diagram box -->
+  <rect x="768" y="278" width="318" height="208" rx="6"
+        fill="#fafafa" stroke="#c0c0d0" stroke-width="1"/>
+  <text x="927" y="298" text-anchor="middle" font-size="10"
+        font-weight="bold" fill="#444">Triangulated face geometry</text>
+
+  <!-- Triangle itself -->
+  <polygon points="820,450 930,470 1060,360"
+           fill="#eef4fb" stroke="#3060a0" stroke-width="1.4"/>
+
+  <!-- Vertex labels -->
+  <text x="806" y="462" font-size="10" font-weight="bold"
+        fill="#3060a0">v<tspan dy="3" font-size="7">1</tspan></text>
+  <text x="928" y="488" font-size="10" font-weight="bold"
+        fill="#3060a0">v<tspan dy="3" font-size="7">2</tspan></text>
+  <text x="1062" y="356" font-size="10" font-weight="bold"
+        fill="#3060a0">v<tspan dy="3" font-size="7">3</tspan></text>
+
+  <!-- Edge labels -->
+  <text x="857" y="478" font-size="9.5" font-style="italic"
+        fill="#555">e<tspan dy="2" font-size="7">1</tspan></text>
+  <text x="997" y="432" font-size="9.5" font-style="italic"
+        fill="#555">e<tspan dy="2" font-size="7">2</tspan></text>
+  <text x="924" y="394" font-size="9.5" font-style="italic"
+        fill="#555">e<tspan dy="2" font-size="7">3</tspan></text>
+
+  <!-- Face label -->
+  <text x="930" y="435" font-size="9.5" font-style="italic"
+        fill="#3060a0">f<tspan dy="2" font-size="7">1</tspan></text>
+
+  <!-- Normal arrow -->
+  <line x1="930" y1="430" x2="894" y2="355"
+        stroke="#c03830" stroke-width="1.4" marker-end="url(#arr_red)"/>
+  <text x="877" y="348" font-size="9.5" font-weight="bold"
+        fill="#c03830">n<tspan dy="2" font-size="7">1</tspan></text>
+
+  <!-- Area label -->
+  <text x="927" y="320" text-anchor="middle" font-size="9.5"
+        fill="#555">Area of f<tspan dy="2" font-size="7">1</tspan>
+        <tspan dy="-2" font-size="9.5"> = T</tspan>
+        <tspan dy="2" font-size="7">1</tspan></text>
+
+  <!-- Arrow ↓ core → output -->
+  <line x1="550" y1="486" x2="550" y2="498"
+        stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 3 — OUTPUT  (y 502–1042)
+  ═══════════════════════════════════════════════════════ -->
+  <rect x="0" y="502" width="1100" height="30" fill="#2d3748"/>
+  <text x="550" y="522" text-anchor="middle" class="hdr" font-size="13">Output</text>
+
+  <!-- ── column layout ──────────────────────────────────────
+       Col 1 Scalars  : x=14,  w=248
+       Col 2 Vectors  : x=276, w=248
+       Col 3 Tensors  : x=538, w=278
+       Col 4 Derived  : x=830, w=256
+  ────────────────────────────────────────────────────── -->
+
+  <!-- ══ COL 1: SCALARS (Rank 0) ══ -->
+  <!-- header -->
+  <rect x="14"  y="536" width="248" height="32" rx="4" fill="#8c7420"/>
+  <text x="138" y="557" text-anchor="middle" class="hdr">Scalars (Rank 0)</text>
+
+  <!-- Visual Representation sub-header -->
+  <rect x="14"  y="570" width="248" height="22" fill="#f3eecc"/>
+  <text x="138" y="585" text-anchor="middle" font-size="9.5"
+        font-weight="bold" fill="#6b5810">Visual Representation</text>
+
+  <!-- W tensor cells (4 × 54 px) -->
+  <!-- cell borders -->
+  <rect x="14" y="592" width="248" height="216" rx="0"
+        fill="#faf7e0" stroke="#c9b84a" stroke-width="0.5"/>
+  <line x1="14"  y1="646" x2="262" y2="646" stroke="#c9b84a" stroke-width="0.5"/>
+  <line x1="14"  y1="700" x2="262" y2="700" stroke="#c9b84a" stroke-width="0.5"/>
+  <line x1="14"  y1="754" x2="262" y2="754" stroke="#c9b84a" stroke-width="0.5"/>
+
+  <!-- W⁰₀₀ at center y = 592+27 = 619 -->
+  <text x="124" y="622" text-anchor="middle" font-size="14" fill="#222">W</text>
+  <text x="138" y="617" font-size="9" fill="#222">0</text>
+  <text x="138" y="626" font-size="9" fill="#222">00</text>
+
+  <!-- W¹₀₀ center y=673 -->
+  <text x="124" y="676" text-anchor="middle" font-size="14" fill="#222">W</text>
+  <text x="138" y="671" font-size="9" fill="#222">1</text>
+  <text x="138" y="680" font-size="9" fill="#222">00</text>
+
+  <!-- W²₀₀ center y=727 -->
+  <text x="124" y="730" text-anchor="middle" font-size="14" fill="#222">W</text>
+  <text x="138" y="725" font-size="9" fill="#222">2</text>
+  <text x="138" y="734" font-size="9" fill="#222">00</text>
+
+  <!-- W³₀₀ center y=781 -->
+  <text x="124" y="784" text-anchor="middle" font-size="14" fill="#222">W</text>
+  <text x="138" y="779" font-size="9" fill="#222">3</text>
+  <text x="138" y="788" font-size="9" fill="#222">00</text>
+
+  <!-- Descriptors sub-header -->
+  <rect x="14" y="808" width="248" height="22" fill="#f3eecc"/>
+  <text x="138" y="823" text-anchor="middle" font-size="9.5"
+        font-weight="bold" fill="#6b5810">Descriptors</text>
+
+  <!-- Descriptor cells (4 × 54 px) -->
+  <rect x="14" y="830" width="248" height="216" rx="0"
+        fill="#faf7e0" stroke="#c9b84a" stroke-width="0.5"/>
+  <line x1="14"  y1="884" x2="262" y2="884" stroke="#c9b84a" stroke-width="0.5"/>
+  <line x1="14"  y1="938" x2="262" y2="938" stroke="#c9b84a" stroke-width="0.5"/>
+  <line x1="14"  y1="992" x2="262" y2="992" stroke="#c9b84a" stroke-width="0.5"/>
+
+  <text x="138" y="854" text-anchor="middle" font-size="10.5" fill="#333">Volume</text>
+  <text x="138" y="908" text-anchor="middle" font-size="10.5" fill="#333">Surface Area</text>
+  <text x="138" y="955" text-anchor="middle" font-size="10" fill="#333">Integral Mean</text>
+  <text x="138" y="969" text-anchor="middle" font-size="10" fill="#333">Curvature</text>
+  <text x="138" y="1009" text-anchor="middle" font-size="10" fill="#333">Euler</text>
+  <text x="138" y="1023" text-anchor="middle" font-size="10" fill="#333">Characteristic</text>
+
+  <!-- Column bottom border -->
+  <rect x="14" y="536" width="248" height="510" rx="4"
+        fill="none" stroke="#8c7420" stroke-width="1"/>
+
+  <!-- ══ COL 2: VECTORS (Rank 1) ══ -->
+  <!-- header -->
+  <rect x="276" y="536" width="248" height="32" rx="4" fill="#7080aa"/>
+  <text x="400" y="557" text-anchor="middle" class="hdr">Vectors (Rank 1)</text>
+
+  <!-- Visual Representation sub-header -->
+  <rect x="276" y="570" width="248" height="22" fill="#e8ecf5"/>
+  <text x="400" y="585" text-anchor="middle" font-size="9.5"
+        font-weight="bold" fill="#3a4a7a">Visual Representation</text>
+
+  <!-- W tensor cells -->
+  <rect x="276" y="592" width="248" height="216"
+        fill="#f2f4fa" stroke="#9098c0" stroke-width="0.5"/>
+  <line x1="276" y1="646" x2="524" y2="646" stroke="#9098c0" stroke-width="0.5"/>
+  <line x1="276" y1="700" x2="524" y2="700" stroke="#9098c0" stroke-width="0.5"/>
+  <line x1="276" y1="754" x2="524" y2="754" stroke="#9098c0" stroke-width="0.5"/>
+
+  <!-- W⁰₁₀ -->
+  <text x="386" y="622" text-anchor="middle" font-size="14" fill="#222">W</text>
+  <text x="400" y="617" font-size="9" fill="#222">0</text>
+  <text x="400" y="626" font-size="9" fill="#222">10</text>
+
+  <!-- W¹₁₀ -->
+  <text x="386" y="676" text-anchor="middle" font-size="14" fill="#222">W</text>
+  <text x="400" y="671" font-size="9" fill="#222">1</text>
+  <text x="400" y="680" font-size="9" fill="#222">10</text>
+
+  <!-- W²₁₀ -->
+  <text x="386" y="730" text-anchor="middle" font-size="14" fill="#222">W</text>
+  <text x="400" y="725" font-size="9" fill="#222">2</text>
+  <text x="400" y="734" font-size="9" fill="#222">10</text>
+
+  <!-- W³₁₀ -->
+  <text x="386" y="784" text-anchor="middle" font-size="14" fill="#222">W</text>
+  <text x="400" y="779" font-size="9" fill="#222">3</text>
+  <text x="400" y="788" font-size="9" fill="#222">10</text>
+
+  <!-- Descriptors sub-header -->
+  <rect x="276" y="808" width="248" height="22" fill="#e8ecf5"/>
+  <text x="400" y="823" text-anchor="middle" font-size="9.5"
+        font-weight="bold" fill="#3a4a7a">Descriptors</text>
+
+  <!-- Descriptor cells -->
+  <rect x="276" y="830" width="248" height="216"
+        fill="#f2f4fa" stroke="#9098c0" stroke-width="0.5"/>
+  <line x1="276" y1="884" x2="524" y2="884" stroke="#9098c0" stroke-width="0.5"/>
+  <line x1="276" y1="938" x2="524" y2="938" stroke="#9098c0" stroke-width="0.5"/>
+  <line x1="276" y1="992" x2="524" y2="992" stroke="#9098c0" stroke-width="0.5"/>
+
+  <text x="400" y="854" text-anchor="middle" font-size="10" fill="#333">Center of Mass</text>
+  <text x="400" y="908" text-anchor="middle" font-size="10" fill="#333">Center of Surface</text>
+  <text x="400" y="955" text-anchor="middle" font-size="10" fill="#333">Center of</text>
+  <text x="400" y="969" text-anchor="middle" font-size="10" fill="#333">Curvature</text>
+  <text x="400" y="1009" text-anchor="middle" font-size="10" fill="#333">Center of</text>
+  <text x="400" y="1023" text-anchor="middle" font-size="10" fill="#333">Characteristic</text>
+
+  <rect x="276" y="536" width="248" height="510" rx="4"
+        fill="none" stroke="#7080aa" stroke-width="1"/>
+
+  <!-- ══ COL 3: TENSORS (Rank 2) ══ -->
+  <!-- header -->
+  <rect x="538" y="536" width="278" height="32" rx="4" fill="#8a2a44"/>
+  <text x="677" y="557" text-anchor="middle" class="hdr">Tensors (Rank 2)</text>
+
+  <!-- Visual Representation sub-header -->
+  <rect x="538" y="570" width="278" height="22" fill="#fde8ee"/>
+  <text x="677" y="585" text-anchor="middle" font-size="9.5"
+        font-weight="bold" fill="#6a1030">Visual Representation</text>
+
+  <!-- W tensor cells (6 × 36 px) -->
+  <rect x="538" y="592" width="278" height="216"
+        fill="#fef3f6" stroke="#c07088" stroke-width="0.5"/>
+  <line x1="538" y1="628" x2="816" y2="628" stroke="#c07088" stroke-width="0.5"/>
+  <line x1="538" y1="664" x2="816" y2="664" stroke="#c07088" stroke-width="0.5"/>
+  <line x1="538" y1="700" x2="816" y2="700" stroke="#c07088" stroke-width="0.5"/>
+  <line x1="538" y1="736" x2="816" y2="736" stroke="#c07088" stroke-width="0.5"/>
+  <line x1="538" y1="772" x2="816" y2="772" stroke="#c07088" stroke-width="0.5"/>
+
+  <!-- W⁰₂₀  center y=610 -->
+  <text x="659" y="613" text-anchor="middle" font-size="14" fill="#222">W</text>
+  <text x="673" y="608" font-size="9" fill="#222">0</text>
+  <text x="673" y="617" font-size="9" fill="#222">20</text>
+
+  <!-- W¹₂₀  center y=646 -->
+  <text x="659" y="649" text-anchor="middle" font-size="14" fill="#222">W</text>
+  <text x="673" y="644" font-size="9" fill="#222">1</text>
+  <text x="673" y="653" font-size="9" fill="#222">20</text>
+
+  <!-- W²₂₀  center y=682 -->
+  <text x="659" y="685" text-anchor="middle" font-size="14" fill="#222">W</text>
+  <text x="673" y="680" font-size="9" fill="#222">2</text>
+  <text x="673" y="689" font-size="9" fill="#222">20</text>
+
+  <!-- W³₂₀  center y=718 -->
+  <text x="659" y="721" text-anchor="middle" font-size="14" fill="#222">W</text>
+  <text x="673" y="716" font-size="9" fill="#222">3</text>
+  <text x="673" y="725" font-size="9" fill="#222">20</text>
+
+  <!-- W¹₀₂  center y=754 -->
+  <text x="659" y="757" text-anchor="middle" font-size="14" fill="#222">W</text>
+  <text x="673" y="752" font-size="9" fill="#222">1</text>
+  <text x="673" y="761" font-size="9" fill="#222">02</text>
+
+  <!-- W²₀₂  center y=790 -->
+  <text x="659" y="793" text-anchor="middle" font-size="14" fill="#222">W</text>
+  <text x="673" y="788" font-size="9" fill="#222">2</text>
+  <text x="673" y="797" font-size="9" fill="#222">02</text>
+
+  <!-- Descriptors sub-header -->
+  <rect x="538" y="808" width="278" height="22" fill="#fde8ee"/>
+  <text x="677" y="823" text-anchor="middle" font-size="9.5"
+        font-weight="bold" fill="#6a1030">Descriptors</text>
+
+  <!-- Descriptor cells (6 × 36 px) -->
+  <rect x="538" y="830" width="278" height="216"
+        fill="#fef3f6" stroke="#c07088" stroke-width="0.5"/>
+  <line x1="538" y1="866" x2="816" y2="866" stroke="#c07088" stroke-width="0.5"/>
+  <line x1="538" y1="902" x2="816" y2="902" stroke="#c07088" stroke-width="0.5"/>
+  <line x1="538" y1="938" x2="816" y2="938" stroke="#c07088" stroke-width="0.5"/>
+  <line x1="538" y1="974" x2="816" y2="974" stroke="#c07088" stroke-width="0.5"/>
+  <line x1="538" y1="1010" x2="816" y2="1010" stroke="#c07088" stroke-width="0.5"/>
+
+  <text x="677" y="852" text-anchor="middle" font-size="10" fill="#333">Solid Moment Tensor (MT)</text>
+  <text x="677" y="888" text-anchor="middle" font-size="10" fill="#333">Hollow MT</text>
+  <text x="677" y="924" text-anchor="middle" font-size="10" fill="#333">Wire MT</text>
+  <text x="677" y="960" text-anchor="middle" font-size="10" fill="#333">Vertices MT</text>
+  <text x="677" y="996" text-anchor="middle" font-size="10" fill="#333">Curvature Distribution</text>
+  <text x="677" y="1032" text-anchor="middle" font-size="10" fill="#333">Normal Distribution</text>
+
+  <rect x="538" y="536" width="278" height="510" rx="4"
+        fill="none" stroke="#8a2a44" stroke-width="1"/>
+
+  <!-- ══ COL 4: DERIVED & ADDITIONAL ══ -->
+  <!-- header -->
+  <rect x="830" y="536" width="256" height="32" rx="4" fill="#4a3080"/>
+  <text x="958" y="551" text-anchor="middle" class="hdr">Derived &amp; Additional</text>
+  <text x="958" y="562" text-anchor="middle" font-size="8.5" fill="#ccc">Measures</text>
+
+  <!-- From Rank-2 section label -->
+  <rect x="830" y="570" width="256" height="22" fill="#ede8f8"/>
+  <text x="958" y="585" text-anchor="middle" font-size="9"
+        font-weight="bold" fill="#3a2070">From Rank-2 Tensors (Wᵛ₂₀)</text>
+
+  <!-- Derived items background -->
+  <rect x="830" y="592" width="256" height="454" rx="0"
+        fill="#f8f5fe" stroke="#9080c8" stroke-width="0.5"/>
+
+  <!-- Eigenvalues -->
+  <line x1="830" y1="636" x2="1086" y2="636" stroke="#9080c8" stroke-width="0.5"/>
+  <text x="958" y="608" text-anchor="middle" font-size="10.5" font-weight="bold"
+        fill="#333">Eigenvalues  (λ)</text>
+  <text x="958" y="624" text-anchor="middle" font-size="9.5" fill="#555">λ₁, λ₂, λ₃  (sorted by |λ|)</text>
+
+  <!-- Eigenvectors -->
+  <line x1="830" y1="680" x2="1086" y2="680" stroke="#9080c8" stroke-width="0.5"/>
+  <text x="958" y="652" text-anchor="middle" font-size="10.5" font-weight="bold"
+        fill="#333">Eigenvectors</text>
+  <text x="958" y="668" text-anchor="middle" font-size="9.5" fill="#555">principal axes of the tensor</text>
+
+  <!-- Anisotropy -->
+  <line x1="830" y1="730" x2="1086" y2="730" stroke="#9080c8" stroke-width="0.5"/>
+  <text x="958" y="697" text-anchor="middle" font-size="10.5" font-weight="bold"
+        fill="#333">Anisotropy Ratio  (β)</text>
+  <text x="958" y="712" text-anchor="middle" font-size="10" fill="#555">β = min(λ) / max(λ)</text>
+  <text x="958" y="727" text-anchor="middle" font-size="9" fill="#777">0 = isotropic, 1 = maximally anisotropic</text>
+
+  <!-- Trace -->
+  <line x1="830" y1="768" x2="1086" y2="768" stroke="#9080c8" stroke-width="0.5"/>
+  <text x="958" y="752" text-anchor="middle" font-size="10.5" font-weight="bold"
+        fill="#333">Trace</text>
+  <text x="958" y="766" text-anchor="middle" font-size="9.5" fill="#555">tr(W) = λ₁ + λ₂ + λ₃</text>
+
+  <!-- Trace/Scalar ratios -->
+  <line x1="830" y1="820" x2="1086" y2="820" stroke="#9080c8" stroke-width="0.5"/>
+  <text x="958" y="785" text-anchor="middle" font-size="10.5" font-weight="bold"
+        fill="#333">Trace / Scalar Ratios</text>
+  <text x="958" y="800" text-anchor="middle" font-size="9.5" fill="#555">trace_ratio = tr(Wᵛ₂₀) / W^v₀₀</text>
+  <text x="958" y="815" text-anchor="middle" font-size="9" fill="#777">normalises out size dependence</text>
+
+  <!-- Curvature diagram -->
+  <line x1="830" y1="898" x2="1086" y2="898" stroke="#9080c8" stroke-width="0.5"/>
+  <!-- small curvature schematic: curve with tangent frame -->
+  <path d="M868,875 Q920,838 972,870 Q1002,890 1018,862"
+        fill="none" stroke="#555" stroke-width="1.4"/>
+  <!-- normal arrow at midpoint -->
+  <line x1="940" y1="858" x2="940" y2="828"
+        stroke="#c03830" stroke-width="1.2" marker-end="url(#arr_red)"/>
+  <!-- tangent arrow -->
+  <line x1="916" y1="860" x2="966" y2="856"
+        stroke="#3060a0" stroke-width="1.2" marker-end="url(#arr)"/>
+  <text x="940" y="826" text-anchor="middle" font-size="8" fill="#c03830" font-weight="bold">N</text>
+  <text x="972" y="854" font-size="8" fill="#3060a0" font-weight="bold">X₁</text>
+  <text x="896" y="876" font-size="8" fill="#555">1/R₁</text>
+  <text x="958" y="892" text-anchor="middle" font-size="8.5" fill="#777">principal curvature at a face</text>
+
+  <!-- Additional: Rank 3 & 4 -->
+  <line x1="830" y1="942" x2="1086" y2="942" stroke="#9080c8" stroke-width="0.5"/>
+  <text x="958" y="913" text-anchor="middle" font-size="10.5" font-weight="bold"
+        fill="#333">Rank 3 &amp; 4 Normal Tensors</text>
+  <text x="958" y="929" text-anchor="middle" font-size="9.5" fill="#555">W¹₀₃, W¹₀₄  (compute='all')</text>
+
+  <!-- Irreducible -->
+  <text x="958" y="958" text-anchor="middle" font-size="10.5" font-weight="bold"
+        fill="#333">Irreducible Minkowski</text>
+  <text x="958" y="972" text-anchor="middle" font-size="10.5" font-weight="bold"
+        fill="#333">Tensors</text>
+  <text x="958" y="988" text-anchor="middle" font-size="9.5" fill="#555">msm_ql, msm_wl</text>
+  <text x="958" y="1004" text-anchor="middle" font-size="9" fill="#777">spherical Minkowski summaries</text>
+
+  <rect x="830" y="536" width="256" height="510" rx="4"
+        fill="none" stroke="#4a3080" stroke-width="1"/>
+
+  <!-- Outer border of all output columns -->
+  <rect x="14" y="536" width="1072" height="510" rx="4"
+        fill="none" stroke="#aaa" stroke-width="1"/>
 
 </svg>
