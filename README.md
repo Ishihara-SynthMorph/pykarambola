@@ -13,7 +13,7 @@
 
 Given a mesh, it returns scalar, vector, and tensor quantities including volume, surface area, integrated mean curvature, and Euler characteristic (the Minkowski functionals), as well as higher-rank tensors that capture anisotropy and preferred orientation independently of coordinate frame.
 pykarambola is a Python implementation of [karambola](https://github.com/morphometry/karambola), the reference C++ package for Minkowski tensor computation on 3D triangulated surfaces.
-Minkowski tensors are widely applicable to analyzing 3D structures in biomedical imaging, computational physics, and materials science.
+Minkowski tensors are widely applicable to analyzing 3D structures in biomedical imaging, astrophysics, and materials science.
 
 ## Example notebooks
 
@@ -77,10 +77,22 @@ For development (includes pytest and scikit-image):
 pip install "pykarambola[dev]"
 ```
 
+To run the example notebooks (includes scikit-image and tifffile):
+
+```bash
+pip install "pykarambola[notebooks]"
+```
+
 GLB/glTF support requires [trimesh](https://trimesh.org/):
 
 ```bash
 pip install "pykarambola[glb]"
+```
+
+You can combine extras in a single install:
+
+```bash
+pip install "pykarambola[dev,notebooks,accel]"
 ```
 
 ## High-level API
@@ -173,6 +185,13 @@ result = pk.minkowski_tensors(verts, faces, labels="auto")
 # bodies are numbered 1, 2, … by connected component
 print(result[1]["w000"])
 ```
+
+## Example notebooks
+
+| Notebook | What it covers |
+|----------|---------------|
+| [`examples/pykarambola_demo.ipynb`](examples/pykarambola_demo.ipynb) | A hands-on tour of the mesh API: passing vertices and faces as NumPy arrays, supplying per-face labels or using `labels='auto'` to separate connected bodies, retrieving the object count with `return_count`, and computing derived scalars (`_beta`, `_trace`, `_trace_ratio`) |
+| [`examples/label_image_api.ipynb`](examples/label_image_api.ipynb) | Working with 3D segmentation images: measures whole-cell morphology from a single label, compares nucleus and cell body separately using two labels, and runs per-nuclear object anisotropy analysis across three connected components from a real AllenCell hiPSC dataset |
 
 ## File I/O
 
