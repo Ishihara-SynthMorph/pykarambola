@@ -15,6 +15,26 @@ Given a mesh, it returns scalar, vector, and tensor quantities including volume,
 pykarambola is a Python implementation of [karambola](https://github.com/morphometry/karambola), the reference C++ package for Minkowski tensor computation on 3D triangulated surfaces.
 Minkowski tensors are widely applicable to analyzing 3D structures in biomedical imaging, computational physics, and materials science.
 
+## Example notebooks
+
+| Notebook | Description |
+|---|---|
+| [`examples/pykarambola_demo.ipynb`](examples/pykarambola_demo.ipynb) | Core API walkthrough: NumPy arrays, file parsers, rank-2 tensors, labels, label-image API |
+| [`examples/segmentation_to_tensors.ipynb`](examples/segmentation_to_tensors.ipynb) | End-to-end pipeline: confocal stack → segmentation → Minkowski tensors → PCA + clustering |
+
+### End-to-end pipeline: confocal nuclei → segmentation → shape clustering
+
+<table align="center">
+  <tr>
+    <td align="center"><img src="assets/demo_raw.png" width="220"/><br/><sub>Raw confocal (nuclei channel)</sub></td>
+    <td align="center"><img src="assets/demo_segmented.png" width="220"/><br/><sub>Segmented nuclei</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="assets/demo_pca_full.png" width="220"/><br/><sub>PCA — scalars + β + eigvals + trace + msm</sub></td>
+    <td align="center"><img src="assets/demo_mesh_full.png" width="220"/><br/><sub>Meshes coloured by cluster</sub></td>
+  </tr>
+</table>
+
 ## New in pykarambola
 
 Compared to the original C++ karambola, this Python port adds:
