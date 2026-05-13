@@ -43,7 +43,7 @@ dev = ["pytest", "scikit-image>=0.19"]
 accel = ["cython>=3.0"]
 glb = ["trimesh"]
 stl = ["numpy-stl"]
-notebooks = ["scikit-image>=0.19", "matplotlib", "seaborn", "pandas", "medmnist", "tifffile"]
+notebooks = ["scikit-image>=0.19", "matplotlib", "seaborn", "pandas", "medmnist", "tifffile", "scikit-learn"]
 
 [tool.setuptools.packages.find]
 include = ["pykarambola*"]
