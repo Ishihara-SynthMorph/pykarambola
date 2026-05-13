@@ -8,7 +8,7 @@
 **pykarambola** computes Minkowski tensors for 3D objects represented as triangulated meshes — a family of shape descriptors rooted in integral geometry that rigorously quantify size, shape, and orientation.
 
 <p align="center">
-  <img src="assets/banner.png" alt="pykarambola — Minkowski tensor morphometry of 3D triangulated surfaces" width="75%"/>
+  <img src="assets/banner.png" alt="pykarambola — Minkowski tensor morphometry of 3D structures" width="75%"/>
 </p>
 
 Given a mesh, it returns scalar, vector, and tensor quantities including volume, surface area, integrated mean curvature, and Euler characteristic (the Minkowski functionals), as well as higher-rank tensors that capture anisotropy and preferred orientation independently of coordinate frame.
