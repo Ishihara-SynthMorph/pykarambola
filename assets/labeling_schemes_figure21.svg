@@ -1,0 +1,191 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 530" width="880" height="530">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6b7280"/>
+    </marker>
+    <style>
+      text { font-family: 'Helvetica Neue', Arial, sans-serif; }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect width="880" height="530" fill="#f9fafb"/>
+
+  <!-- Title -->
+  <text x="440" y="18" text-anchor="middle" font-size="14"
+        font-weight="bold" fill="#111827">
+    label-image API — Single-Label vs Multi-Label Morphometry
+  </text>
+
+  <!-- ================================================================
+       TOP: shared binary image
+  ================================================================ -->
+  <rect x="290" y="28" width="300" height="72" rx="7"
+        fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="440" y="52" text-anchor="middle" font-size="13"
+        font-weight="bold" fill="#1e40af">3D Binary Image</text>
+  <text x="440" y="70" text-anchor="middle" font-size="11"
+        fill="#1e3a8a">numpy array  (Z × Y × X),  dtype bool / uint8</text>
+  <text x="440" y="87" text-anchor="middle" font-size="11"
+        fill="#1e3a8a">e.g. segmented fluorescence volume</text>
+
+  <!-- Fork arrows -->
+  <line x1="370" y1="100" x2="207" y2="148"
+        stroke="#6b7280" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="510" y1="100" x2="673" y2="148"
+        stroke="#6b7280" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- ================================================================
+       LEFT PANEL: Case (i) — Single Label
+  ================================================================ -->
+  <rect x="16" y="154" width="400" height="340" rx="8"
+        fill="#ffffff" stroke="#7c3aed" stroke-width="1.5"/>
+
+  <!-- Panel header -->
+  <rect x="16" y="154" width="400" height="38" rx="8"
+        fill="#7c3aed"/>
+  <rect x="16" y="176" width="400" height="16" fill="#7c3aed"/>
+  <text x="216" y="178" text-anchor="middle" font-size="13"
+        font-weight="bold" fill="#ffffff">Case (i) — Single Label</text>
+
+  <!-- Blob visual: 3 overlapping shapes, all same colour -->
+  <!-- cell 1 -->
+  <ellipse cx="150" cy="240" rx="58" ry="42" fill="#c4b5fd" stroke="#7c3aed" stroke-width="1"/>
+  <!-- cell 2 -->
+  <ellipse cx="215" cy="262" rx="50" ry="36" fill="#c4b5fd" stroke="#7c3aed" stroke-width="1"/>
+  <!-- cell 3 -->
+  <ellipse cx="270" cy="235" rx="44" ry="32" fill="#c4b5fd" stroke="#7c3aed" stroke-width="1"/>
+  <!-- single label tag -->
+  <text x="216" y="220" text-anchor="middle" font-size="10.5"
+        fill="#5b21b6" font-weight="bold">label = 1</text>
+  <text x="216" y="234" text-anchor="middle" font-size="10.5"
+        fill="#5b21b6" font-weight="bold">label = 1</text>
+  <text x="216" y="248" text-anchor="middle" font-size="10.5"
+        fill="#5b21b6" font-weight="bold">label = 1</text>
+
+  <!-- Code step -->
+  <rect x="34" y="300" width="364" height="38" rx="5"
+        fill="#f3f0ff" stroke="#7c3aed" stroke-width="1"/>
+  <text x="216" y="314" text-anchor="middle" font-size="10"
+        fill="#374151">set all foreground → label 1</text>
+  <text x="216" y="330" text-anchor="middle" font-size="10.5"
+        font-weight="bold" fill="#5b21b6">
+    minkowski_tensors_from_label_image( image )
+  </text>
+
+  <!-- Arrow to output -->
+  <line x1="216" y1="338" x2="216" y2="358"
+        stroke="#6b7280" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Output box -->
+  <rect x="34" y="364" width="364" height="118" rx="5"
+        fill="#fce7f3" stroke="#db2777" stroke-width="1.5"/>
+  <text x="216" y="384" text-anchor="middle" font-size="11.5"
+        font-weight="bold" fill="#9d174d">1 result — whole structure</text>
+  <line x1="50" y1="391" x2="382" y2="391"
+        stroke="#db2777" stroke-width="0.8"/>
+  <text x="216" y="407" text-anchor="middle" font-size="10.5"
+        fill="#374151">w000  volume of entire structure</text>
+  <text x="216" y="423" text-anchor="middle" font-size="10.5"
+        fill="#374151">w100  total surface area</text>
+  <text x="216" y="439" text-anchor="middle" font-size="10.5"
+        fill="#374151">w300  Euler characteristic  χ</text>
+  <text x="216" y="458" text-anchor="middle" font-size="10"
+        fill="#6b7280" font-style="italic">
+    single set of scalars / vectors / tensors
+  </text>
+  <text x="216" y="474" text-anchor="middle" font-size="10"
+        font-weight="bold" fill="#be185d">treats all objects as one shape</text>
+
+  <!-- ================================================================
+       RIGHT PANEL: Case (ii) — Multiple Labels
+  ================================================================ -->
+  <rect x="464" y="154" width="400" height="340" rx="8"
+        fill="#ffffff" stroke="#059669" stroke-width="1.5"/>
+
+  <!-- Panel header -->
+  <rect x="464" y="154" width="400" height="38" rx="8"
+        fill="#059669"/>
+  <rect x="464" y="176" width="400" height="16" fill="#059669"/>
+  <text x="664" y="178" text-anchor="middle" font-size="13"
+        font-weight="bold" fill="#ffffff">Case (ii) — Multiple Labels</text>
+
+  <!-- Blob visual: 3 separate shapes, each a different colour -->
+  <!-- cell 1: blue -->
+  <ellipse cx="560" cy="240" rx="52" ry="38" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="560" y="244" text-anchor="middle" font-size="10"
+        font-weight="bold" fill="#1e40af">1</text>
+  <!-- cell 2: orange -->
+  <ellipse cx="664" cy="248" rx="46" ry="34" fill="#fed7aa" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="664" y="252" text-anchor="middle" font-size="10"
+        font-weight="bold" fill="#9a3412">2</text>
+  <!-- cell 3: green -->
+  <ellipse cx="756" cy="237" rx="40" ry="30" fill="#bbf7d0" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="756" y="241" text-anchor="middle" font-size="10"
+        font-weight="bold" fill="#14532d">3</text>
+
+  <!-- Code steps -->
+  <rect x="482" y="300" width="364" height="38" rx="5"
+        fill="#f0fdf4" stroke="#059669" stroke-width="1"/>
+  <text x="664" y="314" text-anchor="middle" font-size="10"
+        fill="#374151">scipy.ndimage.label(binary_image)  → unique label per component</text>
+  <text x="664" y="330" text-anchor="middle" font-size="10.5"
+        font-weight="bold" fill="#065f46">
+    minkowski_tensors_from_label_image( label_image )
+  </text>
+
+  <!-- Arrow to output -->
+  <line x1="664" y1="338" x2="664" y2="358"
+        stroke="#6b7280" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Output box -->
+  <rect x="482" y="364" width="364" height="118" rx="5"
+        fill="#fce7f3" stroke="#db2777" stroke-width="1.5"/>
+  <text x="664" y="384" text-anchor="middle" font-size="11.5"
+        font-weight="bold" fill="#9d174d">N results — one per object</text>
+  <line x1="498" y1="391" x2="830" y2="391"
+        stroke="#db2777" stroke-width="0.8"/>
+
+  <!-- Mini table header -->
+  <text x="540" y="407" text-anchor="middle" font-size="9.5"
+        fill="#6b7280" font-weight="bold">label</text>
+  <text x="630" y="407" text-anchor="middle" font-size="9.5"
+        fill="#6b7280" font-weight="bold">volume (w000)</text>
+  <text x="760" y="407" text-anchor="middle" font-size="9.5"
+        fill="#6b7280" font-weight="bold">anisotropy β (w020)</text>
+
+  <text x="540" y="423" text-anchor="middle" font-size="10"
+        fill="#1e40af" font-weight="bold">1</text>
+  <text x="630" y="423" text-anchor="middle" font-size="10"
+        fill="#374151">1 840 μm³</text>
+  <text x="760" y="423" text-anchor="middle" font-size="10"
+        fill="#374151">0.82</text>
+
+  <text x="540" y="439" text-anchor="middle" font-size="10"
+        fill="#9a3412" font-weight="bold">2</text>
+  <text x="630" y="439" text-anchor="middle" font-size="10"
+        fill="#374151">1 120 μm³</text>
+  <text x="760" y="439" text-anchor="middle" font-size="10"
+        fill="#374151">0.61</text>
+
+  <text x="540" y="455" text-anchor="middle" font-size="10"
+        fill="#14532d" font-weight="bold">3</text>
+  <text x="630" y="455" text-anchor="middle" font-size="10"
+        fill="#374151">730 μm³</text>
+  <text x="760" y="455" text-anchor="middle" font-size="10"
+        fill="#374151">0.45</text>
+
+  <text x="664" y="474" text-anchor="middle" font-size="10"
+        font-weight="bold" fill="#be185d">reveals per-object shape differences</text>
+
+  <!-- ================================================================
+       BOTTOM NOTE
+  ================================================================ -->
+  <text x="440" y="514" text-anchor="middle" font-size="10"
+        fill="#6b7280" font-style="italic">
+    Values shown are illustrative. Actual output depends on the input image.
+    β = min|λ| / max|λ| from w020 eigensystem.
+  </text>
+
+</svg>

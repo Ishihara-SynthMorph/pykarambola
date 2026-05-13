@@ -1,0 +1,186 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 710" width="880" height="710">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6b7280"/>
+    </marker>
+    <style>
+      text { font-family: 'Helvetica Neue', Arial, sans-serif; }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect width="880" height="710" fill="#f9fafb"/>
+
+  <!-- Title -->
+  <text x="440" y="18" text-anchor="middle" font-size="14"
+        font-weight="bold" fill="#111827">
+    pykarambola — Minkowski Tensor Computation Pipeline
+  </text>
+
+  <!-- ================================================================
+       ROW 1: INPUTS
+  ================================================================ -->
+
+  <!-- Label Image box -->
+  <rect x="40" y="28" width="235" height="80" rx="7"
+        fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="157" y="52" text-anchor="middle" font-size="13"
+        font-weight="bold" fill="#1e40af">Label Image</text>
+  <text x="157" y="70" text-anchor="middle" font-size="11"
+        fill="#1e3a8a">3D integer array  (Z × Y × X)</text>
+  <text x="157" y="88" text-anchor="middle" font-size="11"
+        fill="#1e3a8a">nonzero value = one labeled object</text>
+
+  <!-- Mesh File box -->
+  <rect x="605" y="28" width="235" height="80" rx="7"
+        fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="722" y="52" text-anchor="middle" font-size="13"
+        font-weight="bold" fill="#1e40af">Mesh File</text>
+  <text x="722" y="70" text-anchor="middle" font-size="11"
+        fill="#1e3a8a">.poly  /  .off  /  .obj</text>
+  <text x="722" y="88" text-anchor="middle" font-size="11"
+        fill="#1e3a8a">.glb  /  .gltf</text>
+
+  <!-- ================================================================
+       ARROWS: inputs → processing rows
+  ================================================================ -->
+  <line x1="157" y1="108" x2="157" y2="146"
+        stroke="#6b7280" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="722" y1="108" x2="722" y2="146"
+        stroke="#6b7280" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- ================================================================
+       ROW 2: ENTRY PROCESSING
+  ================================================================ -->
+
+  <!-- Left: minkowski_tensors_from_label_image box -->
+  <rect x="20" y="152" width="375" height="168" rx="7"
+        fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="207" y="174" text-anchor="middle" font-size="11.5"
+        font-weight="bold" fill="#5b21b6">
+    minkowski_tensors_from_label_image()
+  </text>
+  <line x1="36" y1="181" x2="379" y2="181"
+        stroke="#7c3aed" stroke-width="0.8"/>
+  <text x="44" y="198" font-size="10.5" fill="#374151">① pad array 1 voxel on all sides</text>
+  <text x="44" y="216" font-size="10.5" fill="#374151">② marching cubes (skimage) → mesh per label</text>
+  <text x="44" y="234" font-size="10.5" fill="#374151">③ orient normals outward  (_ensure_outward_normals)</text>
+  <text x="44" y="252" font-size="10.5" fill="#374151">④ (optional) center mesh  (centroid_mesh / centroid_voxel)</text>
+  <text x="44" y="270" font-size="10.5" fill="#374151">⑤ call minkowski_tensors() per label</text>
+  <text x="207" y="303" text-anchor="middle" font-size="10"
+        fill="#7c3aed" font-style="italic">→ vertices + faces per label  →  Triangulation</text>
+
+  <!-- Right: parse_*_file() box -->
+  <rect x="485" y="152" width="375" height="85" rx="7"
+        fill="#d1fae5" stroke="#059669" stroke-width="1.5"/>
+  <text x="672" y="174" text-anchor="middle" font-size="11.5"
+        font-weight="bold" fill="#065f46">parse_poly / off / obj / glb_file()</text>
+  <line x1="501" y1="181" x2="844" y2="181"
+        stroke="#059669" stroke-width="0.8"/>
+  <text x="672" y="199" text-anchor="middle" font-size="10.5"
+        fill="#374151">reads mesh  →  Triangulation (verts, faces, labels)</text>
+  <text x="672" y="219" text-anchor="middle" font-size="10"
+        fill="#6b7280" font-style="italic">or: pass a Triangulation object directly</text>
+
+  <!-- ================================================================
+       ARROWS: processing boxes → shared core
+  ================================================================ -->
+  <!-- Left path -->
+  <line x1="207" y1="320" x2="307" y2="388"
+        stroke="#6b7280" stroke-width="1.5" marker-end="url(#arr)"/>
+  <!-- Right path -->
+  <line x1="672" y1="237" x2="572" y2="388"
+        stroke="#6b7280" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- ================================================================
+       ROW 3: SHARED CORE
+  ================================================================ -->
+  <rect x="185" y="394" width="510" height="132" rx="7"
+        fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+  <text x="440" y="416" text-anchor="middle" font-size="13"
+        font-weight="bold" fill="#92400e">minkowski_tensors( tri )</text>
+  <line x1="203" y1="423" x2="677" y2="423"
+        stroke="#d97706" stroke-width="0.8"/>
+  <text x="440" y="440" text-anchor="middle" font-size="10.5"
+        fill="#374151">Triangulation.from_arrays(verts, faces, labels)</text>
+  <text x="440" y="457" text-anchor="middle" font-size="10.5"
+        fill="#374151">per-triangle: normals · areas · centroids · edge lengths</text>
+  <text x="440" y="474" text-anchor="middle" font-size="10.5"
+        fill="#374151">dihedral angles · triangle–triangle adjacency  (Cython _accel)</text>
+  <text x="440" y="491" text-anchor="middle" font-size="10.5"
+        fill="#374151">per-vertex angle sums  (Gaussian curvature)</text>
+  <text x="440" y="511" text-anchor="middle" font-size="11"
+        font-weight="bold" fill="#b45309">
+    → compute Minkowski functionals  (minkowski.py)
+  </text>
+
+  <!-- ================================================================
+       ARROWS: core → outputs
+  ================================================================ -->
+  <line x1="318" y1="526" x2="152" y2="572"
+        stroke="#6b7280" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="440" y1="526" x2="440" y2="572"
+        stroke="#6b7280" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="562" y1="526" x2="728" y2="572"
+        stroke="#6b7280" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- ================================================================
+       ROW 4: OUTPUTS
+  ================================================================ -->
+
+  <!-- Scalars -->
+  <rect x="16" y="578" width="272" height="118" rx="7"
+        fill="#fce7f3" stroke="#db2777" stroke-width="1.5"/>
+  <text x="152" y="600" text-anchor="middle" font-size="12"
+        font-weight="bold" fill="#9d174d">Scalars  (w_r00)</text>
+  <line x1="30" y1="607" x2="272" y2="607"
+        stroke="#db2777" stroke-width="0.8"/>
+  <text x="152" y="623" text-anchor="middle" font-size="10"
+        fill="#374151">w000 — enclosed volume</text>
+  <text x="152" y="639" text-anchor="middle" font-size="10"
+        fill="#374151">w100 — surface area</text>
+  <text x="152" y="655" text-anchor="middle" font-size="10"
+        fill="#374151">w200 — integral mean curvature</text>
+  <text x="152" y="671" text-anchor="middle" font-size="10"
+        fill="#374151">w300 — Gaussian curv. / Euler χ</text>
+  <text x="152" y="688" text-anchor="middle" font-size="10"
+        font-weight="bold" fill="#be185d">1 float per label</text>
+
+  <!-- Vectors -->
+  <rect x="304" y="578" width="272" height="118" rx="7"
+        fill="#fce7f3" stroke="#db2777" stroke-width="1.5"/>
+  <text x="440" y="600" text-anchor="middle" font-size="12"
+        font-weight="bold" fill="#9d174d">Vectors  (w_r10)</text>
+  <line x1="318" y1="607" x2="560" y2="607"
+        stroke="#db2777" stroke-width="0.8"/>
+  <text x="440" y="623" text-anchor="middle" font-size="10"
+        fill="#374151">w010 — volume-weighted moment</text>
+  <text x="440" y="639" text-anchor="middle" font-size="10"
+        fill="#374151">w110 — area-weighted position</text>
+  <text x="440" y="655" text-anchor="middle" font-size="10"
+        fill="#374151">w210 — mean-curvature × position</text>
+  <text x="440" y="671" text-anchor="middle" font-size="10"
+        fill="#374151">w310 — Gauss-curv. × position</text>
+  <text x="440" y="688" text-anchor="middle" font-size="10"
+        font-weight="bold" fill="#be185d">3-vector per label</text>
+
+  <!-- Rank-2 Tensors -->
+  <rect x="592" y="578" width="272" height="118" rx="7"
+        fill="#fce7f3" stroke="#db2777" stroke-width="1.5"/>
+  <text x="728" y="600" text-anchor="middle" font-size="12"
+        font-weight="bold" fill="#9d174d">Rank-2 Tensors  (w_r20/02)</text>
+  <line x1="606" y1="607" x2="848" y2="607"
+        stroke="#db2777" stroke-width="0.8"/>
+  <text x="728" y="623" text-anchor="middle" font-size="10"
+        fill="#374151">w020 / w120 / w220 / w320</text>
+  <text x="728" y="639" text-anchor="middle" font-size="10"
+        fill="#374151">w102 / w202  — normal tensor  n⊗n</text>
+  <text x="728" y="655" text-anchor="middle" font-size="10"
+        fill="#374151">+ eigenvalues + eigenvectors</text>
+  <text x="728" y="671" text-anchor="middle" font-size="10"
+        fill="#374151">+ trace · trace_ratio · beta (anisotropy)</text>
+  <text x="728" y="688" text-anchor="middle" font-size="10"
+        font-weight="bold" fill="#be185d">3×3 symmetric matrix per label</text>
+
+</svg>
