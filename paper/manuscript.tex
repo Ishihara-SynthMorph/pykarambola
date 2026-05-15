@@ -145,7 +145,19 @@ The residual discrepancies observed in non-near-zero features arise from differe
 \end{figure}
 
 \subsection*{Label-image API walkthrough}
-% TODO (issue #33)
+To demonstrate the label-image API, we applied \texttt{minkowski\_tensors\_from\_label\_image} to a publicly available 3D fluorescence segmentation of a human induced pluripotent stem cell (hiPSC) in early anaphase/telophase from the Allen Cell Collection~\cite{Viana2020}.
+The segmentation provides a two-channel binary mask at isotropic voxel spacing of 0.108~$\mu$m: one channel for the DNA (nucleus) and one for the cell body.
+
+Figure~\ref{fig:labelimage} illustrates how the choice of labelling scheme directly determines what the tensors measure, using the DNA channel as a concrete example.
+In case~(i), the entire DNA channel is passed as a single binary mask; \texttt{minkowski\_tensors\_from\_label\_image} returns one tensor set describing the aggregate geometry of all chromosomal material ($V = 110~\mu\text{m}^3$, $A = 435~\mu\text{m}^2$, $\chi = 2$, $\beta_0^{2,0} = 0.118$).
+In case~(ii), \texttt{scipy.ndimage.label} first assigns a unique integer label to each connected component, and \texttt{minkowski\_tensors\_from\_label\_image} returns three independent tensor sets --- one per DNA object.
+The per-object results reveal structure that is invisible in case~(i): object~1 ($V = 56~\mu\text{m}^3$, $\beta_0^{2,0} = 0.194$) is approximately twice the volume of objects~2 and~3 ($V \approx 27~\mu\text{m}^3$ each), which are more elongated ($\beta_0^{2,0} \approx 0.144$--$0.151$), consistent with sister chromatids caught mid-separation.
+The anisotropy of the DNA objects is substantially higher than that of the cell body ($\beta_0^{2,0} = 0.277$).
+
+This example demonstrates a general principle: identical binary image data yields fundamentally different morphometric results depending on label assignment, and the correct choice depends on the biological question.
+Whole-structure morphometry (case~i) is appropriate when the aggregate shape is the object of interest; per-object morphometry (case~ii) is required when individual instances must be resolved, as in cell counting, organelle tracking, or shape clustering.
+Both modes are supported by a single function call; the full worked example including mesh visualisation and Minkowski tensor additivity is provided in the accompanying notebook (notebook~\#17, Supplementary Material).
+The pipeline from label image to triangulated mesh and Minkowski tensors is summarised in Figure~\ref{fig:pipeline}; the pykarambola output is directly compatible with standard bioimage segmentation tools such as cellpose~\cite{Stringer2021cellpose} and StarDist~\cite{Schmidt2018stardist}, whose instance segmentation outputs are integer label images of precisely the form accepted by \texttt{minkowski\_tensors\_from\_label\_image}.
 
 \begin{figure}
 \centering
