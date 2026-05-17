@@ -72,7 +72,7 @@ An optional Cython extension accelerates the graph-traversal steps of mesh initi
 The API for computing Minkowski tensors directly from segmented 3D label images (\texttt{minkowski\_tensors\_from\_label\_image}) requires scikit-image~\cite{vanderwalt2014scikit} for marching-cubes surface extraction; this dependency is not declared as mandatory and resolves automatically in environments where scikit-image is already present.
 
 Pykarambola retains support for the two mesh formats accepted by C++ karambola: the karambola-native \texttt{.poly} format and the Object File Format (\texttt{.off}).
-Two additional parsers for Wavefront OBJ (\texttt{.obj}) and binary glTF (\texttt{.glb}) were added to broaden compatibility with mesh files produced by common 3D reconstruction and visualisation tools.
+Three additional parsers for Wavefront OBJ (\texttt{.obj}), binary glTF (\texttt{.glb}), and STereoLithography (\texttt{.stl}) were added to broaden compatibility with mesh files produced by common 3D reconstruction and visualisation tools.
 
 The Python port and software development were assisted by Claude (Opus 4.5 and Sonnet 4.6; Anthropic).
 Numerical correctness of the port was validated by extensive benchmarking against the C++ karambola binary across a diverse set of test meshes, confirming agreement to floating-point precision for all Minkowski scalars, vectors, and tensors.
@@ -166,28 +166,19 @@ The residual discrepancies observed in non-near-zero features arise from differe
 \section*{Discussion}
 %% -------------------------------------------------------
 pykarambola makes Minkowski tensor morphometry directly accessible within the Python bioimage ecosystem by replacing a C++ binary with a pip-installable package that accepts NumPy arrays and returns plain Python dicts.
-Beyond the interface change, the reimplementation extends input support to Wavefront OBJ, binary glTF, and STereoLithography (\texttt{.stl}) files and adds a high-level label-image API that converts 3D segmentation outputs into per-object tensors in a single call.
-The benchmark results show that despite being a Python implementation, pykarambola is 2.0--2.2$\times$ faster than C++ karambola end-to-end on icospheres and 2.3$\times$ faster on the AdrenalMNIST3D dataset; the Cython-accelerated build extends this advantage to 2.7--3.4$\times$.
+Beyond the interface change, the reimplementation extends input support to Wavefront OBJ, binary glTF, and STL (\texttt{.stl}) files and adds a high-level label-image API that converts 3D segmentation outputs into per-object tensors in a single call.
+The benchmark results show that pykarambola is 2.0--2.2$\times$ faster than C++ karambola end-to-end on icospheres and 2.3$\times$ faster on the AdrenalMNIST3D dataset; the Cython-accelerated build extends this advantage to 2.7--3.4$\times$.
 The speedup over the C++ binary arises primarily from two sources: the elimination of per-mesh file I/O (C++ karambola writes one result folder per object to disk) and NumPy vectorization of the Minkowski tensor functionals over all triangles in a single array operation.
 The optional Cython extension targets only the graph-traversal steps of mesh initialisation, which resist vectorization; its benefit is therefore most pronounced for large meshes and batch analyses where initialisation cost dominates.
 For interactive or small-scale use, the pure-Python build is sufficient and requires no compiled extension.
 
-The primary limitation of pykarambola, inherited from karambola, is that it operates exclusively on triangulated surface meshes.
+The primary limitation of pykarambola, inherited from karambola, is that it operates exclusively on triangulated surface meshes; data in other representations such as point clouds must first be converted to a triangulated surface before analysis.
 For label-image inputs, the surface is extracted by marching cubes, which introduces a discretization artefact: at typical fluorescence microscopy voxel sizes, the mesh is a piecewise-planar approximation of the true surface.
 Tensor values therefore converge to their continuous limits as voxel resolution increases, and users working with low-resolution data should interpret results with this in mind.
 Passing the physical voxel spacing via the \texttt{spacing} argument ensures that all length, area, and volume quantities are reported in physical units and are comparable across datasets acquired at different resolutions.
-A second limitation is that pykarambola does not currently support GPU acceleration; the NumPy back end is CPU-only, and performance scales linearly with the number of objects in a batch.
 
-Future development directions include a napari plugin for interactive visualisation of tensor outputs alongside raw image data, support for additional Minkowski tensor families beyond those available in karambola, GPU acceleration of the tensor functionals via a CuPy back end, and a streaming batch-processing mode for datasets too large to hold in memory simultaneously.
-
-
-%% -------------------------------------------------------
-\section*{Conclusions}
-%% -------------------------------------------------------
-pykarambola brings Minkowski tensor morphometry into the Python bioimage ecosystem as a pip-installable package with a NumPy-native API.
-By accepting 3D label images directly and returning per-object tensors in a single call, it removes the format-conversion and build-toolchain barriers that previously limited Minkowski tensor analysis to specialist C++ workflows.
-The benchmarks confirm that the Python reimplementation is faster than the C++ reference binary end-to-end, numerically equivalent to floating-point precision, and immediately compatible with standard segmentation tools.
-We invite the bioimage analysis community to adopt pykarambola as a drop-in morphometry step in existing segmentation pipelines and to contribute new tensor types, file format parsers, and downstream analysis notebooks via the project repository.
+Future development directions include a napari plugin for interactive visualisation of tensor outputs alongside raw image data --- pykarambola's speed makes it well-suited for real-time feedback as users explore and annotate 3D segmentations, support for additional Minkowski tensor families beyond those available in karambola, and a streaming batch-processing mode for datasets too large to hold in memory simultaneously.
+We invite the bioimage analysis community to adopt pykarambola as a drop-in morphometry step in existing segmentation pipelines and to contribute new measures, file format parsers, and downstream analysis notebooks via the project repository.
 
 
 %% -------------------------------------------------------
