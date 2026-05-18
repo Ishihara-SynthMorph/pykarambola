@@ -166,13 +166,13 @@ The residual discrepancies observed in non-near-zero features arise from differe
 \section*{Discussion}
 %% -------------------------------------------------------
 pykarambola makes Minkowski tensor morphometry directly accessible within the Python bioimage ecosystem by replacing a C++ binary with a pip-installable package that accepts NumPy arrays and returns plain Python dicts.
-Beyond the interface change, the reimplementation extends input support to Wavefront OBJ, binary glTF, and STL (\texttt{.stl}) files and adds a high-level label-image API that converts 3D segmentation outputs into per-object tensors in a single call.
+Beyond the interface change, the reimplementation extends input support to Wavefront OBJ, binary glTF, and STL files and adds a high-level label-image API that converts 3D segmentation outputs into per-object tensors in a single call.
 The benchmark results show that pykarambola is 2.0--2.2$\times$ faster than C++ karambola end-to-end on icospheres and 2.3$\times$ faster on the AdrenalMNIST3D dataset; the Cython-accelerated build extends this advantage to 2.7--3.4$\times$.
 The speedup over the C++ binary arises primarily from two sources: the elimination of per-mesh file I/O (C++ karambola writes one result folder per object to disk) and NumPy vectorization of the Minkowski tensor functionals over all triangles in a single array operation.
 The optional Cython extension targets only the graph-traversal steps of mesh initialisation, which resist vectorization; its benefit is therefore most pronounced for large meshes and batch analyses where initialisation cost dominates.
 For interactive or small-scale use, the pure-Python build is sufficient and requires no compiled extension.
 
-The primary limitation of pykarambola, inherited from karambola, is that it operates exclusively on triangulated surface meshes; data in other representations such as point clouds must first be converted to a triangulated surface before analysis.
+The primary limitation of pykarambola, inherited from karambola, is that it operates exclusively on triangulated surface meshes.
 For label-image inputs, the surface is extracted by marching cubes, which introduces a discretization artefact: at typical fluorescence microscopy voxel sizes, the mesh is a piecewise-planar approximation of the true surface.
 Tensor values therefore converge to their continuous limits as voxel resolution increases, and users working with low-resolution data should interpret results with this in mind.
 Passing the physical voxel spacing via the \texttt{spacing} argument ensures that all length, area, and volume quantities are reported in physical units and are comparable across datasets acquired at different resolutions.
