@@ -118,7 +118,7 @@ It extracts a triangulated isosurface for each label via \texttt{scikit-image} m
 We benchmarked pykarambola against the reference C++ karambola binary on two mesh sets.
 First, synthetic icospheres at subdivision levels 5–10 (10{,}242 to 10{,}485{,}762 vertices) were used to characterise runtime scaling; both the pure-Python build and the Cython-accelerated build were timed independently (see Acceleration strategy, Methods).
 Second, the AdrenalMNIST3D a standardized biomedical dataset~\cite{Yang2023MedMNIST} with 1{,}584 adrenal glands at two voxel resolutions (28$^3$ and 64$^3$) was used to measure performance on realistic biological meshes.
-All measurements were performed on a single core of an Apple~M4 processor (macOS~15.7.3, Python~3.11).
+All measurements were performed on a single core of an Apple~M4 processor (macOS~15.7.3, Python~3.11, pykarambola~v0.4.0).
 
 On icospheres, the Cython-accelerated build reduced compute time by ~1.5–1.9$\times$ relative to the pure-Python build (Figure~\ref{fig:runtime}).
 The absolute time saved by Cython, grows with mesh size --- from $\sim$0.03~s at subdivision~5 to $\sim$27~s at subdivision~10. 
@@ -208,7 +208,7 @@ We invite the bioimage analysis community to adopt pykarambola as a drop-in morp
 %% -------------------------------------------------------
 pykarambola is released under the GNU General Public License v3.0 or later (GPL-3.0-or-later) and is freely available at \url{https://github.com/Ishihara-SynthMorph/pykarambola}.
 The package can be installed via the Python Package Index (PyPI) with \texttt{pip install pykarambola}.
-A permanent archived version is deposited on Zenodo at \url{https://doi.org/10.5281/zenodo.20127022}.
+Version 0.4.0, the version described in this paper, is permanently archived on Zenodo at \url{https://doi.org/10.5281/zenodo.20127022}.
 Core dependencies are NumPy and SciPy; optional dependencies include Cython (for acceleration) and scikit-image (for label-image API).
 
 %% -------------------------------------------------------
