@@ -145,19 +145,60 @@ The residual discrepancies observed in non-near-zero features arise from differe
 \end{figure}
 
 \subsection*{Label-image API walkthrough}
-% TODO (issue #33)
+
+The \texttt{minkowski\_tensors\_from\_label\_image} function accepts a 3D integer NumPy array
+in which each nonzero value identifies a distinct object,
+and returns a dict keyed by label with the same Minkowski tensor outputs as the mesh API
+(Figure~\ref{fig:pipeline}).
+Internally, the function calls marching cubes on each label's binary mask to extract
+a triangulated isosurface, then pipes the resulting mesh through the standard
+\texttt{minkowski\_tensors} computation.
+The labelling strategy determines what the tensors measure:
+assigning all foreground voxels a single label (Figure~\ref{fig:labelimage}a) yields
+one set of tensors describing the aggregate structure,
+whereas splitting connected components with \texttt{scipy.ndimage.label} and assigning
+each a unique integer label (Figure~\ref{fig:labelimage}b) produces per-object tensors
+that resolve individual morphologies.
 
 \begin{figure}
 \centering
-% TODO (issue #18): Figure — Minkowski tensor computation pipeline schematic
-\caption{Schematic of the Minkowski tensor computation pipeline in pykarambola.}
+\includegraphics[width=\linewidth]{../assets/pipeline_figure18.pdf}
+\caption{%
+  Computation pipeline of pykarambola.
+  Two entry paths feed into a shared core:
+  \texttt{minkowski\_tensors\_from\_label\_image} (left) accepts a 3D integer label image,
+  pads the array, extracts an isosurface per label via marching cubes, and optionally
+  centers each mesh;
+  mesh files (\texttt{.poly}, \texttt{.off}, \texttt{.obj}, \texttt{.glb}) or direct
+  \texttt{Triangulation} objects (right) bypass this step.
+  The shared core constructs a \texttt{Triangulation} from vertex and face arrays,
+  precomputes per-triangle and per-edge geometry in a single vectorised pass,
+  and evaluates the Minkowski tensor functionals.
+  Outputs are organised into three families:
+  scalars ($w^{0,0,0}$, $w^{1,0,0}$, $w^{2,0,0}$, $w^{3,0,0}$),
+  vectors ($w^{r,1,0}$),
+  and rank-2 tensors ($w^{r,2,0}$ and $w^{r,0,2}$) with their eigensystems
+  and anisotropy index~$\beta$.
+}
 \label{fig:pipeline}
 \end{figure}
 
 \begin{figure}
 \centering
-% TODO (issue #21): Figure — label-image API single-label vs multi-label
-\caption{Label-image API applied to a 3D binary image: single-label versus multi-label mode.}
+\includegraphics[width=\linewidth]{../assets/figure21.pdf}
+\caption{%
+  Label-image API applied to the DNA channel of a 3D fluorescence microscopy segmentation
+  of a hiPSC in anaphase/telophase (Allen Cell Collection; isotropic voxel size 0.108\,\textmu m).
+  (\textbf{a}) The entire DNA channel assigned as a single label;
+  one set of Minkowski tensors describes the aggregate of all three DNA objects,
+  with the volumetric centroid marked~($\times$).
+  (\textbf{b}) Each DNA object assigned a distinct label via \texttt{scipy.ndimage.label};
+  three independent tensor sets resolve per-object volume~($V$), surface area~($A$),
+  Euler characteristic~($\chi$), and anisotropy index~($\beta$),
+  with per-object centroids marked~($\times$).
+  Objects~2 and~3 occupy different axial ranges (Z slices 40--72 and 78--110, respectively)
+  and likely correspond to sister chromatids from the same chromosome.
+}
 \label{fig:labelimage}
 \end{figure}
 
