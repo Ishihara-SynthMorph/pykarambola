@@ -37,7 +37,16 @@ ishihara\at pitt.edu
 \section*{Introduction}
 %% -------------------------------------------------------
 
-% TODO (issue #23): Minkowski functionals and tensors
+Three-dimensional morphometric analysis of biological structures requires shape descriptors that capture size, surface geometry, topology, elongation, and orientation in a mathematically principled way.
+Minkowski functionals provide one such foundation: restricted to convex bodies in $\mathbb{R}^3$, Hadwiger's theorem states that every continuous, additive, and motion-invariant scalar functional is expressible as a linear combination of exactly four measures~\cite{SchroderTurk2013, HugSchneider2017}.
+In three dimensions these are volume $V$, surface area $A$, integrated mean curvature $H$ (the surface integral of the mean of the two principal curvatures, quantifying average surface bending), and Euler characteristic $\chi$ (a topological invariant that counts connected components minus handles plus enclosed voids).
+Together they provide a compact and complete description of size, surface extent, bending, and topology — yet being scalars they carry no directional information: a sphere, a cigar-shaped ellipsoid, and a flat disc can share identical $V$, $A$, $H$, and $\chi$ while differing profoundly in elongation and orientation.
+
+Minkowski tensors are independent tensor-valued shape measures that extend this framework by accumulating directional contributions from the object's surface geometry~\cite{SchroderTurk2013, Beisbart2002, Schaller2020papaya2}.
+The Cartesian Minkowski tensors $W_\nu^{r,s}$ encode orientation explicitly; for example, for the rank-2 surface tensor $W_1^{0,2}$ — which accumulates outer products of surface normals weighted by area — the ratio of smallest to largest eigenvalue defines the anisotropy index $\beta_0^{2,0}$: it equals one for a perfect sphere and decreases toward zero for increasingly elongated or oblate shapes.
+A further layer of description comes from decomposing the Cartesian Minkowski tensors into irreducible representations under rotation, which gives rise to the Minkowski structure metrics $q_\ell$ and $w_\ell$: rotationally invariant quantities that characterise $\ell$-fold orientational order and have been applied extensively to detect crystal-like and liquid-crystalline local symmetry in colloidal and granular systems~\cite{SchroderTurk2013}.
+Originally developed in structural physics, this hierarchy of shape descriptors — from scalar functionals through Cartesian tensors to structure metrics — is increasingly relevant in biological image analysis, where segmented structures such as nuclei and organelles often carry biologically meaningful elongation and orientation that scalar morphometrics cannot detect.
+Realising this potential requires tools that integrate seamlessly into the workflows biologists already use.
 
 % TODO (issue #25): Python ecosystem and bioimage analysis community
 Modern bioimage analysis relies on open source tools largely written in Python.
@@ -72,7 +81,7 @@ An optional Cython extension accelerates the graph-traversal steps of mesh initi
 The API for computing Minkowski tensors directly from segmented 3D label images (\texttt{minkowski\_tensors\_from\_label\_image}) requires scikit-image~\cite{vanderwalt2014scikit} for marching-cubes surface extraction; this dependency is not declared as mandatory and resolves automatically in environments where scikit-image is already present.
 
 Pykarambola retains support for the two mesh formats accepted by C++ karambola: the karambola-native \texttt{.poly} format and the Object File Format (\texttt{.off}).
-Two additional parsers for Wavefront OBJ (\texttt{.obj}) and binary glTF (\texttt{.glb}) were added to broaden compatibility with mesh files produced by common 3D reconstruction and visualisation tools.
+Three additional parsers for Wavefront OBJ (\texttt{.obj}), binary glTF (\texttt{.glb}), and STereoLithography (\texttt{.stl}) were added to broaden compatibility with mesh files produced by common 3D reconstruction and visualisation tools.
 
 The Python port and software development were assisted by Claude (Opus 4.5 and Sonnet 4.6; Anthropic).
 Numerical correctness of the port was validated by extensive benchmarking against the C++ karambola binary across a diverse set of test meshes, confirming agreement to floating-point precision for all Minkowski scalars, vectors, and tensors.
@@ -104,12 +113,35 @@ It extracts a triangulated isosurface for each label via \texttt{scikit-image} m
 \section*{Results}
 %% -------------------------------------------------------
 
+\begin{figure}
+\centering
+\includegraphics[width=\linewidth]{../assets/pipeline_figure18.pdf}
+\caption{%
+  Computation pipeline of pykarambola.
+  Two entry paths feed into a shared core:
+  \texttt{minkowski\_tensors\_from\_label\_image} (left) accepts a 3D integer label image,
+  pads the array, extracts an isosurface per label via marching cubes, and optionally
+  centers each mesh;
+  mesh files (\texttt{.poly}, \texttt{.off}, \texttt{.obj}, \texttt{.glb}) or direct
+  \texttt{Triangulation} objects (right) bypass this step.
+  The shared core constructs a \texttt{Triangulation} from vertex and face arrays,
+  precomputes per-triangle and per-edge geometry in a single vectorised pass,
+  and evaluates the Minkowski tensor functionals.
+  Outputs are organised into three families:
+  scalars ($w^{0,0,0}$, $w^{1,0,0}$, $w^{2,0,0}$, $w^{3,0,0}$),
+  vectors ($w^{r,1,0}$),
+  and rank-2 tensors ($w^{r,2,0}$ and $w^{r,0,2}$) with their eigensystems
+  and anisotropy index~$\beta$.
+}
+\label{fig:pipeline}
+\end{figure}
+
 \subsection*{Runtime benchmark}
 
 We benchmarked pykarambola against the reference C++ karambola binary on two mesh sets.
 First, synthetic icospheres at subdivision levels 5–10 (10{,}242 to 10{,}485{,}762 vertices) were used to characterise runtime scaling; both the pure-Python build and the Cython-accelerated build were timed independently (see Acceleration strategy, Methods).
 Second, the AdrenalMNIST3D a standardized biomedical dataset~\cite{Yang2023MedMNIST} with 1{,}584 adrenal glands at two voxel resolutions (28$^3$ and 64$^3$) was used to measure performance on realistic biological meshes.
-All measurements were performed on a single core of an Apple~M4 processor (macOS~15.7.3, Python~3.11).
+All measurements were performed on a single core of an Apple~M4 processor (macOS~15.7.3, Python~3.11, pykarambola~v0.4.0).
 
 On icospheres, the Cython-accelerated build reduced compute time by ~1.5–1.9$\times$ relative to the pure-Python build (Figure~\ref{fig:runtime}).
 The absolute time saved by Cython, grows with mesh size --- from $\sim$0.03~s at subdivision~5 to $\sim$27~s at subdivision~10. 
@@ -139,49 +171,39 @@ The residual discrepancies observed in non-near-zero features arise from differe
 
 \begin{figure}
 \centering
-% TODO (issue #20): Figure — numerical accuracy agreement with C++ karambola
-\caption{Numerical accuracy of pykarambola relative to the reference C++ karambola implementation.}
+\textbf{(a)}\par\smallskip
+\includegraphics[width=\linewidth]{notebooks/results/heatmap_relative_error_28.pdf}\\[8pt]
+\textbf{(b)}\par\smallskip
+\includegraphics[width=\linewidth]{notebooks/results/heatmap_relative_error_64.pdf}
+\caption{%
+  Numerical accuracy of pykarambola relative to the reference C++ karambola implementation,
+  evaluated on the AdrenalMNIST3D dataset (1{,}584 meshes).
+  Each cell shows the mean relative error (\%) per feature (columns) and shape label (rows).
+  (\textbf{a})~$28^3$ voxel resolution.
+  (\textbf{b})~$64^3$ voxel resolution.
+  Colour scale is RdYlGn$_r$; greener cells indicate lower error.
+  Three features (\texttt{w010}, \texttt{w300}, \texttt{w202\_02}) show elevated errors
+  due to near-zero values that inflate the relative error metric
+  (see text for details).
+}
 \label{fig:accuracy}
 \end{figure}
 
 \subsection*{Label-image API walkthrough}
+To demonstrate the label-image API, we applied \texttt{minkowski\_tensors\_from\_label\_image} to a publicly available 3D fluorescence segmentation of a human induced pluripotent stem cell (hiPSC) in early anaphase/telophase from the Allen Cell Collection~\cite{viana2023integrated}.
+The segmentation provides a two-channel binary mask at isotropic voxel spacing of 0.108~$\mu$m: one channel for the DNA (nucleus) and one for the cell body.
 
-The \texttt{minkowski\_tensors\_from\_label\_image} function accepts a 3D integer NumPy array
-in which each nonzero value identifies a distinct object,
-and returns a dict keyed by label with the same Minkowski tensor outputs as the mesh API
-(Figure~\ref{fig:pipeline}).
-Internally, the function calls marching cubes on each label's binary mask to extract
-a triangulated isosurface, then pipes the resulting mesh through the standard
-\texttt{minkowski\_tensors} computation.
-The labelling strategy determines what the tensors measure:
-assigning all foreground voxels a single label (Figure~\ref{fig:labelimage}a) yields
-one set of tensors describing the aggregate structure,
-whereas splitting connected components with \texttt{scipy.ndimage.label} and assigning
-each a unique integer label (Figure~\ref{fig:labelimage}b) produces per-object tensors
-that resolve individual morphologies.
+Figure~\ref{fig:labelimage} illustrates how the choice of labelling scheme directly determines what the tensors measure, using the DNA channel as a concrete example.
+In case~(i), the binary DNA mask is cast to an integer array (\texttt{dna\_mask.astype(int)}) and passed with the default \texttt{autolabel=False}; because all non-zero voxels share label value~1, the function returns one tensor set describing the aggregate geometry of all chromosomal material ($V = 110~\mu\text{m}^3$, $A = 435~\mu\text{m}^2$, $\chi = 2$, $\beta_0^{2,0} = 0.118$).
+In case~(ii), \texttt{scipy.ndimage.label(dna\_mask)} first assigns a unique integer to each connected component; the resulting three-valued label image is passed with \texttt{autolabel=False} (default), and the function returns three independent tensor sets --- one per DNA object.
+Equivalently, case~(ii) can be achieved in a single call by passing the binary mask with \texttt{autolabel=True}, which instructs the function to detect connected components on the mesh internally without any preprocessing; the per-object tensors are numerically identical.
+The per-object results reveal structure that is invisible in case~(i): object~1 ($V = 56~\mu\text{m}^3$, $\beta_0^{2,0} = 0.194$) is approximately twice the volume of objects~2 and~3 ($V \approx 27~\mu\text{m}^3$ each), which are more elongated ($\beta_0^{2,0} \approx 0.144$--$0.151$), consistent with sister chromatids caught mid-separation.
+The anisotropy of the DNA objects is substantially higher than that of the cell body ($\beta_0^{2,0} = 0.277$).
 
-\begin{figure}
-\centering
-\includegraphics[width=\linewidth]{../assets/pipeline_figure18.pdf}
-\caption{%
-  Computation pipeline of pykarambola.
-  Two entry paths feed into a shared core:
-  \texttt{minkowski\_tensors\_from\_label\_image} (left) accepts a 3D integer label image,
-  pads the array, extracts an isosurface per label via marching cubes, and optionally
-  centers each mesh;
-  mesh files (\texttt{.poly}, \texttt{.off}, \texttt{.obj}, \texttt{.glb}) or direct
-  \texttt{Triangulation} objects (right) bypass this step.
-  The shared core constructs a \texttt{Triangulation} from vertex and face arrays,
-  precomputes per-triangle and per-edge geometry in a single vectorised pass,
-  and evaluates the Minkowski tensor functionals.
-  Outputs are organised into three families:
-  scalars ($w^{0,0,0}$, $w^{1,0,0}$, $w^{2,0,0}$, $w^{3,0,0}$),
-  vectors ($w^{r,1,0}$),
-  and rank-2 tensors ($w^{r,2,0}$ and $w^{r,0,2}$) with their eigensystems
-  and anisotropy index~$\beta$.
-}
-\label{fig:pipeline}
-\end{figure}
+This example demonstrates a general principle: identical binary image data yields fundamentally different morphometric results depending on label assignment, and the correct choice depends on the biological question.
+Whole-structure morphometry (case~i) is appropriate when the aggregate shape is the object of interest; per-object morphometry (case~ii) is required when individual instances must be resolved, as in cell counting, organelle tracking, or shape clustering.
+Both modes are supported by a single function call; the full worked example including mesh visualisation and Minkowski tensor additivity is provided in the accompanying notebook (notebook~\#17, Supplementary Material).
+The pipeline from label image to triangulated mesh and Minkowski tensors is summarised in Figure~\ref{fig:pipeline}; the pykarambola output is directly compatible with standard bioimage segmentation tools such as cellpose~\cite{Stringer2021cellpose} and StarDist~\cite{Schmidt2018stardist}, whose instance segmentation outputs are integer label images of precisely the form accepted by \texttt{minkowski\_tensors\_from\_label\_image}.
 
 \begin{figure}
 \centering
@@ -206,21 +228,36 @@ that resolve individual morphologies.
 %% -------------------------------------------------------
 \section*{Discussion}
 %% -------------------------------------------------------
-% TODO (issue #34)
+pykarambola makes Minkowski tensor morphometry directly accessible within the Python bioimage ecosystem by replacing a C++ binary with a pip-installable package that accepts NumPy arrays and returns plain Python dicts.
+Beyond the interface change, the reimplementation extends input support to Wavefront OBJ, binary glTF, and STL files and adds a high-level label-image API that converts 3D segmentation outputs into per-object tensors in a single call.
+The benchmark results show that pykarambola is 2.0--2.2$\times$ faster than C++ karambola end-to-end on icospheres and 2.3$\times$ faster on the AdrenalMNIST3D dataset; the Cython-accelerated build extends this advantage to 2.7--3.4$\times$.
+The speedup over the C++ binary arises primarily from two sources: the elimination of per-mesh file I/O (C++ karambola writes one result folder per object to disk) and NumPy vectorization of the Minkowski tensor functionals over all triangles in a single array operation.
+The optional Cython extension targets only the graph-traversal steps of mesh initialisation, which resist vectorization; its benefit is therefore most pronounced for large meshes and batch analyses where initialisation cost dominates.
+For interactive or small-scale use, the pure-Python build is sufficient and requires no compiled extension.
 
+The primary limitation of pykarambola, inherited from karambola, is that it operates exclusively on triangulated surface meshes.
+For label-image inputs, the surface is extracted by marching cubes, which introduces a discretization artefact: at typical fluorescence microscopy voxel sizes, the mesh is a piecewise-planar approximation of the true surface.
+Tensor values therefore converge to their continuous limits as voxel resolution increases, and users working with low-resolution data should interpret results with this in mind.
+Passing the physical voxel spacing via the \texttt{spacing} argument ensures that all length, area, and volume quantities are reported in physical units and are comparable across datasets acquired at different resolutions.
 
-%% -------------------------------------------------------
-\section*{Conclusions}
-%% -------------------------------------------------------
-% TODO (issue #35)
+Future development directions include a napari plugin for interactive visualisation of tensor outputs alongside raw image data --- pykarambola's speed makes it well-suited for real-time feedback as users explore and annotate 3D segmentations, support for additional Minkowski tensor families beyond those available in karambola, and a streaming batch-processing mode for datasets too large to hold in memory simultaneously.
+We invite the bioimage analysis community to adopt pykarambola as a drop-in morphometry step in existing segmentation pipelines and to contribute new measures, file format parsers, and downstream analysis notebooks via the project repository.
 
 
 %% -------------------------------------------------------
 \section*{Software availability}
 %% -------------------------------------------------------
-pykarambola is available at \url{https://github.com/Ishihara-SynthMorph/pykarambola}.
+pykarambola is released under the GNU General Public License v3.0 or later (GPL-3.0-or-later) and is freely available at \url{https://github.com/Ishihara-SynthMorph/pykarambola}.
+The package can be installed via the Python Package Index (PyPI) with \texttt{pip install pykarambola}.
+Version 0.4.0, the version described in this paper, is permanently archived on Zenodo at \url{https://doi.org/10.5281/zenodo.20127022}.
 Core dependencies are NumPy and SciPy; optional dependencies include Cython (for acceleration) and scikit-image (for label-image API).
-% TODO (issue #36): Complete software availability statement
+
+%% -------------------------------------------------------
+\section*{Data availability}
+%% -------------------------------------------------------
+All datasets used in this study are publicly available.
+The AdrenalMNIST3D benchmark meshes are part of MedMNIST~\cite{Yang2023MedMNIST} and can be downloaded via the \texttt{medmnist} Python package.
+The Allen Cell Collection segmentations are publicly available through the Allen Institute for Cell Science~\cite{viana2023integrated}.
 
 
 \begin{acknowledgements}
