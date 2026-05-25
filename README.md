@@ -253,6 +253,25 @@ All quantities below are returned by `compute='standard'` unless noted `(compute
 
 Rank-2 tensors additionally yield `{name}_eigvals` and `{name}_eigvecs` entries.
 
+## FAQ
+
+**My mesh is not water-tight. What should I do?**
+
+pykarambola will still run on open (non-water-tight) meshes and will emit a `UserWarning` listing the affected labels.
+Volume-dependent quantities (`w000`, `w020`) are set to `NaN` for open labels because the divergence theorem requires a closed surface to define volume unambiguously.
+All other quantities — surface area (`w100`), curvature integrals (`w200`, `w300`), and their associated vectors and tensors — remain valid and are computed normally.
+
+If you need volume, the recommended fix is to close the surface before calling pykarambola.
+Common tools for this are [PyMeshFix](https://github.com/pyvista/pymeshfix) (`pymeshfix.MeshFix(verts, faces).repair()`) and [Open3D](http://www.open3d.org/) (`mesh.fill_holes()`).
+Alternatively, if your mesh comes from a 3D label image, use `minkowski_tensors_from_label_image` directly — it always produces closed surfaces via marching cubes and automatically pads the image at boundaries to prevent open surfaces.
+
+**I have point cloud data. Can I use pykarambola?**
+
+Not directly — pykarambola requires a triangulated surface mesh (vertex array + face array), not raw point positions.
+You first need to reconstruct a surface from your point cloud.
+[Open3D](http://www.open3d.org/) provides two common approaches: Poisson surface reconstruction (`o3d.geometry.TriangleMesh.create_from_point_cloud_poisson`) for smooth, water-tight surfaces, and ball-pivoting (`create_from_point_cloud_ball_pivoting`) for locally faithful but potentially open surfaces.
+Once you have a mesh, pass its vertex and face arrays to `minkowski_tensors(verts, faces)` directly.
+
 ## Citation
 
 If you use pykarambola in published work, please cite both pykarambola and the original karambola package.
