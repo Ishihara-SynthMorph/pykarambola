@@ -61,7 +61,7 @@ Here we present our tool pykarambola, a Python package that integrates Minkowski
 The C++ karambola package~\cite{Schaller2020karambola} is the reference implementation for computing Minkowski tensors on 3D triangulated surfaces, and has been widely used in structural analysis of soft matter and disordered systems~\cite{SchroderTurk2013}.
 It accepts meshes in two formats: the karambola-native \texttt{.poly} format and the Object File Format (\texttt{.off}), and writes results to plain-text files.
 Despite its numerical capabilities, karambola is not distributed through a package manager, requires a C++ build toolchain, and provides no NumPy-compatible interface.
-Researchers who wish to use it within a Python pipeline must write format-conversion scripts for the input and output parsers around the binary, adding fragile intermediates that are difficult to maintain.
+Since modern bioimage analysis pipelines operate predominantly in Python — with segmentation tools such as cellpose~\cite{Stringer2021cellpose} and scikit-image~\cite{vanderwalt2014scikit} producing in-memory NumPy arrays or integer label images — integrating karambola into such a workflow requires serialising data to disk in a supported mesh format, invoking the binary as a subprocess, and parsing the plain-text result files back into Python, adding fragile intermediates that are difficult to maintain.
 pykarambola removes these barriers: it is installable with \texttt{pip install pykarambola}, extends input support to Wavefront OBJ (\texttt{.obj}) and binary glTF (\texttt{.glb}) in addition to \texttt{.poly} and \texttt{.off}, accepts vertex and face arrays directly as NumPy arrays, and returns results as plain Python dicts.
 
 
@@ -118,14 +118,15 @@ It extracts a triangulated isosurface for each label via \texttt{scikit-image} m
 We benchmarked pykarambola against the reference C++ karambola binary on two mesh sets.
 First, synthetic icospheres at subdivision levels 5–10 (10{,}242 to 10{,}485{,}762 vertices) were used to characterise runtime scaling; both the pure-Python build and the Cython-accelerated build were timed independently (see Acceleration strategy, Methods).
 Second, the AdrenalMNIST3D a standardized biomedical dataset~\cite{Yang2023MedMNIST} with 1{,}584 adrenal glands at two voxel resolutions (28$^3$ and 64$^3$) was used to measure performance on realistic biological meshes.
-All measurements were performed on a single core of an Apple~M4 processor (macOS~15.7.3, Python~3.11, pykarambola~v0.4.0).
+All measurements were performed on a single core of an Apple~M4 processor (macOS~15.7.3, Python~3.13, pykarambola~v0.3.0).
 
-On icospheres, the Cython-accelerated build reduced compute time by ~1.5–1.9$\times$ relative to the pure-Python build (Figure~\ref{fig:runtime}).
-The absolute time saved by Cython, grows with mesh size --- from $\sim$0.03~s at subdivision~5 to $\sim$27~s at subdivision~10. 
+On icospheres, the Cython-accelerated build reduced compute time by ~1.1–1.2$\times$ relative to the pure-Python build (Figure~\ref{fig:runtime}).
+The absolute time saved by Cython grows with mesh size --- from $\sim$0.01~s at subdivision~5 to $\sim$26~s at subdivision~10.
 For real-world batch analyses — where hundreds or thousands of meshes are processed sequentially — the growing absolute time saving at larger mesh sizes translates directly into meaningful reductions in total pipeline runtime.
-End-to-end (file parse plus compute), pykarambola was 2.0–2.2$\times$ faster than C++ karambola across all mesh sizes; the Cython-accelerated build reached 2.7–3.4$\times$ faster.
-On AdrenalMNIST3D, pykarambola processed all 1{,}584 meshes at 28$^3$ resolution in 22~s versus 92~s for C++ karambola (4.1$\times$ faster) and at 64$^3$ resolution in 112~s versus 221~s (2.0$\times$ faster), for a 2.3$\times$ combined speedup.
-The C++ karambola timing includes sequential file I/O (one result folder per mesh written to disk), whereas the pykarambola timing covers only in-memory computation; the I/O overhead of the C++ binary partially accounts for the speedup observed on the adrenal dataset.
+For the Minkowski tensor accumulation step (excluding file I/O), pykarambola was faster than C++ karambola at small mesh sizes (0.7–0.9$\times$ of karambola time at subdivision~5–8) but reached comparable speed at the largest mesh (1.1$\times$ at subdivision~10); the Cython-accelerated compute was consistently faster than karambola across all sizes (0.6–0.9$\times$ of karambola time).
+End-to-end (file parse plus compute), both pykarambola builds showed times comparable to karambola (pure-Python: 0.9–1.3$\times$; Cython-accelerated: 0.8–1.1$\times$).
+On AdrenalMNIST3D, pykarambola processed all 1{,}584 meshes at 28$^3$ resolution in 11.1~s versus 31~s for C++ karambola (2.8$\times$ faster) and at 64$^3$ resolution in 57.4~s versus 90~s (1.6$\times$ faster).
+The C++ karambola timing includes sequential file I/O (one result folder per mesh written to disk), whereas the pykarambola timing covers only in-memory computation; the file I/O overhead of the C++ binary accounts for most of the speedup observed on the adrenal dataset.
 
 \begin{figure}
 \centering
@@ -136,20 +137,18 @@ The C++ karambola timing includes sequential file I/O (one result folder per mes
 
 \subsection*{Numerical accuracy}
 
-We compared pykarambola output to C++ karambola on the full AdrenalMNIST3D dataset~\cite{Yang2023MedMNIST} (1{,}584 meshes at both 28$^3$ and 64$^3$ resolutions), evaluating all scalar, vector, tensor and tensor eigenvalue features returned by the standard computation mode.
-In addition, the anisotropy indices for the adrenal meshes were computed.
-For 73 of the 76 features, mean relative error was below $3 \times 10^{-5}$\% and maximum relative error was below $3.5 \times 10^{-3}$\% at 28$^3$ resolution and below $0.73$\% at 64$^3$ resolution, confirming agreement at floating-point precision across all Minkowski scalars, vectors, and tensors (Figure~\ref{fig:accuracy}).
-
-Three features showed elevated mean relative errors: the three \texttt{w010} components (the center-of-mass position vector), \texttt{w300} (the integral of mean curvature), and the \texttt{w202\_02} off-diagonal tensor element.
-For \texttt{w010}, elevated errors arise because the AdrenalMNIST3D meshes are center-of-mass aligned to the origin, making all three components physically near zero; any small absolute floating-point discrepancy between the two implementations then inflates the relative error.
-For \texttt{w300} and \texttt{w202\_02}, a subset of meshes produces values within machine epsilon of zero, again causing the relative error metric to be uninformative.
-In all cases, inspection of the highest-error instances confirmed that both implementations return values consistent with physical zero, and their absolute errors are within floating-point precision ($\lesssim 10^{-8}$).
-The residual discrepancies observed in non-near-zero features arise from differences in floating-point evaluation order between the C++ and Python implementations and from the substitution of the GNU Scientific Library eigenvalue solver with NumPy's \texttt{eigh}; both sources affect only the last 1--2 significant digits.
+We compared pykarambola output to C++ karambola on the full AdrenalMNIST3D dataset~\cite{Yang2023MedMNIST} (1{,}584 meshes at both 28$^3$ and 64$^3$ resolutions), evaluating all 121 scalar values output by karambola: 4 Minkowski scalars, 12 vector components, 36 rank-2 tensor upper-triangle elements, 18 rank-2 tensor eigenvalues, 27 components of the rank-3 tensor $W^{1,0,3}$ (\texttt{w103}), 6 eigenvalues of $W^{1,0,4}$ (\texttt{w104}), and 18 spherical Minkowski summary values (\texttt{msm\_ql}, \texttt{msm\_wl}).
+Tensor eigenvectors are computed by pykarambola but are excluded from direct comparison: eigenvectors are defined only up to sign and, in the presence of degenerate eigenvalues, up to arbitrary rotation within the degenerate subspace; the eigenvalues fully characterise the spectral geometry of each tensor.
+Across all 121 features, all 1{,}584 meshes, and both resolutions, pykarambola and karambola outputs fall on the identity line (Figure~\ref{fig:accuracy}).
+Residual discrepancies are consistent with floating-point summation order differences between the C++ and Python implementations and with the substitution of the GNU Scientific Library eigenvalue solver with NumPy's \texttt{eigh}.
 
 \begin{figure}
 \centering
-% TODO (issue #20): Figure — numerical accuracy agreement with C++ karambola
-\caption{Numerical accuracy of pykarambola relative to the reference C++ karambola implementation.}
+\includegraphics[width=\linewidth]{notebooks/results/scatter_accuracy_paper.pdf}
+\caption{Numerical accuracy of pykarambola relative to C++ karambola.
+Each panel shows a scatter plot of values from identical analyses run in C++ (karambola, $x$-axis) and Python (pykarambola, $y$-axis) on the AdrenalMNIST3D dataset (1{,}584 meshes).
+Rows correspond to the two voxel resolutions (28$^3$ and 64$^3$); columns correspond to feature groups (scalars and vectors; rank-2 tensor components and eigenvalues; rank-3 tensor \texttt{w103}; higher-rank \texttt{w104} eigenvalues and spherical Minkowski summary quantities \texttt{msm}).
+The red diagonal indicates perfect agreement; all points fall on this line.}
 \label{fig:accuracy}
 \end{figure}
 
@@ -189,8 +188,9 @@ The pipeline from label image to triangulated mesh and Minkowski tensors is summ
 %% -------------------------------------------------------
 pykarambola makes Minkowski tensor morphometry directly accessible within the Python bioimage ecosystem by replacing a C++ binary with a pip-installable package that accepts NumPy arrays and returns plain Python dicts.
 Beyond the interface change, the reimplementation extends input support to Wavefront OBJ, binary glTF, and STL files and adds a high-level label-image API that converts 3D segmentation outputs into per-object tensors in a single call.
-The benchmark results show that pykarambola is 2.0--2.2$\times$ faster than C++ karambola end-to-end on icospheres and 2.3$\times$ faster on the AdrenalMNIST3D dataset; the Cython-accelerated build extends this advantage to 2.7--3.4$\times$.
-The speedup over the C++ binary arises primarily from two sources: the elimination of per-mesh file I/O (C++ karambola writes one result folder per object to disk) and NumPy vectorization of the Minkowski tensor functionals over all triangles in a single array operation.
+The benchmark results show that on icospheres, pykarambola compute times are comparable to C++ karambola (pure-Python: 0.9--1.2$\times$; Cython-accelerated: 0.8--1.1$\times$ of karambola end-to-end time), with the Cython-accelerated compute step consistently faster than karambola across all mesh sizes.
+On the AdrenalMNIST3D dataset, pykarambola was faster than C++ karambola (2.8$\times$ at 28$^3$, 1.6$\times$ at 64$^3$), primarily because C++ karambola writes one result folder per object to disk.
+The NumPy vectorization of the Minkowski tensor functionals over all triangles in a single array operation avoids per-triangle Python overhead and accounts for the compute-step parity with the C++ implementation.
 The optional Cython extension targets only the graph-traversal steps of mesh initialisation, which resist vectorization; its benefit is therefore most pronounced for large meshes and batch analyses where initialisation cost dominates.
 For interactive or small-scale use, the pure-Python build is sufficient and requires no compiled extension.
 
@@ -208,7 +208,7 @@ We invite the bioimage analysis community to adopt pykarambola as a drop-in morp
 %% -------------------------------------------------------
 pykarambola is released under the GNU General Public License v3.0 or later (GPL-3.0-or-later) and is freely available at \url{https://github.com/Ishihara-SynthMorph/pykarambola}.
 The package can be installed via the Python Package Index (PyPI) with \texttt{pip install pykarambola}.
-Version 0.4.0, the version described in this paper, is permanently archived on Zenodo at \url{https://doi.org/10.5281/zenodo.20127022}.
+Version 0.3.0, the version described in this paper, is permanently archived on Zenodo at \url{https://doi.org/10.5281/zenodo.20127022}.
 Core dependencies are NumPy and SciPy; optional dependencies include Cython (for acceleration) and scikit-image (for label-image API).
 
 %% -------------------------------------------------------
