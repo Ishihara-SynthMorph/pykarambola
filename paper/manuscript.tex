@@ -83,7 +83,7 @@ The API for computing Minkowski tensors directly from segmented 3D label images 
 Pykarambola retains support for the two mesh formats accepted by C++ karambola: the karambola-native \texttt{.poly} format and the Object File Format (\texttt{.off}).
 Three additional parsers for Wavefront OBJ (\texttt{.obj}), binary glTF (\texttt{.glb}), and STereoLithography (\texttt{.stl}) were added to broaden compatibility with mesh files produced by common 3D reconstruction and visualisation tools.
 
-The Python port and software development were assisted by Claude (Opus 4.5 and Sonnet 4.6; Anthropic).
+The Python port and software development were assisted by AI language models (see Acknowledgements for disclosure).
 Numerical correctness of the port was validated by extensive benchmarking against the C++ karambola binary across a diverse set of test meshes, confirming agreement to floating-point precision for all Minkowski scalars, vectors, and tensors.
 
 \subsection*{Acceleration strategy: NumPy vectorization and Cython}
@@ -222,6 +222,10 @@ The Allen Cell Collection segmentations are publicly available through the Allen
 \begin{acknowledgements}
 pykarambola is a GPL\,3.0 derivative work of karambola, the C++ reference implementation by Schaller, Kapfer, and Schröder-Turk~\cite{Schaller2020karambola}.
 This work was supported in part by an American Heart Association Career Development Award (grant 25CDA1432232) to K.I.
+
+\textbf{AI tools disclosure.}
+Claude Opus 4.5 and Claude Sonnet 4.6 (Anthropic) were used during this project for software and code development (Python port, refactoring, and test scaffolding) and for manuscript drafting and editing.
+All AI-assisted outputs were reviewed, edited, and validated by the human authors before inclusion.
 \end{acknowledgements}
 
 \begin{contributions}
