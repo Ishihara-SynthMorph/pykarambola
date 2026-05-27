@@ -561,6 +561,8 @@ def minkowski_tensors(verts: Union[np.ndarray, Triangulation], faces=None, label
                 out['msm_wl'] = np.array(sph.wl)
             else:
                 out[name] = _extract_result(raw[label])
+                if name == 'w104':
+                    out['w104_eigvals'] = np.linalg.eigh(out['w104'])[0]
 
         # Add eigensystems
         for name in _RANK2:

@@ -11,6 +11,13 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.5.0] - 2026-05-27
+
+### Added
+- `w104_eigvals`: the 6 eigenvalues of the W₁⁰⁴ rank-4 tensor's 6×6 Voigt matrix (computed via `np.linalg.eigh`), added to the `minkowski_tensors` output dict alongside `w104`. Directly comparable to karambola's `w104_eigval` file output. (#130)
+
+---
+
 ## [0.4.0] - 2026-05-11
 
 ### Added
