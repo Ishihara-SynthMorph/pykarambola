@@ -9,6 +9,17 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+---
+
+## [0.5.0] - 2026-05-27
+
+### Added
+- `w104_eigvals`: the 6 eigenvalues of the W₁⁰⁴ rank-4 tensor's 6×6 Voigt matrix (computed via `np.linalg.eigh`), added to the `minkowski_tensors` output dict alongside `w104`. Directly comparable to karambola's `w104_eigval` file output. (#130)
+
+---
+
+## [0.4.0] - 2026-05-11
+
 ### Added
 - `parse_stl_file()`: load ASCII and binary STL files directly into a `Triangulation`, enabling `minkowski_tensors()` to accept STL meshes without manual parsing. Vertex deduplication is performed automatically. Requires the optional `numpy-stl` extra (`pip install "pykarambola[stl]"`). (#119)
 
@@ -89,7 +100,8 @@ Initial Python port of [karambola](https://github.com/morphometry/karambola).
 
 ---
 
-[Unreleased]: https://github.com/Ishihara-SynthMorph/pykarambola/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/Ishihara-SynthMorph/pykarambola/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/Ishihara-SynthMorph/pykarambola/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Ishihara-SynthMorph/pykarambola/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Ishihara-SynthMorph/pykarambola/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Ishihara-SynthMorph/pykarambola/releases/tag/v0.1.0
