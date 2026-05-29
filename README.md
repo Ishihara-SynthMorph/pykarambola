@@ -1,24 +1,45 @@
 # pykarambola
-<!--
-[![CI](https://github.com/Ishihara-SynthMorph/pykarambola/actions/workflows/ci.yml/badge.svg)](https://github.com/Ishihara-SynthMorph/pykarambola/actions/workflows/ci.yml)
+<!-- CI badge disabled: GitHub Actions disabled at org level -->
+<!-- [![CI](https://github.com/Ishihara-SynthMorph/pykarambola/actions/workflows/ci.yml/badge.svg)](https://github.com/Ishihara-SynthMorph/pykarambola/actions/workflows/ci.yml) -->
 [![PyPI version](https://img.shields.io/pypi/v/pykarambola)](https://pypi.org/project/pykarambola/)
 [![Python versions](https://img.shields.io/pypi/pyversions/pykarambola)](https://pypi.org/project/pykarambola/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
--->
-<p align="center">
-  <img src="assets/banner.png" alt="pykarambola" width="75%"/>
-</p>
 
 **pykarambola** computes Minkowski tensors for 3D objects represented as triangulated meshes — a family of shape descriptors rooted in integral geometry that rigorously quantify size, shape, and orientation.
+
+<p align="center">
+  <img src="assets/banner.png" alt="pykarambola — Minkowski tensor morphometry of 3D structures" width="75%"/>
+</p>
+
 Given a mesh, it returns scalar, vector, and tensor quantities including volume, surface area, integrated mean curvature, and Euler characteristic (the Minkowski functionals), as well as higher-rank tensors that capture anisotropy and preferred orientation independently of coordinate frame.
 pykarambola is a Python implementation of [karambola](https://github.com/morphometry/karambola), the reference C++ package for Minkowski tensor computation on 3D triangulated surfaces.
-Minkowski tensors are widely applicable to analyzing 3D structures in biomedical imaging, computational physics, and materials science.
+Minkowski tensors are widely applicable to analyzing 3D structures in biomedical imaging, astrophysics, and materials science.
+
+## Example notebooks
+
+| Notebook | Description |
+|---|---|
+| [`examples/pykarambola_demo.ipynb`](examples/pykarambola_demo.ipynb) | Core API walkthrough: NumPy arrays, file parsers, rank-2 tensors, labels, label-image API |
+| [`examples/segmentation_to_tensors.ipynb`](examples/segmentation_to_tensors.ipynb) | End-to-end pipeline: confocal stack → segmentation → Minkowski tensors → PCA + clustering |
+
+### End-to-end pipeline: confocal nuclei → segmentation → shape clustering
+
+<table align="center">
+  <tr>
+    <td align="center"><img src="assets/demo_raw.png" width="220"/><br/><sub>Raw confocal (nuclei channel)</sub></td>
+    <td align="center"><img src="assets/demo_segmented.png" width="220"/><br/><sub>Segmented nuclei</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="assets/demo_pca_full.png" width="220"/><br/><sub>PCA — scalars + β + eigvals + trace + msm</sub></td>
+    <td align="center"><img src="assets/demo_mesh_full.png" width="220"/><br/><sub>Meshes coloured by cluster</sub></td>
+  </tr>
+</table>
 
 ## New in pykarambola
 
 Compared to the original C++ karambola, this Python port adds:
 
-- **OBJ and GLB parsers** — read Wavefront OBJ and binary glTF (`.glb`) meshes directly, in addition to the original `.poly` and `.off` formats.
+- **OBJ, GLB, and STL parsers** — read Wavefront OBJ, binary glTF (`.glb`), and STL (ASCII and binary) meshes directly via `parse_stl_file()`, in addition to the original `.poly` and `.off` formats.
 - **High-level API** — `minkowski_tensors()` accepts NumPy arrays and returns a plain dict, making it easy to integrate into pipelines without dealing with the lower-level triangulation types.
 - **`labels='auto'`** — pass `labels='auto'` to detect connected mesh components automatically and compute tensors for each body separately, without supplying a face-label array.
 - **`return_count=True`** — append the number of connected objects to the return value as a `(results, n_objects)` tuple.
@@ -36,6 +57,7 @@ Compared to the original C++ karambola, this Python port adds:
 - [Cython](https://cython.org/) ≥ 3.0 — compiled C acceleration (`pip install "pykarambola[accel]"`)
 - [scikit-image](https://scikit-image.org/) — label-image API (`pip install "pykarambola[dev]"`)
 - [trimesh](https://trimesh.org/) — GLB/glTF file support (`pip install "pykarambola[glb]"`)
+- [numpy-stl](https://github.com/WoLpH/numpy-stl) — STL file support (`pip install "pykarambola[stl]"`)
 
 ## Installation
 
@@ -55,10 +77,22 @@ For development (includes pytest and scikit-image):
 pip install "pykarambola[dev]"
 ```
 
+To run the example notebooks (includes scikit-image and tifffile):
+
+```bash
+pip install "pykarambola[notebooks]"
+```
+
 GLB/glTF support requires [trimesh](https://trimesh.org/):
 
 ```bash
 pip install "pykarambola[glb]"
+```
+
+You can combine extras in a single install:
+
+```bash
+pip install "pykarambola[dev,notebooks,accel]"
 ```
 
 ## High-level API
@@ -152,6 +186,13 @@ result = pk.minkowski_tensors(verts, faces, labels="auto")
 print(result[1]["w000"])
 ```
 
+## Example notebooks
+
+| Notebook | What it covers |
+|----------|---------------|
+| [`examples/pykarambola_demo.ipynb`](examples/pykarambola_demo.ipynb) | A hands-on tour of the mesh API: passing vertices and faces as NumPy arrays, supplying per-face labels or using `labels='auto'` to separate connected bodies, retrieving the object count with `return_count`, and computing derived scalars (`_beta`, `_trace`, `_trace_ratio`) |
+| [`examples/label_image_api.ipynb`](examples/label_image_api.ipynb) | Working with 3D segmentation images: measures whole-cell morphology from a single label, compares nucleus and cell body separately using two labels, and runs per-nuclear object anisotropy analysis across three connected components from a real AllenCell hiPSC dataset |
+
 ## File I/O
 
 pykarambola can read four mesh formats. The parsers return a `Triangulation` object that can be passed directly to `minkowski_tensors()`.
@@ -161,6 +202,7 @@ surface = pk.parse_poly_file("my_surface.poly")   # karambola native
 surface = pk.parse_off_file("my_surface.off")     # Object File Format
 surface = pk.parse_obj_file("my_surface.obj")     # Wavefront OBJ  (new)
 surface = pk.parse_glb_file("my_surface.glb")     # binary glTF    (new, requires trimesh)
+surface = pk.parse_stl_file("my_surface.stl")     # STL ASCII/binary (new, requires numpy-stl)
 
 result = pk.minkowski_tensors(surface)
 ```
@@ -171,6 +213,7 @@ result = pk.minkowski_tensors(surface)
 | `.off`    | Object File Format |
 | `.obj`    | Wavefront OBJ |
 | `.glb`    | GL Transmission Format (binary glTF) — requires `trimesh` |
+| `.stl`    | STereoLithography (ASCII and binary) — requires `numpy-stl` |
 
 ## Command-line interface
 
@@ -210,19 +253,36 @@ All quantities below are returned by `compute='standard'` unless noted `(compute
 
 Rank-2 tensors additionally yield `{name}_eigvals` and `{name}_eigvecs` entries.
 
+## FAQ
+
+**My mesh is not water-tight. What should I do?**
+
+pykarambola will still run on open (non-water-tight) meshes and will emit a `UserWarning` listing the affected labels.
+Volume-dependent quantities (`w000`, `w020`) are set to `NaN` for open labels because the divergence theorem requires a closed surface to define volume unambiguously.
+All other quantities — surface area (`w100`), curvature integrals (`w200`, `w300`), and their associated vectors and tensors — remain valid and are computed normally.
+
+If you need volume, the recommended fix is to close the surface before calling pykarambola.
+Common tools for this are [PyMeshFix](https://github.com/pyvista/pymeshfix) (`pymeshfix.MeshFix(verts, faces).repair()`) and [Open3D](http://www.open3d.org/) (`mesh.fill_holes()`).
+Alternatively, if your mesh comes from a 3D label image, use `minkowski_tensors_from_label_image` directly — it always produces closed surfaces via marching cubes and automatically pads the image at boundaries to prevent open surfaces.
+
+**I have point cloud data. Can I use pykarambola?**
+
+Not directly — pykarambola requires a triangulated surface mesh (vertex array + face array), not raw point positions.
+You first need to reconstruct a surface from your point cloud.
+[Open3D](http://www.open3d.org/) provides two common approaches: Poisson surface reconstruction (`o3d.geometry.TriangleMesh.create_from_point_cloud_poisson`) for smooth, water-tight surfaces, and ball-pivoting (`create_from_point_cloud_ball_pivoting`) for locally faithful but potentially open surfaces.
+Once you have a mesh, pass its vertex and face arrays to `minkowski_tensors(verts, faces)` directly.
+
 ## Citation
 
 If you use pykarambola in published work, please cite both pykarambola and the original karambola package.
 
 > Ishihara, K., & Khurana, Y.
-> *pykarambola: Minkowski tensor morphometry of 3D structures* (v0.3.0).
-> https://doi.org/10.5281/zenodo.XXXXXXX
+> *pykarambola: Minkowski tensor morphometry of 3D structures* (v0.4.0).
+> https://doi.org/10.5281/zenodo.20127022
 
 > Schaller, F. M., Kapfer, S. C., & Schröder-Turk, G. E.
 > *karambola — 3D Minkowski Tensor Package* (v2.0).
 > https://github.com/morphometry/karambola
-
-**Note:** Version, DOI, and release year will be updated after v1.0.0 is released (see [`CITATION.cff`](CITATION.cff) for machine-readable metadata).
 
 ## Contributing
 
