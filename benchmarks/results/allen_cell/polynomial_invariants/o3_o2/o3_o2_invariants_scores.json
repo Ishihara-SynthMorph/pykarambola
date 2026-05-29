@@ -1,0 +1,445 @@
+{
+  "O3 Degree 1": {
+    "n_features": 8,
+    "feature_names": [
+      "w000",
+      "w020",
+      "w100",
+      "w120",
+      "w200",
+      "w220",
+      "w300",
+      "w320"
+    ],
+    "balanced_accuracy": {
+      "mean": 0.6665545925349847,
+      "std": 0.003782368193620138
+    },
+    "geometric_mean": {
+      "mean": 0.6357089445194587,
+      "std": 0.0046074720885511755
+    },
+    "runtime_seconds": {
+      "optimization": 6.8,
+      "evaluation": 0.1
+    }
+  },
+  "O3 Degree 1 + Eigenvalues": {
+    "n_features": 26,
+    "feature_names": [
+      "w000",
+      "w020",
+      "w100",
+      "w120",
+      "w200",
+      "w220",
+      "w300",
+      "w320",
+      "w020_EVal1",
+      "w020_EVal2",
+      "w020_EVal3",
+      "w102_EVal1",
+      "w102_EVal2",
+      "w102_EVal3",
+      "w120_EVal1",
+      "w120_EVal2",
+      "w120_EVal3",
+      "w202_EVal1",
+      "w202_EVal2",
+      "w202_EVal3",
+      "w220_EVal1",
+      "w220_EVal2",
+      "w220_EVal3",
+      "w320_EVal1",
+      "w320_EVal2",
+      "w320_EVal3"
+    ],
+    "balanced_accuracy": {
+      "mean": 0.7933991398452184,
+      "std": 0.005757266610735655
+    },
+    "geometric_mean": {
+      "mean": 0.7892679955170179,
+      "std": 0.006514951072128248
+    },
+    "runtime_seconds": {
+      "optimization": 4.9,
+      "evaluation": 0.2
+    }
+  },
+  "O3 Degree 1 + Eigenvalues + Beta": {
+    "n_features": 32,
+    "feature_names": [
+      "w000",
+      "w020",
+      "w100",
+      "w120",
+      "w200",
+      "w220",
+      "w300",
+      "w320",
+      "w020_EVal1",
+      "w020_EVal2",
+      "w020_EVal3",
+      "w102_EVal1",
+      "w102_EVal2",
+      "w102_EVal3",
+      "w120_EVal1",
+      "w120_EVal2",
+      "w120_EVal3",
+      "w202_EVal1",
+      "w202_EVal2",
+      "w202_EVal3",
+      "w220_EVal1",
+      "w220_EVal2",
+      "w220_EVal3",
+      "w320_EVal1",
+      "w320_EVal2",
+      "w320_EVal3",
+      "beta_w020",
+      "beta_w102",
+      "beta_w120",
+      "beta_w202",
+      "beta_w220",
+      "beta_w320"
+    ],
+    "balanced_accuracy": {
+      "mean": 0.8141148644825115,
+      "std": 0.0030548532676640617
+    },
+    "geometric_mean": {
+      "mean": 0.811762360448998,
+      "std": 0.0030698410726872614
+    },
+    "runtime_seconds": {
+      "optimization": 7.0,
+      "evaluation": 0.3
+    }
+  },
+  "O3 Degree 2": {
+    "n_features": 39,
+    "feature_names": [
+      "dot_w010_w010",
+      "dot_w010_w110",
+      "dot_w010_w210",
+      "dot_w010_w310",
+      "dot_w110_w110",
+      "dot_w110_w210",
+      "dot_w110_w310",
+      "dot_w210_w210",
+      "dot_w210_w310",
+      "dot_w310_w310",
+      "frob_w020_w020",
+      "frob_w020_w102",
+      "frob_w020_w120",
+      "frob_w020_w202",
+      "frob_w020_w220",
+      "frob_w020_w320",
+      "frob_w102_w102",
+      "frob_w102_w120",
+      "frob_w102_w202",
+      "frob_w102_w220",
+      "frob_w102_w320",
+      "frob_w120_w120",
+      "frob_w120_w202",
+      "frob_w120_w220",
+      "frob_w120_w320",
+      "frob_w202_w202",
+      "frob_w202_w220",
+      "frob_w202_w320",
+      "frob_w220_w220",
+      "frob_w220_w320",
+      "frob_w320_w320",
+      "w000",
+      "w020",
+      "w100",
+      "w120",
+      "w200",
+      "w220",
+      "w300",
+      "w320"
+    ],
+    "balanced_accuracy": {
+      "mean": 0.7831589228648053,
+      "std": 0.004890673173323369
+    },
+    "geometric_mean": {
+      "mean": 0.7777158429487371,
+      "std": 0.0050905261813494656
+    },
+    "runtime_seconds": {
+      "optimization": 42.1,
+      "evaluation": 3.8
+    }
+  },
+  "O3 Degree 2 + Eigenvalues": {
+    "n_features": 57,
+    "feature_names": "57 features",
+    "balanced_accuracy": {
+      "mean": 0.8175691877897759,
+      "std": 0.0031621070058817672
+    },
+    "geometric_mean": {
+      "mean": 0.8143188497521511,
+      "std": 0.003813167115546296
+    },
+    "runtime_seconds": {
+      "optimization": 82.1,
+      "evaluation": 5.2
+    }
+  },
+  "O3 Degree 2 + Eigenvalues + Beta": {
+    "n_features": 63,
+    "feature_names": "63 features",
+    "balanced_accuracy": {
+      "mean": 0.8262600007698047,
+      "std": 0.009005911169025842
+    },
+    "geometric_mean": {
+      "mean": 0.8242080126540099,
+      "std": 0.009813433490761338
+    },
+    "runtime_seconds": {
+      "optimization": 92.1,
+      "evaluation": 3.4
+    }
+  },
+  "O3 Degree 3": {
+    "n_features": 155,
+    "feature_names": "155 features",
+    "balanced_accuracy": {
+      "mean": 0.8063045554467122,
+      "std": 0.0027580385693295865
+    },
+    "geometric_mean": {
+      "mean": 0.8003193175235821,
+      "std": 0.0036421867758142357
+    },
+    "runtime_seconds": {
+      "optimization": 390.9,
+      "evaluation": 21.1
+    }
+  },
+  "O3 Degree 3 + Eigenvalues": {
+    "n_features": 173,
+    "feature_names": "173 features",
+    "balanced_accuracy": {
+      "mean": 0.8134245685716274,
+      "std": 0.0023906414551262273
+    },
+    "geometric_mean": {
+      "mean": 0.8081570746755067,
+      "std": 0.0021247044311196147
+    },
+    "runtime_seconds": {
+      "optimization": 444.9,
+      "evaluation": 21.6
+    }
+  },
+  "O3 Degree 3 + Eigenvalues + Beta": {
+    "n_features": 179,
+    "feature_names": "179 features",
+    "balanced_accuracy": {
+      "mean": 0.8086644035173447,
+      "std": 0.005230208494961657
+    },
+    "geometric_mean": {
+      "mean": 0.8030507621887212,
+      "std": 0.005736825248041539
+    },
+    "runtime_seconds": {
+      "optimization": 462.5,
+      "evaluation": 17.9
+    }
+  },
+  "O2 Degree 1": {
+    "n_features": 14,
+    "feature_names": [
+      "w000",
+      "w020",
+      "w020_zz",
+      "w100",
+      "w102_zz",
+      "w120",
+      "w120_zz",
+      "w200",
+      "w202_zz",
+      "w220",
+      "w220_zz",
+      "w300",
+      "w320",
+      "w320_zz"
+    ],
+    "balanced_accuracy": {
+      "mean": 0.6775448672507496,
+      "std": 0.005296570560717755
+    },
+    "geometric_mean": {
+      "mean": 0.6534248979780992,
+      "std": 0.007076498657541959
+    },
+    "runtime_seconds": {
+      "optimization": 3.7,
+      "evaluation": 0.2
+    }
+  },
+  "O2 Degree 1 + Eigenvalues": {
+    "n_features": 32,
+    "feature_names": [
+      "w000",
+      "w020",
+      "w020_zz",
+      "w100",
+      "w102_zz",
+      "w120",
+      "w120_zz",
+      "w200",
+      "w202_zz",
+      "w220",
+      "w220_zz",
+      "w300",
+      "w320",
+      "w320_zz",
+      "w020_EVal1",
+      "w020_EVal2",
+      "w020_EVal3",
+      "w102_EVal1",
+      "w102_EVal2",
+      "w102_EVal3",
+      "w120_EVal1",
+      "w120_EVal2",
+      "w120_EVal3",
+      "w202_EVal1",
+      "w202_EVal2",
+      "w202_EVal3",
+      "w220_EVal1",
+      "w220_EVal2",
+      "w220_EVal3",
+      "w320_EVal1",
+      "w320_EVal2",
+      "w320_EVal3"
+    ],
+    "balanced_accuracy": {
+      "mean": 0.7968916682151975,
+      "std": 0.0037637183337813447
+    },
+    "geometric_mean": {
+      "mean": 0.7934590495214477,
+      "std": 0.004142713412016722
+    },
+    "runtime_seconds": {
+      "optimization": 9.1,
+      "evaluation": 0.4
+    }
+  },
+  "O2 Degree 1 + Eigenvalues + Beta": {
+    "n_features": 38,
+    "feature_names": [
+      "w000",
+      "w020",
+      "w020_zz",
+      "w100",
+      "w102_zz",
+      "w120",
+      "w120_zz",
+      "w200",
+      "w202_zz",
+      "w220",
+      "w220_zz",
+      "w300",
+      "w320",
+      "w320_zz",
+      "w020_EVal1",
+      "w020_EVal2",
+      "w020_EVal3",
+      "w102_EVal1",
+      "w102_EVal2",
+      "w102_EVal3",
+      "w120_EVal1",
+      "w120_EVal2",
+      "w120_EVal3",
+      "w202_EVal1",
+      "w202_EVal2",
+      "w202_EVal3",
+      "w220_EVal1",
+      "w220_EVal2",
+      "w220_EVal3",
+      "w320_EVal1",
+      "w320_EVal2",
+      "w320_EVal3",
+      "beta_w020",
+      "beta_w102",
+      "beta_w120",
+      "beta_w202",
+      "beta_w220",
+      "beta_w320"
+    ],
+    "balanced_accuracy": {
+      "mean": 0.8080878593133495,
+      "std": 0.002788105998070249
+    },
+    "geometric_mean": {
+      "mean": 0.8049156418405631,
+      "std": 0.002745484056417949
+    },
+    "runtime_seconds": {
+      "optimization": 13.5,
+      "evaluation": 0.4
+    }
+  },
+  "O2 Degree 2": {
+    "n_features": 66,
+    "feature_names": "66 features",
+    "balanced_accuracy": {
+      "mean": 0.7541642673995614,
+      "std": 0.00789844014899394
+    },
+    "geometric_mean": {
+      "mean": 0.7475625927811819,
+      "std": 0.008951393335215227
+    },
+    "runtime_seconds": {
+      "optimization": 711.4,
+      "evaluation": 3.7
+    }
+  },
+  "O2 Degree 2 + Eigenvalues": {
+    "n_features": 84,
+    "feature_names": "84 features",
+    "balanced_accuracy": {
+      "mean": 0.8087238275963765,
+      "std": 0.006189734574735443
+    },
+    "geometric_mean": {
+      "mean": 0.8044835037770938,
+      "std": 0.006262939765095086
+    },
+    "runtime_seconds": {
+      "optimization": 163.1,
+      "evaluation": 7.7
+    }
+  },
+  "O2 Degree 2 + Eigenvalues + Beta": {
+    "n_features": 90,
+    "feature_names": "90 features",
+    "balanced_accuracy": {
+      "mean": 0.8184809602701759,
+      "std": 0.003274430218274257
+    },
+    "geometric_mean": {
+      "mean": 0.8148983815289995,
+      "std": 0.004003179574083542
+    },
+    "runtime_seconds": {
+      "optimization": 188.8,
+      "evaluation": 9.7
+    }
+  },
+  "_meta": {
+    "total_runtime_seconds": 2730.4,
+    "n_iter": 20,
+    "seeds": 3,
+    "linear_only": true,
+    "classifier": "svm"
+  }
+}

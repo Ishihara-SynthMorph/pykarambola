@@ -785,8 +785,10 @@ def main():
     parser.add_argument('--spharm-lmax', type=int, nargs='+', default=None, metavar='LMAX',
                         help='lmax values to test (default: lmax from CSV filename). E.g. --spharm-lmax 1 2 3 4 5')
     parser.add_argument('--cellprofiler-input', type=str, default=None, help='Path to CellProfiler features CSV')
-    parser.add_argument('--max-so3-degree', type=int, default=3, choices=[1, 2, 3], help='Maximum SO3 polynomial degree to evaluate (default: 3)')
+    parser.add_argument('--max-so3-degree', type=int, default=3, choices=[0, 1, 2, 3], help='Maximum SO3 polynomial degree to evaluate (0=disabled, default: 3)')
     parser.add_argument('--max-so2-degree', type=int, default=0, choices=[0, 1, 2, 3], help='Maximum SO2 polynomial degree to evaluate (0=disabled, default: 0)')
+    parser.add_argument('--max-o3-degree', type=int, default=0, choices=[0, 1, 2, 3], help='Maximum O3 polynomial degree to evaluate (0=disabled, default: 0)')
+    parser.add_argument('--max-o2-degree', type=int, default=0, choices=[0, 1, 2, 3], help='Maximum O2 polynomial degree to evaluate (0=disabled, default: 0)')
     parser.add_argument('--include', type=str, nargs='+', default=None, metavar='PATTERN',
                         help='Only run feature sets whose names contain any of these substrings (case-insensitive). E.g. --include "SO2 Degree 1" "SO2 Degree 2"')
     parser.add_argument('--output', type=str, default='benchmarks/results', help='Output directory')
@@ -881,6 +883,28 @@ def main():
         )
         feature_sets.append(
             (f'SO2 Degree {deg} + Eigenvalues + Beta', lambda df, d=deg: build_invariants_eigen_beta_features(df, 'SO2', d))
+        )
+
+    for deg in range(1, args.max_o3_degree + 1):
+        feature_sets.append(
+            (f'O3 Degree {deg}', lambda df, d=deg: build_invariant_features(df, max_degree=d, symmetry='O3'))
+        )
+        feature_sets.append(
+            (f'O3 Degree {deg} + Eigenvalues', lambda df, d=deg: build_invariants_eigen_features(df, 'O3', d))
+        )
+        feature_sets.append(
+            (f'O3 Degree {deg} + Eigenvalues + Beta', lambda df, d=deg: build_invariants_eigen_beta_features(df, 'O3', d))
+        )
+
+    for deg in range(1, args.max_o2_degree + 1):
+        feature_sets.append(
+            (f'O2 Degree {deg}', lambda df, d=deg: build_invariant_features(df, max_degree=d, symmetry='O2'))
+        )
+        feature_sets.append(
+            (f'O2 Degree {deg} + Eigenvalues', lambda df, d=deg: build_invariants_eigen_features(df, 'O2', d))
+        )
+        feature_sets.append(
+            (f'O2 Degree {deg} + Eigenvalues + Beta', lambda df, d=deg: build_invariants_eigen_beta_features(df, 'O2', d))
         )
 
     if args.cellprofiler_input:

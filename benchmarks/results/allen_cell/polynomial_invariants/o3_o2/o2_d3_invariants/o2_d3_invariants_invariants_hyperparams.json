@@ -1,0 +1,14 @@
+{
+  "O2 Degree 3": {
+    "classifier__estimator__C": 3.0071002697548934,
+    "pca__n_components": 194
+  },
+  "O2 Degree 3 + Eigenvalues": {
+    "classifier__estimator__C": 795.8962074178947,
+    "pca__n_components": 455
+  },
+  "O2 Degree 3 + Eigenvalues + Beta": {
+    "classifier__estimator__C": 1000.0,
+    "pca__n_components": 270
+  }
+}

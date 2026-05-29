@@ -50,6 +50,40 @@ against Minkowski tensor baselines, with and without explicit eigenvalue augment
 | SO2 Degree 3 | 754 | 740 | 740 | not run | — | — | — | — |
 | SO2 Degree 3 + Eigenvalues | 772 | 758 | 754 | not run | — | — | — | — |
 
+### O(3) Invariants (parity-filtered, full rotation invariance)
+
+O(3) = SO(3) + spatial inversion. Parity-odd invariants (`det_`, `comm_` terms, degree ≥ 3)
+are removed. Feature counts at degrees 1–2 are identical to SO(3); at degree 3: 155 vs 219.
+
+| Feature Set | # Feat | Balanced Accuracy | Geo. Mean | Δ vs SO(3) |
+|-------------|--------|-------------------|-----------|------------|
+| O3 Degree 1 | 8 | 0.667 ± 0.004 | 0.636 ± 0.005 | = SO3 D1 |
+| O3 Degree 1 + Eigenvalues | 26 | 0.793 ± 0.006 | 0.789 ± 0.007 | = SO3 D1+E |
+| O3 Degree 1 + Eigenvalues + Beta | 32 | 0.814 ± 0.003 | 0.812 ± 0.003 | = SO3 D1+E+B |
+| O3 Degree 2 | 39 | 0.783 ± 0.005 | 0.778 ± 0.005 | = SO3 D2 |
+| O3 Degree 2 + Eigenvalues | 57 | 0.818 ± 0.003 | 0.814 ± 0.004 | ≈ SO3 D2+E (+0.1 pp) |
+| O3 Degree 2 + Eigenvalues + Beta | 63 | 0.826 ± 0.009 | 0.824 ± 0.010 | ≈ SO3 D2+E+B (−0.1 pp) |
+| O3 Degree 3 | 155 | **0.806 ± 0.003** | 0.800 ± 0.004 | **+1.1 pp** vs SO3 D3 (219 feat, 0.795) |
+| O3 Degree 3 + Eigenvalues | 173 | **0.813 ± 0.002** | 0.808 ± 0.002 | **+0.9 pp** vs SO3 D3+E (237 feat, 0.804) |
+| O3 Degree 3 + Eigenvalues + Beta | 179 | 0.809 ± 0.005 | 0.803 ± 0.006 | — |
+
+### O(2) Invariants (parity-filtered, axial symmetry)
+
+O(2) = SO(2) + z-reflection. Parity-odd invariants (those with an odd number of `_z`/`_xz`
+factors) are removed. Feature counts: 14/66/438 vs 18/94/754 for SO(2) D1/D2/D3.
+
+| Feature Set | # Feat | Balanced Accuracy | Geo. Mean | Δ vs SO(2) |
+|-------------|--------|-------------------|-----------|------------|
+| O2 Degree 1 | 14 | 0.678 ± 0.005 | 0.653 ± 0.007 | SO2 D1: 0.674, +0.4 pp |
+| O2 Degree 1 + Eigenvalues | 32 | 0.797 ± 0.004 | 0.793 ± 0.004 | SO2 D1+E: 0.799, −0.2 pp |
+| O2 Degree 1 + Eigenvalues + Beta | 38 | 0.808 ± 0.003 | 0.805 ± 0.003 | SO2 D1+E+B: 0.809, −0.1 pp |
+| O2 Degree 2 | 66 | 0.754 ± 0.008 | 0.748 ± 0.009 | SO2 D2: 0.757, −0.3 pp |
+| O2 Degree 2 + Eigenvalues | 84 | 0.809 ± 0.006 | 0.804 ± 0.006 | SO2 D2+E: 0.787, **+2.2 pp** |
+| O2 Degree 2 + Eigenvalues + Beta | 90 | **0.818 ± 0.003** | 0.815 ± 0.004 | — |
+| O2 Degree 3 | 438 | 0.749 ± 0.004 | 0.736 ± 0.006 | SO2 D3: not run |
+| O2 Degree 3 + Eigenvalues | 456 | 0.780 ± 0.003 | 0.770 ± 0.003 | SO2 D3+E: not run |
+| O2 Degree 3 + Eigenvalues + Beta | 462 | 0.782 ± 0.001 | 0.772 ± 0.001 | SO2 D3+E+B: not run |
+
 ---
 
 ## Interpretation
@@ -194,6 +228,31 @@ SO2 Degree 2 + Eigenvalues (112 features, 0.787) underperforms SO2 Degree 1 + Ei
 eigenvalues span partially overlapping directions without the clean complementarity seen in
 the SO3 case.
 
+### Parity filtering: O(3) vs SO(3), O(2) vs SO(2)
+
+Removing parity-odd invariants has a degree-dependent effect.
+
+At degrees 1 and 2, O(3) and SO(3) are **equivalent to within noise** (Δ < 0.1 pp): all
+parity-odd polynomial invariants (`det_` triple determinants and `comm_` commutator products)
+are degree-3 constructs, so no features are removed at degrees 1–2.
+
+At degree 3, O(3) outperforms SO(3) by **+1.1 pp** (155 vs 219 features, no eigenvalues) and
+**+0.9 pp** with eigenvalues (173 vs 237 features). The 64 parity-odd degree-3 features that
+SO(3) includes but O(3) discards are noise for non-chiral shapes: they change sign under spatial
+inversion, average near zero over a symmetric dataset, and add dimensionality that the linear
+classifier must regularise away (reflected in the low C=14.9 at SO3 D3 vs richer
+regularisation at O3 D3).
+
+The O(2) vs SO(2) pattern is similar but the gains are smaller and noisier. At degree 2 without
+eigenvalues the difference is negligible (−0.3 pp), but with eigenvalues O2 D2+E gains
+**+2.2 pp** over SO2 D2+E (84 vs 112 features). At degree 3, both O2 D3 (438 feat, 0.749) and
+O2 D3+E+B (462 feat, 0.782) are much worse than O2 D2+E+B (90 feat, 0.818) — the same
+degree-3 degradation pattern seen in SO3.
+
+**Summary**: For non-chiral shapes, parity filtering at degree 3 recovers ~1 pp with ~25–30%
+fewer features. At degrees 1–2 the effect is negligible. Degree 3 should be avoided regardless
+of parity filtering; D2+E+B remains the best overall set.
+
 ### Feature count vs performance: diminishing returns above 57 features
 
 | # Feat | Feature Set | Bal. Acc | Δ from prev |
@@ -214,6 +273,8 @@ the SO3 case.
 | 86 | Mink (tensors+eigen+beta) | 0.818 | −0.9 vs peak |
 | 94 | SO2 Degree 2 | 0.757 | — |
 | 112 | SO2 D2 + Eigen | 0.787 | — |
+| 155 | O3 Degree 3 | 0.806 | −2.1 vs peak |
+| 173 | O3 D3 + Eigen | 0.813 | −1.4 vs peak |
 | 219 | SO3 Degree 3 | 0.795 | −3.2 vs peak |
 | 237 | SO3 D3 + Eigen | 0.804 | −2.3 vs peak |
 
@@ -423,7 +484,8 @@ by the per-tensor shape indices (eigenvalues and anisotropy ratios) alone.
 | 5th | SO2 Degree 1 + Eigenvalues | 36 | 0.799 | Simple, fast, captures z-axis asymmetry |
 | 6th | SO3 Degree 1 + Eigenvalues | 26 | 0.793 | Simplest full-SO3 set |
 | 7th | Eigenvalues only | 18 | 0.791 | Minimal viable feature set |
-| Avoid | SO3 Degree 3 (+E) | 219–237 | 0.795–0.804 | No gain over D2+E, 4× feature count |
+| Avoid | O3 Degree 3 (+E) | 155–173 | 0.806–0.813 | Better than SO3 D3 but still worse than D2+E+B |
+| Avoid | SO3 Degree 3 (+E) | 219–237 | 0.795–0.804 | Dominated by O3 D3 and by D2+E+B |
 | Avoid | Minkowski (tensors) | 62 | 0.746 | Dominated by any eigen-augmented set |
 
 ---
@@ -619,3 +681,31 @@ wait
 Only the `Minkowski (tensors+eigen+beta)` condition has a saved JSON in `classifier_ceiling/`; the
 `Eigen + Beta` and `SO3 Degree 2 + Eigenvalues + Beta` ceiling results were recorded from console
 output and are not stored as separate files.
+
+### O(3) and O(2) parity-filtered invariants (`polynomial_invariants/o3_o2/`)
+
+```bash
+# O3 D1/D2/D3 and O2 D1/D2 — all conditions  →  o3_o2_invariants_{scores,hyperparams}.json
+python benchmarks/invariants_classification.py \
+    --input ../Minkowski_classifier/data/allen_cell/mitotic_cells_annotated/nuclei/minkowski_tensors_with_eigen_vals.csv \
+    --output benchmarks/results/allen_cell/polynomial_invariants/o3_o2/o3_o2_invariants \
+    --max-o3-degree 3 \
+    --max-o2-degree 2 \
+    --optimize \
+    --n_iter 20 \
+    --linear-only \
+    --seeds 3 \
+    --n_jobs 5
+
+# O2 D3 only  →  o2_d3_invariants/o2_d3_invariants_{scores,hyperparams}.json
+python benchmarks/invariants_classification.py \
+    --input ../Minkowski_classifier/data/allen_cell/mitotic_cells_annotated/nuclei/minkowski_tensors_with_eigen_vals.csv \
+    --output benchmarks/results/allen_cell/polynomial_invariants/o3_o2/o2_d3_invariants \
+    --max-o2-degree 3 \
+    --include "O2 Degree 3" \
+    --optimize \
+    --n_iter 20 \
+    --linear-only \
+    --seeds 3 \
+    --n_jobs 5
+```

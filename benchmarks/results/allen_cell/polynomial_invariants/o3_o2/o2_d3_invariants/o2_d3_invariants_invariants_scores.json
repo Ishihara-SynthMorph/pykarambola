@@ -1,0 +1,57 @@
+{
+  "O2 Degree 3": {
+    "n_features": 438,
+    "feature_names": "438 features",
+    "balanced_accuracy": {
+      "mean": 0.7489507141467926,
+      "std": 0.004474074640345574
+    },
+    "geometric_mean": {
+      "mean": 0.7360170387929353,
+      "std": 0.006062772528534635
+    },
+    "runtime_seconds": {
+      "optimization": 2431.3,
+      "evaluation": 62.1
+    }
+  },
+  "O2 Degree 3 + Eigenvalues": {
+    "n_features": 456,
+    "feature_names": "456 features",
+    "balanced_accuracy": {
+      "mean": 0.7800674225919323,
+      "std": 0.003086356724215625
+    },
+    "geometric_mean": {
+      "mean": 0.7697143150930698,
+      "std": 0.0032945475586595627
+    },
+    "runtime_seconds": {
+      "optimization": 2142.0,
+      "evaluation": 120.6
+    }
+  },
+  "O2 Degree 3 + Eigenvalues + Beta": {
+    "n_features": 462,
+    "feature_names": "462 features",
+    "balanced_accuracy": {
+      "mean": 0.7818847559043638,
+      "std": 0.0014184230010212003
+    },
+    "geometric_mean": {
+      "mean": 0.7716151597993525,
+      "std": 0.0007568753029767012
+    },
+    "runtime_seconds": {
+      "optimization": 1755.9,
+      "evaluation": 66.4
+    }
+  },
+  "_meta": {
+    "total_runtime_seconds": 6589.0,
+    "n_iter": 20,
+    "seeds": 3,
+    "linear_only": true,
+    "classifier": "svm"
+  }
+}

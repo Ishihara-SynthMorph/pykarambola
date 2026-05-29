@@ -1,0 +1,62 @@
+{
+  "O3 Degree 1": {
+    "classifier__estimator__C": 995.0894322285282,
+    "pca__n_components": 8
+  },
+  "O3 Degree 1 + Eigenvalues": {
+    "classifier__estimator__C": 738.7966194299759,
+    "pca__n_components": 20
+  },
+  "O3 Degree 1 + Eigenvalues + Beta": {
+    "classifier__estimator__C": 738.7966194299759,
+    "pca__n_components": 25
+  },
+  "O3 Degree 2": {
+    "classifier__estimator__C": 1000.0,
+    "pca__n_components": 39
+  },
+  "O3 Degree 2 + Eigenvalues": {
+    "classifier__estimator__C": 225.2503789114733,
+    "pca__n_components": 57
+  },
+  "O3 Degree 2 + Eigenvalues + Beta": {
+    "classifier__estimator__C": 738.7966194299759,
+    "pca__n_components": 48
+  },
+  "O3 Degree 3": {
+    "classifier__estimator__C": 25.914281617289323,
+    "pca__n_components": 155
+  },
+  "O3 Degree 3 + Eigenvalues": {
+    "classifier__estimator__C": 94.79506844809133,
+    "pca__n_components": 172
+  },
+  "O3 Degree 3 + Eigenvalues + Beta": {
+    "classifier__estimator__C": 980.5631006558184,
+    "pca__n_components": 146
+  },
+  "O2 Degree 1": {
+    "classifier__estimator__C": 225.2503789114733,
+    "pca__n_components": 14
+  },
+  "O2 Degree 1 + Eigenvalues": {
+    "classifier__estimator__C": 20.76990775462865,
+    "pca__n_components": 32
+  },
+  "O2 Degree 1 + Eigenvalues + Beta": {
+    "classifier__estimator__C": 738.7966194299759,
+    "pca__n_components": 29
+  },
+  "O2 Degree 2": {
+    "classifier__estimator__C": 738.7966194299759,
+    "pca__n_components": 50
+  },
+  "O2 Degree 2 + Eigenvalues": {
+    "classifier__estimator__C": 19.761177791553575,
+    "pca__n_components": 72
+  },
+  "O2 Degree 2 + Eigenvalues + Beta": {
+    "classifier__estimator__C": 952.1576395909625,
+    "pca__n_components": 75
+  }
+}
