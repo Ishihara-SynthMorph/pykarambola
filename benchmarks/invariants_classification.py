@@ -344,9 +344,9 @@ def build_spharm_invariant_features(
     lmax: int = 5,
 ) -> tuple[np.ndarray, list[str]]:
     """Compute rotation-invariant power spectrum + bispectrum from SPHARM coefficients."""
-    from pykarambola.spharm_invariants import compute_spharm_invariants
+    from aicsshparam.shinvariants import get_invariants
     merged = df[['image_num']].merge(spharm_df, on='image_num', how='left')
-    return compute_spharm_invariants(merged, lmax=lmax)
+    return get_invariants(merged, lmax=lmax)
 
 
 def build_spharm_features(

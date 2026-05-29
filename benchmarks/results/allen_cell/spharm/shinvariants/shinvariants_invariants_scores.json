@@ -1,0 +1,283 @@
+{
+  "SPHARM Inv lmax=1": {
+    "n_features": 6,
+    "feature_names": [
+      "power_l0",
+      "power_l1",
+      "bispec_0_0_0",
+      "bispec_0_1_1",
+      "bispec_1_1_0",
+      "bispec_1_1_1"
+    ],
+    "balanced_accuracy": {
+      "mean": 0.44413721876957163,
+      "std": 0.0008491391885734625
+    },
+    "geometric_mean": {
+      "mean": 0.30552124138238534,
+      "std": 0.01723350711084167
+    },
+    "runtime_seconds": {
+      "optimization": 6.8,
+      "evaluation": 0.1
+    }
+  },
+  "SPHARM Inv lmax=2": {
+    "n_features": 14,
+    "feature_names": [
+      "power_l0",
+      "power_l1",
+      "power_l2",
+      "bispec_0_0_0",
+      "bispec_0_1_1",
+      "bispec_0_2_2",
+      "bispec_1_1_0",
+      "bispec_1_1_1",
+      "bispec_1_1_2",
+      "bispec_1_2_1",
+      "bispec_1_2_2",
+      "bispec_2_2_0",
+      "bispec_2_2_1",
+      "bispec_2_2_2"
+    ],
+    "balanced_accuracy": {
+      "mean": 0.5897882269205799,
+      "std": 0.0048246009364836025
+    },
+    "geometric_mean": {
+      "mean": 0.5785829208738676,
+      "std": 0.005437547993664721
+    },
+    "runtime_seconds": {
+      "optimization": 3.3,
+      "evaluation": 0.1
+    }
+  },
+  "SPHARM Inv lmax=3": {
+    "n_features": 27,
+    "feature_names": [
+      "power_l0",
+      "power_l1",
+      "power_l2",
+      "power_l3",
+      "bispec_0_0_0",
+      "bispec_0_1_1",
+      "bispec_0_2_2",
+      "bispec_0_3_3",
+      "bispec_1_1_0",
+      "bispec_1_1_1",
+      "bispec_1_1_2",
+      "bispec_1_2_1",
+      "bispec_1_2_2",
+      "bispec_1_2_3",
+      "bispec_1_3_2",
+      "bispec_1_3_3",
+      "bispec_2_2_0",
+      "bispec_2_2_1",
+      "bispec_2_2_2",
+      "bispec_2_2_3",
+      "bispec_2_3_1",
+      "bispec_2_3_2",
+      "bispec_2_3_3",
+      "bispec_3_3_0",
+      "bispec_3_3_1",
+      "bispec_3_3_2",
+      "bispec_3_3_3"
+    ],
+    "balanced_accuracy": {
+      "mean": 0.6271921319715438,
+      "std": 0.006628122003383083
+    },
+    "geometric_mean": {
+      "mean": 0.6188895880495577,
+      "std": 0.007503832443572177
+    },
+    "runtime_seconds": {
+      "optimization": 4.4,
+      "evaluation": 0.2
+    }
+  },
+  "SPHARM Inv lmax=4": {
+    "n_features": 47,
+    "feature_names": [
+      "power_l0",
+      "power_l1",
+      "power_l2",
+      "power_l3",
+      "power_l4",
+      "bispec_0_0_0",
+      "bispec_0_1_1",
+      "bispec_0_2_2",
+      "bispec_0_3_3",
+      "bispec_0_4_4",
+      "bispec_1_1_0",
+      "bispec_1_1_1",
+      "bispec_1_1_2",
+      "bispec_1_2_1",
+      "bispec_1_2_2",
+      "bispec_1_2_3",
+      "bispec_1_3_2",
+      "bispec_1_3_3",
+      "bispec_1_3_4",
+      "bispec_1_4_3",
+      "bispec_1_4_4",
+      "bispec_2_2_0",
+      "bispec_2_2_1",
+      "bispec_2_2_2",
+      "bispec_2_2_3",
+      "bispec_2_2_4",
+      "bispec_2_3_1",
+      "bispec_2_3_2",
+      "bispec_2_3_3",
+      "bispec_2_3_4",
+      "bispec_2_4_2",
+      "bispec_2_4_3",
+      "bispec_2_4_4",
+      "bispec_3_3_0",
+      "bispec_3_3_1",
+      "bispec_3_3_2",
+      "bispec_3_3_3",
+      "bispec_3_3_4",
+      "bispec_3_4_1",
+      "bispec_3_4_2",
+      "bispec_3_4_3",
+      "bispec_3_4_4",
+      "bispec_4_4_0",
+      "bispec_4_4_1",
+      "bispec_4_4_2",
+      "bispec_4_4_3",
+      "bispec_4_4_4"
+    ],
+    "balanced_accuracy": {
+      "mean": 0.6894241723898586,
+      "std": 0.004067150217813928
+    },
+    "geometric_mean": {
+      "mean": 0.6780960252403706,
+      "std": 0.004089897623619079
+    },
+    "runtime_seconds": {
+      "optimization": 7.8,
+      "evaluation": 0.7
+    }
+  },
+  "SPHARM Inv lmax=5": {
+    "n_features": 75,
+    "feature_names": "75 features",
+    "balanced_accuracy": {
+      "mean": 0.7186293515950379,
+      "std": 0.004108054926221048
+    },
+    "geometric_mean": {
+      "mean": 0.7067058000038631,
+      "std": 0.0047049560260476455
+    },
+    "runtime_seconds": {
+      "optimization": 15.8,
+      "evaluation": 1.1
+    }
+  },
+  "SPHARM Inv lmax=6": {
+    "n_features": 113,
+    "feature_names": "113 features",
+    "balanced_accuracy": {
+      "mean": 0.7359770819329642,
+      "std": 0.0006570053774087175
+    },
+    "geometric_mean": {
+      "mean": 0.7218789314061277,
+      "std": 0.0017469436880798402
+    },
+    "runtime_seconds": {
+      "optimization": 66.5,
+      "evaluation": 2.2
+    }
+  },
+  "SPHARM Inv lmax=7": {
+    "n_features": 162,
+    "feature_names": "162 features",
+    "balanced_accuracy": {
+      "mean": 0.7479292970714538,
+      "std": 0.002409735729173209
+    },
+    "geometric_mean": {
+      "mean": 0.7380185113165442,
+      "std": 0.0027291059444169794
+    },
+    "runtime_seconds": {
+      "optimization": 139.8,
+      "evaluation": 8.7
+    }
+  },
+  "SPHARM Inv lmax=8": {
+    "n_features": 224,
+    "feature_names": "224 features",
+    "balanced_accuracy": {
+      "mean": 0.7334287973993856,
+      "std": 0.004038024839977316
+    },
+    "geometric_mean": {
+      "mean": 0.7223133673427866,
+      "std": 0.0033351295753106603
+    },
+    "runtime_seconds": {
+      "optimization": 292.8,
+      "evaluation": 4.3
+    }
+  },
+  "SPHARM Inv lmax=9": {
+    "n_features": 300,
+    "feature_names": "300 features",
+    "balanced_accuracy": {
+      "mean": 0.7051337927563418,
+      "std": 0.009828073244313756
+    },
+    "geometric_mean": {
+      "mean": 0.6883690829714314,
+      "std": 0.012542860080552963
+    },
+    "runtime_seconds": {
+      "optimization": 473.5,
+      "evaluation": 0.7
+    }
+  },
+  "SPHARM Inv lmax=10": {
+    "n_features": 392,
+    "feature_names": "392 features",
+    "balanced_accuracy": {
+      "mean": 0.7152452697795835,
+      "std": 0.005441546059006162
+    },
+    "geometric_mean": {
+      "mean": 0.6983653896341492,
+      "std": 0.0066963035922237985
+    },
+    "runtime_seconds": {
+      "optimization": 626.5,
+      "evaluation": 1.0
+    }
+  },
+  "SPHARM Inv lmax=11": {
+    "n_features": 501,
+    "feature_names": "501 features",
+    "balanced_accuracy": {
+      "mean": 0.6947874105962341,
+      "std": 0.004263919680142421
+    },
+    "geometric_mean": {
+      "mean": 0.6787957275613913,
+      "std": 0.00404580500901837
+    },
+    "runtime_seconds": {
+      "optimization": 974.2,
+      "evaluation": 1.8
+    }
+  },
+  "_meta": {
+    "total_runtime_seconds": 2636.1,
+    "n_iter": 20,
+    "seeds": 3,
+    "linear_only": true,
+    "classifier": "svm"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "SPHARM Inv lmax=1": {
+    "classifier__estimator__C": 13.300153699806186,
+    "pca__n_components": 5
+  },
+  "SPHARM Inv lmax=2": {
+    "classifier__estimator__C": 225.2503789114733,
+    "pca__n_components": 14
+  },
+  "SPHARM Inv lmax=3": {
+    "classifier__estimator__C": 225.2503789114733,
+    "pca__n_components": 27
+  },
+  "SPHARM Inv lmax=4": {
+    "classifier__estimator__C": 66.2723227168625,
+    "pca__n_components": 44
+  },
+  "SPHARM Inv lmax=5": {
+    "classifier__estimator__C": 225.2503789114733,
+    "pca__n_components": 74
+  },
+  "SPHARM Inv lmax=6": {
+    "classifier__estimator__C": 738.7966194299759,
+    "pca__n_components": 86
+  },
+  "SPHARM Inv lmax=7": {
+    "classifier__estimator__C": 11.5164041568618,
+    "pca__n_components": 124
+  },
+  "SPHARM Inv lmax=8": {
+    "classifier__estimator__C": 0.16848119941902193,
+    "pca__n_components": 211
+  },
+  "SPHARM Inv lmax=9": {
+    "classifier__estimator__C": 0.10646722806143986,
+    "pca__n_components": 47
+  },
+  "SPHARM Inv lmax=10": {
+    "classifier__estimator__C": 0.1,
+    "pca__n_components": 74
+  },
+  "SPHARM Inv lmax=11": {
+    "classifier__estimator__C": 0.11932609413718125,
+    "pca__n_components": 82
+  }
+}
