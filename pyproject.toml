@@ -41,8 +41,8 @@ Homepage = "https://github.com/Pitt-IshiharaLab/pykarambola"
 dev = ["pytest", "scikit-image>=0.19"]
 accel = ["cython>=3.0"]
 glb = ["trimesh"]
-<<<<<<< HEAD
 notebooks = ["scikit-image>=0.19", "matplotlib", "seaborn", "pandas", "medmnist"]
+# aicsshparam is not yet on PyPI — uncomment and pin the version once released (issue #137)
 benchmark = ["scikit-learn", "imbalanced-learn", "scikit-optimize", "pandas"]
 
 [tool.setuptools.packages.find]

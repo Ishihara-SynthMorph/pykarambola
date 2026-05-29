@@ -20,6 +20,12 @@ import pandas as pd
 
 from pykarambola.spherical import _wigner3j
 
+try:
+    from aicsshparam.shinvariants import get_invariants as _upstream_get_invariants
+    _HAS_UPSTREAM = True
+except ImportError:
+    _HAS_UPSTREAM = False
+
 
 @lru_cache(maxsize=None)
 def _cg(l1: int, m1: int, l2: int, m2: int, l: int, m: int) -> float:
@@ -180,6 +186,9 @@ def compute_spharm_invariants(
     feature_names : list[str]
         Names for each column of X.
     """
+    if _HAS_UPSTREAM and include_bispectrum:
+        return _upstream_get_invariants(df, lmax=lmax)
+
     f_lm = parse_spharm_df(df, lmax)
 
     S = power_spectrum(f_lm, lmax)
