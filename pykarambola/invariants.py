@@ -453,13 +453,34 @@ def _so2_triple_products(so2_dec: dict[tuple[str, str], object]) -> dict[str, fl
     return result
 
 
+def _is_o2_parity_odd(key: str) -> bool:
+    """Return True if an SO(2) invariant key is parity-odd under z → −z.
+
+    Odd features:
+    - Degree-1 '{name}_z': rank-1 v_z components (z-reflection flips sign).
+    - Degree-2 'd1_{ci}_{cj}': mixed-parity dot products (one '_xy', one '_xz').
+    - Degree-3 'tp_re_...' / 'tp_im_...': triple products where the two |m|=1
+      factors have different parity (one '_xy', one '_xz').
+
+    The rule relies on tensor names not containing the substrings '_xy' or '_xz',
+    which holds for all standard pykarambola tensor names (w000, w010, ...).
+    """
+    # Degree-1: v_z components end with '_z' but not '_zz' (which are M_zz)
+    if key.endswith('_z') and not key.endswith('_zz'):
+        return True
+    # Degree-2/3: mixed parity iff exactly one '_xy' and one '_xz' in key
+    if key.startswith('d1_') or key.startswith('tp_re_') or key.startswith('tp_im_'):
+        return key.count('_xy') == 1 and key.count('_xz') == 1
+    return False
+
+
 def compute_invariants(
     tensors_dict: dict[str, np.ndarray | float],
     max_degree: int = 3,
-    symmetry: Literal['O3', 'SO3', 'SO2'] = 'SO3',
+    symmetry: Literal['O3', 'SO3', 'SO2', 'O2'] = 'SO3',
     deduplicate_scalars: bool = True,
 ) -> dict[str, float]:
-    """Compute SO(3), O(3), or SO(2) invariants from arbitrary Minkowski tensors.
+    """Compute SO(3), O(3), SO(2), or O(2) invariants from arbitrary Minkowski tensors.
 
     This function computes a complete basis of polynomial invariants up to
     the specified degree. The tensor set is flexible — any combination of
@@ -480,13 +501,16 @@ def compute_invariants(
         - 2: Add degree-2 (dot products, Frobenius inner products)
         - 3: Add degree-3 (quadratic forms, triple traces, pseudo-scalars)
 
-    symmetry : {'O3', 'SO3', 'SO2'}, default='SO3'
+    symmetry : {'O3', 'SO3', 'SO2', 'O2'}, default='SO3'
         Symmetry group for invariants:
         - 'O3': Only true scalars (invariant under rotations AND reflections)
         - 'SO3': Include pseudo-scalars (flip sign under reflections)
         - 'SO2': Invariants under rotations about the z-axis only.
           Provides more invariants than SO(3) by treating z-components
           independently. Useful for objects near a wall or with a preferred axis.
+        - 'O2': SO(2) invariants further restricted to be even under z-reflection
+          (z → −z). Drops v_z degree-1 features, mixed-parity d1_ dot products,
+          and mixed-parity tp_ triple products.
 
     deduplicate_scalars : bool, default=True
         If True, remove degree-1 scalars that are linearly dependent on others.
@@ -540,11 +564,19 @@ def compute_invariants(
     if not tensors_dict:
         return {}
 
-    _VALID_SYMMETRIES = {'O3', 'SO3', 'SO2'}
+    _VALID_SYMMETRIES = {'O3', 'SO3', 'SO2', 'O2'}
     if symmetry not in _VALID_SYMMETRIES:
         raise ValueError(
             f"Invalid symmetry '{symmetry}'. Must be one of {sorted(_VALID_SYMMETRIES)}."
         )
+
+    # O(2): compute SO(2) then filter out parity-odd features under z → −z
+    if symmetry == 'O2':
+        so2_result = compute_invariants(
+            tensors_dict, max_degree=max_degree, symmetry='SO2',
+            deduplicate_scalars=deduplicate_scalars,
+        )
+        return {k: v for k, v in so2_result.items() if not _is_o2_parity_odd(k)}
 
     # SO(2): entirely separate decomposition and invariant pipeline
     if symmetry == 'SO2':
