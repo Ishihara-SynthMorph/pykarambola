@@ -1,3 +1,7 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Keisuke Ishihara, Yajushi Khurana
+# This file is part of pykarambola, a Python port of karambola.
+# See LICENSE for the full license text.
 """
 High-level API for computing Minkowski tensors from numpy arrays.
 """
@@ -557,6 +561,8 @@ def minkowski_tensors(verts: Union[np.ndarray, Triangulation], faces=None, label
                 out['msm_wl'] = np.array(sph.wl)
             else:
                 out[name] = _extract_result(raw[label])
+                if name == 'w104':
+                    out['w104_eigvals'] = np.linalg.eigh(out['w104'])[0]
 
         # Add eigensystems
         for name in _RANK2:

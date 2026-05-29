@@ -23,7 +23,7 @@ It covers everything from setting up your environment to releasing a new version
 **Clone and install in editable mode** (do this once):
 
 ```bash
-git clone https://github.com/Pitt-IshiharaLab/pykarambola.git
+git clone https://github.com/Ishihara-SynthMorph/pykarambola.git
 cd pykarambola
 pip install -e ".[dev]"
 ```
@@ -164,7 +164,7 @@ Close all issues in a milestone before moving to the next one.
 ### Project board
 
 The "pykarambola paper" project board at
-`https://github.com/orgs/Pitt-IshiharaLab/projects/4`
+`https://github.com/orgs/Ishihara-SynthMorph/projects/4`
 is our shared view of progress across all milestones.
 
 **Important:** Milestones and the project board are independent systems in GitHub.
@@ -278,9 +278,10 @@ When you are ready to release (see [§8](#8-releasing-a-new-version)):
 3. Update the comparison links at the bottom of the file:
 
 ```markdown
-[Unreleased]: https://github.com/Pitt-IshiharaLab/pykarambola/compare/v0.2.0...HEAD
-[0.2.0]: https://github.com/Pitt-IshiharaLab/pykarambola/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/Pitt-IshiharaLab/pykarambola/releases/tag/v0.1.0
+[Unreleased]: https://github.com/Ishihara-SynthMorph/pykarambola/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/Ishihara-SynthMorph/pykarambola/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/Ishihara-SynthMorph/pykarambola/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/Ishihara-SynthMorph/pykarambola/releases/tag/v0.1.0
 ```
 
 These links make each version heading in the changelog clickable — they open a GitHub
