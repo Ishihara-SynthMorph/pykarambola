@@ -536,9 +536,17 @@ def compute_invariants(
 ) -> dict[str, float]:
     """Compute SO(3), O(3), SO(2), or O(2) invariants from arbitrary Minkowski tensors.
 
-    This function computes a complete basis of polynomial invariants up to
-    the specified degree. The tensor set is flexible — any combination of
-    rank 0, 1, and 2 tensors can be provided.
+    This function enumerates polynomial invariants up to the specified degree
+    by exhausting the standard contraction patterns for each symmetry group
+    (see Notes). The tensor set is flexible — any combination of rank 0, 1,
+    and 2 tensors can be provided.
+
+    The output is intended as a generating set of features, not a proven
+    minimal basis. Apart from the two trace identities removed when
+    ``deduplicate_scalars=True`` (Tr(w102)/3 = w100, Tr(w202)/3 = w200),
+    linear dependencies among higher-degree terms (e.g. Cayley-Hamilton
+    relations among triple traces) are not eliminated, and completeness has
+    not been formally verified.
 
     Parameters
     ----------
