@@ -432,27 +432,40 @@ def _so2_collect_doublets(
 
 
 def _so2_doublet_inner_products(so2_dec: dict[tuple[str, str], object]) -> dict[str, float]:
-    """Compute degree-2 SO(2) invariants: inner products of same-charge doublets.
+    """Compute degree-2 SO(2) invariants: bilinears of same-charge doublets.
+
+    For two same-charge doublets a, b read as complex numbers, both the real and
+    imaginary parts of ``a · conj(b)`` are SO(2) invariant:
+    - real part  = a·b              (dot product, symmetric in a, b)
+    - imag part  = a_x b_y - a_y b_x (2D wedge, antisymmetric; zero on the diagonal)
+
+    The wedge vanishes for a == b, so only i < j pairs are emitted for it.
 
     d1_{ci}_{cj}: dot product of two |m|=1 doublets (from rank-1 _xy and rank-2 _xz)
+    x1_{ci}_{cj}: wedge of two distinct |m|=1 doublets
     d2_{ci}_{cj}: dot product of two |m|=2 doublets (from rank-2 _m2)
+    x2_{ci}_{cj}: wedge of two distinct |m|=2 doublets
     """
     result = {}
+
+    def _emit(doublets, dot_prefix, wedge_prefix):
+        for i, (ci, di) in enumerate(doublets):
+            for cj, dj in doublets[i:]:
+                result[f"{dot_prefix}_{ci}_{cj}"] = float(np.dot(di, dj))
+        for i, (ci, di) in enumerate(doublets):
+            for cj, dj in doublets[i + 1:]:
+                result[f"{wedge_prefix}_{ci}_{cj}"] = float(di[0] * dj[1] - di[1] * dj[0])
 
     # |m|=1 doublets: both 'xy' (rank-1) and 'xz' (rank-2)
     m1_doublets = sorted(
         _so2_collect_doublets(so2_dec, 'xy') + _so2_collect_doublets(so2_dec, 'xz'),
         key=lambda x: x[0],
     )
-    for i, (ci, di) in enumerate(m1_doublets):
-        for cj, dj in m1_doublets[i:]:
-            result[f"d1_{ci}_{cj}"] = float(np.dot(di, dj))
+    _emit(m1_doublets, 'd1', 'x1')
 
     # |m|=2 doublets: 'm2' from rank-2
     m2_doublets = _so2_collect_doublets(so2_dec, 'm2')
-    for i, (ci, di) in enumerate(m2_doublets):
-        for cj, dj in m2_doublets[i:]:
-            result[f"d2_{ci}_{cj}"] = float(np.dot(di, dj))
+    _emit(m2_doublets, 'd2', 'x2')
 
     return result
 
@@ -497,7 +510,8 @@ def _is_o2_parity_odd(key: str) -> bool:
 
     Odd features:
     - Degree-1 '{name}_z': rank-1 v_z components (z-reflection flips sign).
-    - Degree-2 'd1_{ci}_{cj}': mixed-parity dot products (one '_xy', one '_xz').
+    - Degree-2 'd1_{ci}_{cj}'/'x1_{ci}_{cj}': mixed-parity |m|=1 bilinears (one
+      '_xy', one '_xz'). The dot product and the wedge share the same parity.
     - Degree-3 'tp_re_...' / 'tp_im_...': triple products where the two |m|=1
       factors have different parity (one '_xy', one '_xz').
 
@@ -508,7 +522,8 @@ def _is_o2_parity_odd(key: str) -> bool:
     if key.endswith('_z') and not key.endswith('_zz'):
         return True
     # Degree-2/3: mixed parity iff exactly one '_xy' and one '_xz' in key
-    if key.startswith('d1_') or key.startswith('tp_re_') or key.startswith('tp_im_'):
+    if (key.startswith('d1_') or key.startswith('x1_')
+            or key.startswith('tp_re_') or key.startswith('tp_im_')):
         return key.count('_xy') == 1 and key.count('_xz') == 1
     return False
 
@@ -584,7 +599,8 @@ def compute_invariants(
 
     For symmetry='SO2', invariant labels follow these patterns:
     - Degree 1: '{name}' (scalars/traces), '{name}_z' (v_z), '{name}_zz' (M_zz)
-    - Degree 2: 'd1_{ci}_{cj}' (|m|=1 pairs), 'd2_{ci}_{cj}' (|m|=2 pairs)
+    - Degree 2: 'd1_{ci}_{cj}'/'x1_{ci}_{cj}' (|m|=1 dot/wedge),
+                'd2_{ci}_{cj}'/'x2_{ci}_{cj}' (|m|=2 dot/wedge)
     - Degree 3: 'tp_re_{ca}_{cb}_{cc}', 'tp_im_{ca}_{cb}_{cc}'
 
     Examples

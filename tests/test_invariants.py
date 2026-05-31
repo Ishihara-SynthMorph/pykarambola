@@ -1415,16 +1415,30 @@ class TestSO2Invariants:
 
     def test_so2_degree2_count(self):
         """With 1 rank-1 vector and 1 rank-2 matrix:
-        |m|=1 doublets: v_xy + M_xz = 2 → 2*3/2 = 3 d1 pairs
-        |m|=2 doublets: M_m2 = 1 → 1 d2 pair
-        Total: 4
+        |m|=1 doublets: v_xy + M_xz = 2 → 3 d1 dot pairs + 1 x1 wedge (i<j)
+        |m|=2 doublets: M_m2 = 1 → 1 d2 pair + 0 x2 wedge (no distinct pair)
+        Total: 5
         """
         dec = _decompose_so2({'v': np.array([1., 2., 3.]), 'M': np.eye(3)})
         inv = _so2_doublet_inner_products(dec)
         d1_keys = [k for k in inv if k.startswith('d1_')]
+        x1_keys = [k for k in inv if k.startswith('x1_')]
         d2_keys = [k for k in inv if k.startswith('d2_')]
+        x2_keys = [k for k in inv if k.startswith('x2_')]
         assert len(d1_keys) == 3
+        assert len(x1_keys) == 1
         assert len(d2_keys) == 1
+        assert len(x2_keys) == 0
+
+    def test_so2_wedge_antisymmetric(self):
+        """The wedge term flips sign when the two doublets are swapped, and the
+        diagonal (same doublet) wedge is absent (would be zero)."""
+        a = np.array([1.0, 0.0, 0.0])
+        b = np.array([0.0, 1.0, 0.0])
+        inv = compute_invariants({'a': a, 'b': b}, symmetry='SO2', max_degree=2)
+        # a_xy=[1,0], b_xy=[0,1] → wedge = 1*1 - 0*0 = 1
+        assert inv['x1_a_xy_b_xy'] == pytest.approx(1.0)
+        assert 'x1_a_xy_a_xy' not in inv  # diagonal wedge omitted
 
     # ---- degree-3 triple products ----
 
@@ -1531,7 +1545,7 @@ class TestSO2Invariants:
     # ---- invariant count for 14 standard tensors ----
 
     def test_so2_invariant_count_14_tensors(self):
-        """Full 14-tensor set: expect 18 + 76 + 660 = 754 invariants."""
+        """Full 14-tensor set: expect 18 + 136 + 660 = 814 invariants."""
         rng = np.random.default_rng(0)
 
         def rand_sym(n=3):
@@ -1558,18 +1572,19 @@ class TestSO2Invariants:
         inv = compute_invariants(tensors, symmetry='SO2', max_degree=3)
 
         # Degree-1: 4 scalars + 4 v_z + 4 trace (2 deduped: w102, w202) + 6 _zz = 18
-        deg1 = {k: v for k, v in inv.items() if not k.startswith(('d1_', 'd2_', 'tp_'))}
+        deg2_prefixes = ('d1_', 'x1_', 'd2_', 'x2_', 'tp_')
+        deg1 = {k: v for k, v in inv.items() if not k.startswith(deg2_prefixes)}
         assert len(deg1) == 18, f"Expected 18 degree-1, got {len(deg1)}: {sorted(deg1)}"
 
-        # Degree-2: 55 d1 + 21 d2 = 76
-        deg2 = {k: v for k, v in inv.items() if k.startswith(('d1_', 'd2_'))}
-        assert len(deg2) == 76, f"Expected 76 degree-2, got {len(deg2)}"
+        # Degree-2: 55 d1 + 45 x1 + 21 d2 + 15 x2 = 136
+        deg2 = {k: v for k, v in inv.items() if k.startswith(('d1_', 'x1_', 'd2_', 'x2_'))}
+        assert len(deg2) == 136, f"Expected 136 degree-2, got {len(deg2)}"
 
         # Degree-3: 660 triple products (Re + Im)
         deg3 = {k: v for k, v in inv.items() if k.startswith('tp_')}
         assert len(deg3) == 660, f"Expected 660 degree-3, got {len(deg3)}"
 
-        assert len(inv) == 754, f"Expected 754 total, got {len(inv)}"
+        assert len(inv) == 814, f"Expected 814 total, got {len(inv)}"
 
     # ---- API edge cases ----
 
@@ -1669,10 +1684,10 @@ class TestSO2InvariantsMeshIntegration:
         for name in ('w020_zz', 'w102_zz', 'w202_zz'):
             assert name in inv, f"Missing _zz key '{name}'"
 
-    def test_invariant_count_754(self, box_tensors):
-        """Full 14-tensor mesh output produces exactly 754 SO(2) invariants."""
+    def test_invariant_count_814(self, box_tensors):
+        """Full 14-tensor mesh output produces exactly 814 SO(2) invariants."""
         inv = compute_invariants(box_tensors, symmetry='SO2')
-        assert len(inv) == 754
+        assert len(inv) == 814
 
     # ---- deduplication with mesh data ----
 
@@ -1738,13 +1753,13 @@ class TestSO2InvariantsMeshIntegration:
 
     def test_eigensystem_keys_dropped_with_warning(self):
         """Passing minkowski_tensors() output WITH eigensystems drops the derived
-        eigvals/eigvecs keys (with a warning) and yields the same 754 invariants
+        eigvals/eigvecs keys (with a warning) and yields the same 814 invariants
         as the compute_eigensystems=False output."""
         verts, faces = _box_mesh_so2(3.0, 2.0, 1.0)
         tensors_with_eig = minkowski_tensors(verts, faces, compute_eigensystems=True)
         with pytest.warns(UserWarning, match="eigensystem keys"):
             inv = compute_invariants(tensors_with_eig, symmetry='SO2')
-        assert len(inv) == 754
+        assert len(inv) == 814
 
     def test_eigensystem_keys_yield_invariant_features(self):
         """After dropping eigensystem keys, the full-output result is rotation
