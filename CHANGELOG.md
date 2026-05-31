@@ -19,7 +19,6 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
   - `symmetry='O2'` further filters the SO(2) set to remove z-reflection-odd features, yielding a parity-even subset
   - Automatic deduplication of linearly dependent scalars (Tr(w102)/3 = w100, Tr(w202)/3 = w200)
   - Derived eigensystem keys (`*_eigvals`, `*_eigvecs`) from `minkowski_tensors(..., compute_eigensystems=True)` are dropped on input with a warning, since they are not spherical tensors and would otherwise yield non-invariant features
-- `aicsshparam.shinvariants` upstream shim in `pykarambola.spharm_invariants` (#137): when `aicsshparam` is installed, `compute_spharm_invariants` delegates to `aicsshparam.shinvariants.get_invariants` and falls back to the local implementation otherwise
 
 ---
 
