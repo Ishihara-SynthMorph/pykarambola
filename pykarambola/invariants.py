@@ -25,6 +25,7 @@ Schroeder-Turk et al. (2011) - Minkowski Tensors of Anisotropic Spatial Structur
 
 from __future__ import annotations
 
+import warnings
 from itertools import combinations, combinations_with_replacement
 from typing import Literal
 
@@ -37,6 +38,44 @@ _KNOWN_TRACE_DEPS = {
     'w102': 'w100',
     'w202': 'w200',
 }
+
+# Suffixes of derived eigensystem outputs from
+# ``minkowski_tensors(..., compute_eigensystems=True)``. These are NOT spherical
+# tensors: ``_eigvals`` is a sorted scalar triple (shape (3,), but not a geometric
+# vector) and ``_eigvecs`` is an orthogonal matrix (shape (3,3), but not a
+# symmetric rank-2 tensor). Inferring their rank from shape and feeding them into
+# the invariant enumeration silently yields features that are NOT rotation
+# invariant, so they are dropped on input. See issue #102 / PR #107.
+_NON_TENSOR_SUFFIXES = ('_eigvals', '_eigvecs')
+
+
+def _drop_non_tensor_keys(
+    tensors_dict: dict[str, np.ndarray | float],
+) -> dict[str, np.ndarray | float]:
+    """Drop derived eigensystem keys that are not spherical tensors.
+
+    ``minkowski_tensors`` returns eigenvalue/eigenvector keys by default
+    (``compute_eigensystems=True``). Their shapes ``(3,)`` and ``(3,3)`` would be
+    misread as a rank-1 vector and a rank-2 tensor, producing non-invariant
+    features. They are stripped here with a warning so the natural call pattern
+    ``compute_invariants(minkowski_tensors(verts, faces))`` still yields correct
+    invariants.
+    """
+    kept = {
+        name: tensor
+        for name, tensor in tensors_dict.items()
+        if not name.endswith(_NON_TENSOR_SUFFIXES)
+    }
+    dropped = [name for name in tensors_dict if name.endswith(_NON_TENSOR_SUFFIXES)]
+    if dropped:
+        warnings.warn(
+            "compute_invariants: ignoring non-tensor eigensystem keys "
+            f"{sorted(dropped)}. These are eigenvalue/eigenvector outputs, not "
+            "spherical tensors, and would produce non-invariant features. Pass "
+            "compute_eigensystems=False to minkowski_tensors to avoid this warning.",
+            stacklevel=3,
+        )
+    return kept
 
 
 def _infer_rank(tensor) -> int:
@@ -527,6 +566,12 @@ def compute_invariants(
 
     Notes
     -----
+    Eigensystem keys: ``minkowski_tensors`` returns ``{name}_eigvals`` (shape
+    (3,)) and ``{name}_eigvecs`` (shape (3,3)) keys by default. These are not
+    spherical tensors and are dropped on input with a warning, so passing the
+    full ``minkowski_tensors(...)`` output is safe. Use
+    ``compute_eigensystems=False`` to silence the warning.
+
     Translation invariance: Many Minkowski tensors depend on the choice of
     origin/centroid. The invariants computed here will change if the mesh
     is translated, unless the tensors themselves are translation-invariant.
@@ -569,6 +614,13 @@ def compute_invariants(
         raise ValueError(
             f"Invalid symmetry '{symmetry}'. Must be one of {sorted(_VALID_SYMMETRIES)}."
         )
+
+    # Drop derived eigensystem keys (eigvals/eigvecs) that are not spherical
+    # tensors; otherwise their (3,) / (3,3) shapes would be misread as a vector /
+    # rank-2 tensor and silently produce non-invariant features.
+    tensors_dict = _drop_non_tensor_keys(tensors_dict)
+    if not tensors_dict:
+        return {}
 
     # O(2): compute SO(2) then filter out parity-odd features under z → −z
     if symmetry == 'O2':

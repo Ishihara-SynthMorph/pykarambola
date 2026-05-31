@@ -33,6 +33,7 @@ from pykarambola.invariants import (
     _so2_collect_doublets,
     _so2_doublet_inner_products,
     _so2_triple_products,
+    _drop_non_tensor_keys,
     compute_invariants,
 )
 
@@ -255,6 +256,36 @@ class TestDecomposeAll:
     def test_empty_input(self):
         decomposed = decompose_all({})
         assert decomposed == {}
+
+
+class TestDropNonTensorKeys:
+    """Tests for stripping derived eigensystem keys (eigvals/eigvecs)."""
+
+    def test_drops_eigvals_and_eigvecs(self):
+        d = {
+            'w020': np.eye(3),
+            'w020_eigvals': np.array([1.0, 2.0, 3.0]),
+            'w020_eigvecs': np.eye(3),
+        }
+        with pytest.warns(UserWarning, match="eigensystem keys"):
+            kept = _drop_non_tensor_keys(d)
+        assert set(kept) == {'w020'}
+
+    def test_no_warning_when_clean(self):
+        d = {'w000': 1.0, 'w020': np.eye(3)}
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            kept = _drop_non_tensor_keys(d)
+        assert set(kept) == {'w000', 'w020'}
+
+    def test_compute_invariants_ignores_eigen_keys(self):
+        clean = {'w000': 1.0, 'w010': np.array([1.0, 0.0, 0.0])}
+        polluted = {**clean, 'w020_eigvals': np.array([5.0, 4.0, 3.0])}
+        base = compute_invariants(clean, max_degree=2)
+        with pytest.warns(UserWarning, match="eigensystem keys"):
+            got = compute_invariants(polluted, max_degree=2)
+        assert got == base
 
 
 # =============================================================================
@@ -1607,9 +1638,9 @@ class TestSO2InvariantsMeshIntegration:
         mesh → minkowski_tensors() → compute_invariants(symmetry='SO2')
 
     All tests use an asymmetric box (3×2×1) so the invariants are non-trivial.
-    compute_eigensystems=False is required; passing eigensystem keys inflates
-    the invariant count (eigvals shape (3,) → treated as rank-1 vectors,
-    eigvecs shape (3,3) → treated as rank-2 matrices).
+    Eigensystem keys (eigvals shape (3,), eigvecs shape (3,3)) are not spherical
+    tensors; compute_invariants drops them on input with a warning, so passing
+    the full minkowski_tensors() output is safe.
     """
 
     @pytest.fixture
@@ -1705,17 +1736,33 @@ class TestSO2InvariantsMeshIntegration:
 
     # ---- eigensystem-key pitfall ----
 
-    def test_eigensystem_keys_inflate_count(self):
-        """Passing minkowski_tensors() output WITH eigensystems produces more than
-        754 invariants because eigvals (shape (3,)) are treated as rank-1 vectors
-        and eigvecs (shape (3,3)) as rank-2 matrices.
-
-        This documents the required usage: always pass compute_eigensystems=False.
-        """
+    def test_eigensystem_keys_dropped_with_warning(self):
+        """Passing minkowski_tensors() output WITH eigensystems drops the derived
+        eigvals/eigvecs keys (with a warning) and yields the same 754 invariants
+        as the compute_eigensystems=False output."""
         verts, faces = _box_mesh_so2(3.0, 2.0, 1.0)
         tensors_with_eig = minkowski_tensors(verts, faces, compute_eigensystems=True)
-        inv = compute_invariants(tensors_with_eig, symmetry='SO2')
-        assert len(inv) > 754
+        with pytest.warns(UserWarning, match="eigensystem keys"):
+            inv = compute_invariants(tensors_with_eig, symmetry='SO2')
+        assert len(inv) == 754
+
+    def test_eigensystem_keys_yield_invariant_features(self):
+        """After dropping eigensystem keys, the full-output result is rotation
+        invariant under z-rotation (the footgun is fixed, not just documented)."""
+        verts, faces = _box_mesh_so2(3.0, 2.0, 1.0)
+        R = Rotation.from_euler('z', 37, degrees=True).as_matrix()
+        with pytest.warns(UserWarning, match="eigensystem keys"):
+            inv = compute_invariants(
+                minkowski_tensors(verts, faces, compute_eigensystems=True),
+                symmetry='SO2',
+            )
+            inv_rot = compute_invariants(
+                minkowski_tensors(verts @ R.T, faces, compute_eigensystems=True),
+                symmetry='SO2',
+            )
+        assert set(inv) == set(inv_rot)
+        for k in inv:
+            assert abs(inv[k] - inv_rot[k]) < 1e-10, f"z-rotation broke '{k}'"
 
 # =============================================================================
 # TestSO3InvariantsMeshIntegration
@@ -1727,9 +1774,9 @@ class TestSO3InvariantsMeshIntegration:
     These tests exercise the full pipeline:
         mesh → minkowski_tensors() → compute_invariants(symmetry='SO3'/'O3')
 
-    The same compute_eigensystems=False requirement applies as for SO(2):
-    eigvals (shape (3,)) are treated as rank-1 vectors and eigvecs (shape (3,3))
-    as rank-2 matrices, inflating the invariant count if included.
+    As for SO(2), eigensystem keys (eigvals shape (3,), eigvecs shape (3,3)) are
+    not spherical tensors; compute_invariants drops them on input with a warning,
+    so passing the full minkowski_tensors() output is safe.
 
     Tolerance for rotation-invariance tests is 1e-5 (absolute).  The triple-trace
     invariants Tr(Ti @ Tj @ Tk) accumulate ~2.7e-7 floating-point error for the
@@ -1844,9 +1891,20 @@ class TestSO3InvariantsMeshIntegration:
 
     # ---- eigensystem-key pitfall ----
 
-    def test_eigensystem_keys_inflate_count(self):
-        """Passing minkowski_tensors() output WITH eigensystems inflates count."""
+    def test_eigensystem_keys_dropped_with_warning(self):
+        """Passing minkowski_tensors() output WITH eigensystems drops the derived
+        eigvals/eigvecs keys (with a warning), yielding the same result as
+        compute_eigensystems=False."""
         verts, faces = _box_mesh_so2(3.0, 2.0, 1.0)
-        tensors_with_eig = minkowski_tensors(verts, faces, compute_eigensystems=True)
-        inv = compute_invariants(tensors_with_eig, symmetry='SO3')
-        assert len(inv) > 219
+        with pytest.warns(UserWarning, match="eigensystem keys"):
+            inv_full = compute_invariants(
+                minkowski_tensors(verts, faces, compute_eigensystems=True),
+                symmetry='SO3',
+            )
+        inv_clean = compute_invariants(
+            minkowski_tensors(verts, faces, compute_eigensystems=False),
+            symmetry='SO3',
+        )
+        assert inv_full.keys() == inv_clean.keys()
+        for k in inv_full:
+            assert abs(inv_full[k] - inv_clean[k]) < 1e-12
