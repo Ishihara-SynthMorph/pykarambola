@@ -140,14 +140,14 @@ sequential file I/O (one result folder per mesh written to disk), whereas the
 overhead of the C++ binary accounts for most of the speedup observed on the 
 adrenal dataset.
 
-\begin{figure}
+\begin{figure*}
 \centering
-\includegraphics[width=\linewidth]{notebooks/results/timing_comparison_option_a.pdf}
+\includegraphics[width=\textwidth]{notebooks/results/timing_comparison_option_a.pdf}
 \caption{Runtime benchmark on synthetic icospheres (subdivision levels 5--10; 10{,}242--10{,}485{,}762 vertices).
 \textbf{Left}: absolute wall-clock time (log-log scale) for end-to-end execution (mesh parse + Minkowski tensor compute) for C++ karambola (green), pykarambola pure-Python (blue), and pykarambola Cython-accelerated (orange).
 \textbf{Right}: speedup ratio (karambola time / pykarambola time); values above the dashed line ($= 1$) indicate pykarambola is faster.}
 \label{fig:runtime}
-\end{figure}
+\end{figure*}
 
 \subsection*{Numerical accuracy}
 
