@@ -120,12 +120,25 @@ First, synthetic icospheres at subdivision levels 5–10 (10{,}242 to 10{,}485{,
 Second, the AdrenalMNIST3D a standardized biomedical dataset~\cite{Yang2023MedMNIST} with 1{,}584 adrenal glands at two voxel resolutions (28$^3$ and 64$^3$) was used to measure performance on realistic biological meshes.
 All measurements were performed on a single core of an Apple~M4 processor (macOS~15.7.3, Python~3.13, pykarambola~v0.5.0).
 
-On icospheres, the Cython-accelerated build reduced compute time by ~1.2–1.3$\times$ relative to the pure-Python build (Figure~\ref{fig:runtime}).
-The absolute time saved by Cython grows with mesh size, meaning the benefit is most pronounced for large meshes and batch analyses where initialisation cost dominates.
-For the Minkowski tensor accumulation step (excluding file I/O), pykarambola was faster than C++ karambola at small mesh sizes (0.7–0.9$\times$ of karambola time at subdivision~5–8) but reached comparable speed at the largest mesh (1.1$\times$ at subdivision~10); the Cython-accelerated compute was consistently faster than karambola across all sizes (0.6–0.9$\times$ of karambola time).
-End-to-end (file parse plus compute), both pykarambola builds showed times comparable to karambola (pure-Python: 0.9–1.3$\times$; Cython-accelerated: 0.8–1.1$\times$).
-On AdrenalMNIST3D, pykarambola processed all 1{,}584 meshes at 28$^3$ resolution in 11.1~s versus 31~s for C++ karambola (2.8$\times$ faster) and at 64$^3$ resolution in 57.4~s versus 90~s (1.6$\times$ faster).
-The C++ karambola timing includes sequential file I/O (one result folder per mesh written to disk), whereas the pykarambola timing covers only in-memory computation; the file I/O overhead of the C++ binary accounts for most of the speedup observed on the adrenal dataset.
+End-to-end (file parse plus compute), both \texttt{pykarambola} builds achieved 
+runtimes within $1.0$--$1.3\times$ of C++ \texttt{karambola} across all mesh 
+sizes tested (Figure~\ref{fig:runtime}). The Cython-accelerated build 
+(\texttt{pykarambola[accel]}) was consistently faster than \texttt{karambola} 
+($1.0$--$1.2\times$ speedup; Figure~\ref{fig:runtime}b, orange), while the 
+pure-Python build showed comparable or slightly slower runtimes at larger mesh 
+sizes ($0.8$--$1.0\times$; Figure~\ref{fig:runtime}b, blue). Within 
+\texttt{pykarambola}, the Cython acceleration reduced compute time by 
+$1.2$--$1.3\times$ relative to the pure-Python build, with the benefit most 
+pronounced at larger mesh sizes.
+
+On AdrenalMNIST3D, \texttt{pykarambola} processed all 1{,}584 meshes at 
+$28^3$ resolution in 11~s versus 31~s for C++ \texttt{karambola} 
+($2.8\times$ faster) and at $64^3$ resolution in 61.8~s versus 90~s 
+($1.5\times$ faster). Note that the C++ \texttt{karambola} timing includes 
+sequential file I/O (one result folder per mesh written to disk), whereas the 
+\texttt{pykarambola} timing covers only in-memory computation; the file I/O 
+overhead of the C++ binary accounts for most of the speedup observed on the 
+adrenal dataset.
 
 \begin{figure}
 \centering
