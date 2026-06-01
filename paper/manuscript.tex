@@ -113,6 +113,29 @@ It extracts a triangulated isosurface for each label via \texttt{scikit-image} m
 \section*{Results}
 %% -------------------------------------------------------
 
+\begin{figure*}
+\centering
+\includegraphics[width=0.95\textwidth]{../assets/pipeline_figure18.pdf}
+\caption{%
+  Computation pipeline of pykarambola.
+  Two entry paths feed into a shared core:
+  \texttt{minkowski\_tensors\_from\_label\_image} (left) accepts a 3D integer label image,
+  pads the array, extracts an isosurface per label via marching cubes, and optionally
+  centers each mesh;
+  mesh files (\texttt{.poly}, \texttt{.off}, \texttt{.obj}, \texttt{.glb}) or direct
+  \texttt{Triangulation} objects (right) bypass this step.
+  The shared core constructs a \texttt{Triangulation} from vertex and face arrays,
+  precomputes per-triangle and per-edge geometry in a single vectorised pass,
+  and evaluates the Minkowski tensor functionals.
+  Outputs are organised into three families:
+  scalars ($w^{0,0,0}$, $w^{1,0,0}$, $w^{2,0,0}$, $w^{3,0,0}$),
+  vectors ($w^{r,1,0}$),
+  and rank-2 tensors ($w^{r,2,0}$ and $w^{r,0,2}$) with their eigensystems
+  and anisotropy index~$\beta$.
+}
+\label{fig:pipeline}
+\end{figure*}
+
 \subsection*{Runtime benchmark}
 
 We benchmarked pykarambola against the reference C++ karambola binary on two mesh sets.
@@ -148,8 +171,21 @@ The residual discrepancies observed in non-near-zero features arise from differe
 
 \begin{figure}
 \centering
-% TODO (issue #20): Figure — numerical accuracy agreement with C++ karambola
-\caption{Numerical accuracy of pykarambola relative to the reference C++ karambola implementation.}
+\textbf{(a)}\par\smallskip
+\includegraphics[width=\linewidth]{notebooks/results/heatmap_relative_error_28.pdf}\\[8pt]
+\textbf{(b)}\par\smallskip
+\includegraphics[width=\linewidth]{notebooks/results/heatmap_relative_error_64.pdf}
+\caption{%
+  Numerical accuracy of pykarambola relative to the reference C++ karambola implementation,
+  evaluated on the AdrenalMNIST3D dataset (1{,}584 meshes).
+  Each cell shows the mean relative error (\%) per feature (columns) and shape label (rows).
+  (\textbf{a})~$28^3$ voxel resolution.
+  (\textbf{b})~$64^3$ voxel resolution.
+  Colour scale is RdYlGn$_r$; greener cells indicate lower error.
+  Three features (\texttt{w010}, \texttt{w300}, \texttt{w202\_02}) show elevated errors
+  due to near-zero values that inflate the relative error metric
+  (see text for details).
+}
 \label{fig:accuracy}
 \end{figure}
 
@@ -171,15 +207,20 @@ The pipeline from label image to triangulated mesh and Minkowski tensors is summ
 
 \begin{figure}
 \centering
-% TODO (issue #18): Figure — Minkowski tensor computation pipeline schematic
-\caption{Schematic of the Minkowski tensor computation pipeline in pykarambola.}
-\label{fig:pipeline}
-\end{figure}
-
-\begin{figure}
-\centering
-% TODO (issue #21): Figure — label-image API single-label vs multi-label
-\caption{Label-image API applied to a 3D binary image: single-label versus multi-label mode.}
+\includegraphics[width=\linewidth]{../assets/figure21.pdf}
+\caption{%
+  Label-image API applied to the DNA channel of a 3D fluorescence microscopy segmentation
+  of a hiPSC in anaphase/telophase (Allen Cell Collection; isotropic voxel size 0.108\,\textmu m).
+  (\textbf{a}) The entire DNA channel assigned as a single label;
+  one set of Minkowski tensors describes the aggregate of all three DNA objects,
+  with the volumetric centroid marked~($\times$).
+  (\textbf{b}) Each DNA object assigned a distinct label via \texttt{scipy.ndimage.label};
+  three independent tensor sets resolve per-object volume~($V$), surface area~($A$),
+  Euler characteristic~($\chi$), and anisotropy index~($\beta$),
+  with per-object centroids marked~($\times$).
+  Objects~2 and~3 occupy different axial ranges (Z slices 40--72 and 78--110, respectively)
+  and likely correspond to sister chromatids from the same chromosome.
+}
 \label{fig:labelimage}
 \end{figure}
 
