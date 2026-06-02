@@ -20,7 +20,16 @@
 
 %TC:break Abstract
 \begin{abstract}
-% TODO (issue #22): Write abstract
+Three-dimensional morphometric analysis of biological structures requires shape descriptors that capture not only size and topology but also elongation and orientation.
+Minkowski tensors are tensor-valued extensions of the classical Minkowski functionals that encode directional surface geometry and are applicable to objects of arbitrary topology.
+While computing Minkowski tensors on triangulated surfaces is possible with the C++ karambola package, it is inaccessible within Python-based bioimage workflows: karambola is not distributed through a package manager, requires a C++ build toolchain, and provides no NumPy-compatible interface.
+Here we present pykarambola, a complete Python reimplementation that integrates Minkowski tensor morphometry directly into the Python bioimage ecosystem.
+The package is installable via \texttt{pip install pykarambola}, accepts NumPy arrays, and returns results as plain Python dicts.
+It extends input support to Wavefront OBJ, binary glTF, and STL formats and provides a high-level label-image API (\texttt{minkowski\_tensors\_from\_label\_image}) that converts 3D integer segmentation arrays into per-object Minkowski tensors in a single call.
+An optional Cython extension accelerates graph-traversal steps of mesh initialisation.
+Benchmarked against C++ karambola on 1{,}584 adrenal gland meshes from the AdrenalMNIST3D dataset, pykarambola is 2.3$\times$ faster overall; the Cython-accelerated build is 2.7--3.4$\times$ faster on synthetic icospheres.
+Numerical output agrees with C++ karambola to floating-point precision across all scalar, vector, and tensor features.
+pykarambola is freely available at \url{https://github.com/Ishihara-SynthMorph/pykarambola} and archived on Zenodo (\url{https://doi.org/10.5281/zenodo.20127022}).
 \end{abstract}
 %TC:break main
 
@@ -77,7 +86,7 @@ The C++ implementation depended on the GNU Scientific Library (GSL) for eigenval
 
 The package is structured around a pure-Python core that requires NumPy~\cite{harris2020numpy} and SciPy~\cite{virtanen2020scipy}.
 SciPy is used for connected component detection on mesh graphs and for spherical harmonic basis functions in the spherical Minkowski summary quantities (\texttt{msm}).
-An optional Cython extension accelerates the graph-traversal steps of mesh initialisation; the package falls back to pure-Python implementations when the extension is absent (described below).
+An optional Cython~\cite{behnel2011cython} extension accelerates the graph-traversal steps of mesh initialisation; the package falls back to pure-Python implementations when the extension is absent (described below).
 The API for computing Minkowski tensors directly from segmented 3D label images (\texttt{minkowski\_tensors\_from\_label\_image}) requires scikit-image~\cite{vanderwalt2014scikit} for marching-cubes surface extraction; this dependency is not declared as mandatory and resolves automatically in environments where scikit-image is already present.
 
 Pykarambola retains support for the two mesh formats accepted by C++ karambola: the karambola-native \texttt{.poly} format and the Object File Format (\texttt{.off}).
