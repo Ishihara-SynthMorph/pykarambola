@@ -239,8 +239,8 @@ The pipeline from label image to triangulated mesh and Minkowski tensors is summ
 %% -------------------------------------------------------
 pykarambola makes Minkowski tensor morphometry directly accessible within the Python bioimage ecosystem by replacing a C++ binary with a pip-installable package that accepts NumPy arrays and returns plain Python dicts.
 Beyond the interface change, the reimplementation extends input support to Wavefront OBJ, binary glTF, and STL files and adds a high-level label-image API that converts 3D segmentation outputs into per-object tensors in a single call.
-The benchmark results show that on icospheres, pykarambola compute times are comparable to C++ karambola (pure-Python: 0.9--1.2$\times$; Cython-accelerated: 0.8--1.1$\times$ of karambola end-to-end time), with the Cython-accelerated compute step consistently faster than karambola across all mesh sizes.
-On the AdrenalMNIST3D dataset, pykarambola was faster than C++ karambola (2.8$\times$ at 28$^3$, 1.6$\times$ at 64$^3$), primarily because C++ karambola writes one result folder per object to disk.
+The benchmark results show that on icospheres, the Cython-accelerated build was consistently faster than C++ karambola ($1.0$--$1.2\times$ speedup), while the pure-Python build was comparable or slightly slower at larger mesh sizes ($0.8$--$1.0\times$).
+On the AdrenalMNIST3D dataset, pykarambola was faster than C++ karambola (2.8$\times$ at 28$^3$, 1.5$\times$ at 64$^3$), primarily because C++ karambola writes one result folder per object to disk.
 The NumPy vectorization of the Minkowski tensor functionals over all triangles in a single array operation avoids per-triangle Python overhead and accounts for the compute-step parity with the C++ implementation.
 The optional Cython extension targets only the graph-traversal steps of mesh initialisation, which resist vectorization; its benefit is therefore most pronounced for large meshes and batch analyses where initialisation cost dominates.
 For interactive or small-scale use, the pure-Python build is sufficient and requires no compiled extension.
