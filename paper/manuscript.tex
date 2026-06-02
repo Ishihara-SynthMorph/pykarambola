@@ -113,6 +113,29 @@ It extracts a triangulated isosurface for each label via \texttt{scikit-image} m
 \section*{Results}
 %% -------------------------------------------------------
 
+\begin{figure*}
+\centering
+\includegraphics[width=0.95\textwidth]{../assets/pipeline_figure18.pdf}
+\caption{%
+  Computation pipeline of pykarambola.
+  Two entry paths feed into a shared core:
+  \texttt{minkowski\_tensors\_from\_label\_image} (left) accepts a 3D integer label image,
+  pads the array, extracts an isosurface per label via marching cubes, and optionally
+  centers each mesh;
+  mesh files (\texttt{.poly}, \texttt{.off}, \texttt{.obj}, \texttt{.glb}) or direct
+  \texttt{Triangulation} objects (right) bypass this step.
+  The shared core constructs a \texttt{Triangulation} from vertex and face arrays,
+  precomputes per-triangle and per-edge geometry in a single vectorised pass,
+  and evaluates the Minkowski tensor functionals.
+  Outputs are organised into three families:
+  scalars ($w^{0,0,0}$, $w^{1,0,0}$, $w^{2,0,0}$, $w^{3,0,0}$),
+  vectors ($w^{r,1,0}$),
+  and rank-2 tensors ($w^{r,2,0}$ and $w^{r,0,2}$) with their eigensystems
+  and anisotropy index~$\beta$.
+}
+\label{fig:pipeline}
+\end{figure*}
+
 \subsection*{Runtime benchmark}
 
 We benchmarked pykarambola against the reference C++ karambola binary on two mesh sets.
@@ -190,12 +213,12 @@ order $10^{-8}$--$10^{-7}$ on the AdrenalMNIST3D meshes.
 \centering
 \includegraphics[width=0.95\textwidth]{notebooks/results/scatter_accuracy_paper.pdf}
 \caption{Numerical accuracy of \texttt{pykarambola} relative to C++ \texttt{karambola}.
-Each panel shows a scatter plot of values from identical analyses run in C++ 
-(\texttt{karambola}, $x$-axis) and Python (\texttt{pykarambola}, $y$-axis) on 
+Each panel shows a scatter plot of values from identical analyses run in C++
+(\texttt{karambola}, $x$-axis) and Python (\texttt{pykarambola}, $y$-axis) on
 the AdrenalMNIST3D dataset (1{,}584 meshes, $28^3$ voxel resolution).
-Columns correspond to feature groups: scalars ($W_\nu^{0,0}$), 
-vectors ($W_\nu^{1,0}$), rank-2 tensors ($W_\nu^{2,0}$, $W_\nu^{0,2}$), 
-and higher-rank quantities ($W_1^{0,3}$, $W_1^{0,4}$ eigenvalues, and spherical 
+Columns correspond to feature groups: scalars ($W_\nu^{0,0}$),
+vectors ($W_\nu^{1,0}$), rank-2 tensors ($W_\nu^{2,0}$, $W_\nu^{0,2}$),
+and higher-rank quantities ($W_1^{0,3}$, $W_1^{0,4}$ eigenvalues, and spherical
 Minkowski summary quantities $q_l$ and $w_l$).
 Panel labels are shown in the top-left corner of each panel, colored by feature group.
 The red diagonal indicates perfect agreement; all points fall on this line.
@@ -221,15 +244,20 @@ The pipeline from label image to triangulated mesh and Minkowski tensors is summ
 
 \begin{figure}
 \centering
-% TODO (issue #18): Figure — Minkowski tensor computation pipeline schematic
-\caption{Schematic of the Minkowski tensor computation pipeline in pykarambola.}
-\label{fig:pipeline}
-\end{figure}
-
-\begin{figure}
-\centering
-% TODO (issue #21): Figure — label-image API single-label vs multi-label
-\caption{Label-image API applied to a 3D binary image: single-label versus multi-label mode.}
+\includegraphics[width=\linewidth]{../assets/figure21.pdf}
+\caption{%
+  Label-image API applied to the DNA channel of a 3D fluorescence microscopy segmentation
+  of a hiPSC in anaphase/telophase (Allen Cell Collection; isotropic voxel size 0.108\,\textmu m).
+  (\textbf{a}) The entire DNA channel assigned as a single label;
+  one set of Minkowski tensors describes the aggregate of all three DNA objects,
+  with the volumetric centroid marked~($\times$).
+  (\textbf{b}) Each DNA object assigned a distinct label via \texttt{scipy.ndimage.label};
+  three independent tensor sets resolve per-object volume~($V$), surface area~($A$),
+  Euler characteristic~($\chi$), and anisotropy index~($\beta$),
+  with per-object centroids marked~($\times$).
+  Objects~2 and~3 occupy different axial ranges (Z slices 40--72 and 78--110, respectively)
+  and likely correspond to sister chromatids from the same chromosome.
+}
 \label{fig:labelimage}
 \end{figure}
 
