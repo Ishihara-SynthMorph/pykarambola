@@ -10,15 +10,11 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
-- `pykarambola.invariants` module for computing SO(3), O(3), and SO(2) rotational invariants from Minkowski tensors (#102)
-  - `compute_invariants(tensors_dict, max_degree, symmetry, deduplicate_scalars)` computes a set of polynomial invariants up to degree 3
+- `pykarambola.invariants` module for computing rotational invariants from Minkowski tensors (#102)
+  - `compute_invariants(tensors_dict, max_degree, symmetry, deduplicate_scalars)` builds polynomial invariants up to degree 3 from any combination of rank-0/1/2 tensors (not limited to the 14 standard Minkowski tensors)
   - `decompose_all(tensors_dict)` decomposes tensors into irreducible representations (trace/traceless split for rank-2)
-  - Flexible input: accepts any combination of rank 0, 1, 2 tensors (not limited to the 14 standard Minkowski tensors)
-  - Supports O(3) (true scalars), SO(3) (includes pseudo-scalars), SO(2) (z-rotation only), and O(2) (z-rotation + z-reflection) symmetry groups
-  - `symmetry='SO2'` decomposes tensors by SO(2) charge m and constructs invariants from m=0 scalars, |m|=1 doublets, and |m|=2 doublets up to degree 3; degree-2 invariants include both the dot product (`d1_`/`d2_`) and the antisymmetric wedge (`x1_`/`x2_`) of same-charge doublets, yielding 814 invariants for the 14 standard Minkowski tensors
-  - `symmetry='O2'` further filters the SO(2) set to remove z-reflection-odd features, yielding a parity-even subset
-  - Automatic deduplication of linearly dependent scalars (Tr(w102)/3 = w100, Tr(w202)/3 = w200)
-  - Derived eigensystem keys (`*_eigvals`, `*_eigvecs`) from `minkowski_tensors(..., compute_eigensystems=True)` are dropped on input with a warning, since they are not spherical tensors and would otherwise yield non-invariant features
+  - Symmetry groups: `O3` (true scalars), `SO3` (adds pseudo-scalars), `SO2` (z-rotation), and `O2` (z-rotation + z-reflection, a parity-even subset of `SO2`)
+  - Linearly dependent scalars are deduplicated automatically (e.g. `Tr(w102)/3 = w100`); eigensystem keys (`*_eigvals`/`*_eigvecs`) are dropped with a warning, since they are not spherical tensors
 
 ---
 
