@@ -177,13 +177,12 @@ agree to within $5 \times 10^{-9}$ on average.
 
 The spherical Minkowski summary quantities (\texttt{msm\_ql} and 
 \texttt{msm\_wl}, $l = 0, \ldots, 8$) show a distinct accuracy pattern 
-(Figure~\ref{fig:accuracy}q--t). For \texttt{msm\_ql} and even-$l$ 
-\texttt{msm\_wl}, both implementations agree to floating-point precision 
-(Figure~\ref{fig:accuracy}q--s). For odd-$l$ \texttt{msm\_wl} ($l = 1, 3, 5, 7$), 
-the Wigner 3j parity selection rule requires $w_l = 0$ exactly 
-(Figure~\ref{fig:accuracy}t). \texttt{pykarambola}'s Racah-formula implementation 
-applies this rule analytically and returns exactly zero, whereas C++ 
-\texttt{karambola} uses \texttt{gsl\_sf\_coupling\_3j}, which evaluates 
+(Figure~\ref{fig:accuracy}). For \texttt{msm\_ql} and even-$l$ 
+\texttt{msm\_wl}, both implementations agree to floating-point precision. 
+For odd-$l$ \texttt{msm\_wl} ($l = 1, 3, 5, 7$), the Wigner 3j parity 
+selection rule requires $w_l = 0$ exactly. \texttt{pykarambola}'s Racah-formula 
+implementation applies this rule analytically and returns exactly zero, whereas 
+C++ \texttt{karambola} uses \texttt{gsl\_sf\_coupling\_3j}, which evaluates 
 numerically without an explicit parity check, producing spurious residuals of 
 order $10^{-8}$--$10^{-7}$ on the AdrenalMNIST3D meshes.
 
@@ -194,13 +193,13 @@ order $10^{-8}$--$10^{-7}$ on the AdrenalMNIST3D meshes.
 Each panel shows a scatter plot of values from identical analyses run in C++ 
 (\texttt{karambola}, $x$-axis) and Python (\texttt{pykarambola}, $y$-axis) on 
 the AdrenalMNIST3D dataset (1{,}584 meshes, $28^3$ voxel resolution).
-Columns correspond to feature groups: scalars ($W_\nu^{0,0}$, panels a--d), 
-vectors ($W_\nu^{1,0}$, panels e--h), rank-2 tensors ($W_\nu^{2,0}$, 
-$W_\nu^{0,2}$, panels i--n), and higher-rank quantities including $W_1^{0,3}$, 
-$W_1^{0,4}$ eigenvalues, and spherical Minkowski summary quantities ($q_l$, 
-$w_l$, panels o--t).
+Columns correspond to feature groups: scalars ($W_\nu^{0,0}$), 
+vectors ($W_\nu^{1,0}$), rank-2 tensors ($W_\nu^{2,0}$, $W_\nu^{0,2}$), 
+and higher-rank quantities ($W_1^{0,3}$, $W_1^{0,4}$ eigenvalues, and spherical 
+Minkowski summary quantities $q_l$ and $w_l$).
+Panel labels are shown in the top-left corner of each panel, colored by feature group.
 The red diagonal indicates perfect agreement; all points fall on this line.
-Equivalent agreement is observed at $64^3$ resolution (Figure~\ref{fig:accuracy_supp}).}
+Equivalent agreement is observed at $64^3$ resolution (Supplementary Figure~\ref{fig:accuracy_supp}).}
 \label{fig:accuracy}
 \end{figure*}
 
@@ -300,6 +299,8 @@ K.I.: Conceptualization, Funding acquisition, Project administration, Supervisio
 %TC:endignore
 \newpage
 
+\renewcommand{\thefigure}{S\arabic{figure}}
+\setcounter{figure}{0}
 
 \section{Supplementary Material}
 
@@ -307,7 +308,7 @@ K.I.: Conceptualization, Funding acquisition, Project administration, Supervisio
 \centering
 \includegraphics[width=0.95\textwidth]{notebooks/results/scatter_accuracy_paper_supplementary.pdf}
 \caption{Numerical accuracy of \texttt{pykarambola} relative to C++ \texttt{karambola} at $64^3$ voxel resolution.
-All panels and groupings are identical to Figure~\ref{fig:accuracy}; all points fall on the identity line.}
+All panels and groupings are identical to Figure~\ref{fig:accuracy}.}
 \label{fig:accuracy_supp}
 \end{figure*}
 
