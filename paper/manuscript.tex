@@ -27,9 +27,9 @@ Here we present pykarambola, a complete Python reimplementation that integrates 
 The package is installable via \texttt{pip install pykarambola}, accepts NumPy arrays, and returns results as plain Python dicts.
 It extends input support to Wavefront OBJ, binary glTF, and STL formats and provides a high-level label-image API (\texttt{minkowski\_tensors\_from\_label\_image}) that converts 3D integer segmentation arrays into per-object Minkowski tensors in a single call.
 An optional Cython extension accelerates graph-traversal steps of mesh initialisation.
-Benchmarked against C++ karambola on 1{,}584 adrenal gland meshes from the AdrenalMNIST3D dataset, pykarambola is 2.3$\times$ faster overall; the Cython-accelerated build is 2.7--3.4$\times$ faster on synthetic icospheres.
-Numerical output agrees with C++ karambola to floating-point precision across all scalar, vector, and tensor features.
-pykarambola is freely available at \url{https://github.com/Ishihara-SynthMorph/pykarambola} and archived on Zenodo (\url{https://doi.org/10.5281/zenodo.20127022}).
+Benchmarked against C++ karambola on 1{,}584 adrenal gland meshes from the AdrenalMNIST3D dataset, pykarambola is $2.8\times$ faster at $28^3$ resolution and $1.5\times$ faster at $64^3$ resolution, with the speedup primarily attributable to C++ karambola's sequential per-object file I/O; the Cython-accelerated build achieves $1.0$--$1.2\times$ speedup relative to C++ karambola on synthetic icospheres.
+Numerical output agrees with C++ karambola to floating-point precision across all 121 scalar, vector, and tensor features evaluated.
+pykarambola is freely available at \url{https://github.com/Ishihara-SynthMorph/pykarambola} and archived on Zenodo (\url{https://doi.org/10.5281/zenodo.20418801}).
 \end{abstract}
 %TC:break main
 
