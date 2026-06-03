@@ -19,8 +19,8 @@ Minkowski tensors are widely applicable to analyzing 3D structures in biomedical
 
 | Notebook | Description |
 |---|---|
-| [`examples/pykarambola_demo.ipynb`](examples/pykarambola_demo.ipynb) | Core API walkthrough: NumPy arrays, file parsers, rank-2 tensors, labels, label-image API |
-| [`examples/segmentation_to_tensors.ipynb`](examples/segmentation_to_tensors.ipynb) | End-to-end pipeline: confocal stack → segmentation → Minkowski tensors → PCA + clustering |
+| [`examples/demo.ipynb`](examples/demo.ipynb) | Core API walkthrough: NumPy arrays, file parsers, rank-2 tensors, labels, label-image API |
+| [`examples/segmentation_workflow.ipynb`](examples/segmentation_workflow.ipynb) | End-to-end pipeline: confocal stack → segmentation → Minkowski tensors → PCA + clustering |
 
 ### End-to-end pipeline: confocal nuclei → segmentation → shape clustering
 
@@ -55,7 +55,7 @@ Compared to the original C++ karambola, this Python port adds:
 
 **Optional:**
 - [Cython](https://cython.org/) ≥ 3.0 — compiled C acceleration (`pip install "pykarambola[accel]"`)
-- [scikit-image](https://scikit-image.org/) — label-image API (`pip install "pykarambola[dev]"`)
+- [scikit-image](https://scikit-image.org/) — label-image API (`pip install "pykarambola[notebooks]"`)
 - [trimesh](https://trimesh.org/) — GLB/glTF file support (`pip install "pykarambola[glb]"`)
 - [numpy-stl](https://github.com/WoLpH/numpy-stl) — STL file support (`pip install "pykarambola[stl]"`)
 
@@ -190,8 +190,11 @@ print(result[1]["w000"])
 
 | Notebook | What it covers |
 |----------|---------------|
-| [`examples/pykarambola_demo.ipynb`](examples/pykarambola_demo.ipynb) | A hands-on tour of the mesh API: passing vertices and faces as NumPy arrays, supplying per-face labels or using `labels='auto'` to separate connected bodies, retrieving the object count with `return_count`, and computing derived scalars (`_beta`, `_trace`, `_trace_ratio`) |
-| [`examples/label_image_api.ipynb`](examples/label_image_api.ipynb) | Working with 3D segmentation images: measures whole-cell morphology from a single label, compares nucleus and cell body separately using two labels, and runs per-nuclear object anisotropy analysis across three connected components from a real AllenCell hiPSC dataset |
+| [`examples/demo.ipynb`](examples/demo.ipynb) | A hands-on tour of the mesh API: passing vertices and faces as NumPy arrays, supplying per-face labels or using `labels='auto'` to separate connected bodies, retrieving the object count with `return_count`, and computing derived scalars (`_beta`, `_trace`, `_trace_ratio`) |
+| [`examples/segmentation_workflow.ipynb`](examples/segmentation_workflow.ipynb) | End-to-end pipeline: confocal stack → segmentation → Minkowski tensors → PCA + clustering |
+| [`examples/multilabel_image_workflow.ipynb`](examples/multilabel_image_workflow.ipynb) | Working with 3D segmentation images: measures whole-cell morphology from a single label, compares nucleus and cell body separately using two labels, and runs per-nuclear object anisotropy analysis across three connected components from a real AllenCell hiPSC dataset |
+| [`examples/minkowski_additivity.ipynb`](examples/minkowski_additivity.ipynb) | How the `center` parameter affects additivity of Minkowski tensors; when per-body vs. global centering matters |
+| [`examples/parallel_processing.ipynb`](examples/parallel_processing.ipynb) | Parallel tensor computation with `joblib`: sequential baseline, multi-core speedup, keyword arguments, and processing mesh files in bulk |
 
 ## File I/O
 
@@ -221,7 +224,7 @@ result = pk.minkowski_tensors(surface)
 python -m pykarambola [options] <surface_file>
 ```
 
-Supported input formats: `.poly`, `.off`, `.obj`, `.glb`.
+Supported input formats: `.poly`, `.off`, `.obj`, `.glb`, `.stl`.
 Run `python -m pykarambola --help` for the full list of options.
 
 ## Computed quantities
@@ -277,8 +280,8 @@ Once you have a mesh, pass its vertex and face arrays to `minkowski_tensors(vert
 If you use pykarambola in published work, please cite both pykarambola and the original karambola package.
 
 > Ishihara, K., & Khurana, Y.
-> *pykarambola: Minkowski tensor morphometry of 3D structures* (v0.4.0).
-> https://doi.org/10.5281/zenodo.20127022
+> *pykarambola: Minkowski tensor morphometry of 3D structures* (v0.5.0).
+> https://doi.org/10.5281/zenodo.20418801
 
 > Schaller, F. M., Kapfer, S. C., & Schröder-Turk, G. E.
 > *karambola — 3D Minkowski Tensor Package* (v2.0).
