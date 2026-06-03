@@ -57,7 +57,6 @@ A further layer of description comes from decomposing the Cartesian Minkowski te
 Originally developed in structural physics, this hierarchy of shape descriptors — from scalar functionals through Cartesian tensors to structure metrics — is increasingly relevant in biological image analysis, where segmented structures such as nuclei and organelles often carry biologically meaningful elongation and orientation that scalar morphometrics cannot detect.
 Realising this potential requires tools that integrate seamlessly into the workflows biologists already use.
 
-% TODO (issue #25): Python ecosystem and bioimage analysis community
 Modern bioimage analysis relies on open source tools largely written in Python.
 A typical morphometry pipeline proceeds from microscopy acquisition through volumetric segmentation to quantitative shape measurement, with tools such as scikit-image~\cite{vanderwalt2014scikit} for image processing and surface extraction, napari~\cite{Sofroniew2026napari} for interactive 3D visualisation, and pandas~\cite{McKinney2010pandas} for tabular data handling.
 Most morphometry tools in this ecosystem report simple scalar descriptors (volume, surface area, sphericity) that do not capture the directional properties of shape.
@@ -66,7 +65,6 @@ Minkowski tensors capture directional information explicitly: their eigensystems
 While computing Minkowski tensors on 3D triangulated surfaces is possible in C++ (karambola~\cite{Schaller2020karambola}), but it is not directly accessible within Python workflows.
 Here we present our tool pykarambola, a Python package that integrates Minkowski tensor analysis directly into the Python bioimage ecosystem: in a single call, segmented objects are converted into triangulated surfaces and processed into a dict of NumPy arrays with the objects' corresponding Minkowski tensors, which makes its output immediately compatible with downstream analysis and mesh visualisation tools~\cite{Sofroniew2026napari, Sullivan2019pyvista, Musy2026vedo}.
 
-% TODO (issue #24): karambola C++ and motivation for a Python port
 The C++ karambola package~\cite{Schaller2020karambola} is the reference implementation for computing Minkowski tensors on 3D triangulated surfaces, and has been widely used in structural analysis of soft matter and disordered systems~\cite{SchroderTurk2013}.
 It accepts meshes in two formats: the karambola-native \texttt{.poly} format and the Object File Format (\texttt{.off}), and writes results to plain-text files.
 Despite its numerical capabilities, karambola is not distributed through a package manager, requires a C++ build toolchain, and provides no NumPy-compatible interface.
