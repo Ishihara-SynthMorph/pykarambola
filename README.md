@@ -15,13 +15,6 @@ Given a mesh, it returns scalar, vector, and tensor quantities including volume,
 pykarambola is a Python implementation of [karambola](https://github.com/morphometry/karambola), the reference C++ package for Minkowski tensor computation on 3D triangulated surfaces.
 Minkowski tensors are widely applicable to analyzing 3D structures in biomedical imaging, astrophysics, and materials science.
 
-## Example notebooks
-
-| Notebook | Description |
-|---|---|
-| [`examples/demo.ipynb`](examples/demo.ipynb) | Core API walkthrough: NumPy arrays, file parsers, rank-2 tensors, labels, label-image API |
-| [`examples/segmentation_workflow.ipynb`](examples/segmentation_workflow.ipynb) | End-to-end pipeline: confocal stack → segmentation → Minkowski tensors → PCA + clustering |
-
 ### End-to-end pipeline: confocal nuclei → segmentation → shape clustering
 
 <table align="center">
@@ -189,7 +182,7 @@ print(result[1]["w000"])
 ## Example notebooks
 
 | Notebook | What it covers |
-|----------|---------------|
+|----------|----------------|
 | [`examples/demo.ipynb`](examples/demo.ipynb) | A hands-on tour of the mesh API: passing vertices and faces as NumPy arrays, supplying per-face labels or using `labels='auto'` to separate connected bodies, retrieving the object count with `return_count`, and computing derived scalars (`_beta`, `_trace`, `_trace_ratio`) |
 | [`examples/segmentation_workflow.ipynb`](examples/segmentation_workflow.ipynb) | End-to-end pipeline: confocal stack → segmentation → Minkowski tensors → PCA + clustering |
 | [`examples/multilabel_image_workflow.ipynb`](examples/multilabel_image_workflow.ipynb) | Working with 3D segmentation images: measures whole-cell morphology from a single label, compares nucleus and cell body separately using two labels, and runs per-nuclear object anisotropy analysis across three connected components from a real AllenCell hiPSC dataset |
@@ -231,12 +224,19 @@ Run `python -m pykarambola --help` for the full list of options.
 
 All quantities below are returned by `compute='standard'` unless noted `(compute='all')`.
 
+> **Normalization convention.** pykarambola follows the karambola/Hadwiger convention in which
+> each Minkowski functional carries a factor of 1/3: `w100` = surface area / 3,
+> `w200` = integrated mean curvature / 3, `w300` = 2π χ / 3.
+> Recover physical quantities as `A = 3·w100`, `M = 3·w200`, `χ = 3·w300 / (2π)`.
+> For full mathematical definitions, discrete formulas, and normalization derivations see
+> [`docs/minkowski_tensors.md`](docs/minkowski_tensors.md).
+
 | Name | Type | Description |
 |------|------|-------------|
 | `w000` | scalar | Volume |
-| `w100` | scalar | Surface area |
-| `w200` | scalar | Integrated mean curvature |
-| `w300` | scalar | Euler characteristic |
+| `w100` | scalar | Surface area / 3 |
+| `w200` | scalar | Integrated mean curvature / 3 |
+| `w300` | scalar | 2π × Euler characteristic / 3 |
 | `w010` | vector | Minkowski vector (volume) |
 | `w110` | vector | Minkowski vector (surface) |
 | `w210` | vector | Minkowski vector (curvature) |
