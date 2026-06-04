@@ -1923,3 +1923,93 @@ class TestSO3InvariantsMeshIntegration:
         assert inv_full.keys() == inv_clean.keys()
         for k in inv_full:
             assert abs(inv_full[k] - inv_clean[k]) < 1e-12
+
+
+# =============================================================================
+# TestSO2SO3Consistency
+# =============================================================================
+
+class TestSO2SO3Consistency:
+    """Verify that the independent SO(2) and SO(3) pipelines are mutually coherent.
+
+    The two pipelines share no code: SO(3) goes through decompose_all() while
+    SO(2) goes through _decompose_so2() directly.  These tests verify that the
+    mathematical relationships between their outputs hold.
+
+    Key identities tested:
+
+    Degree-1:
+        SO3[name]       == SO2[name]          for rank-0 scalars
+        SO3[name]       == SO2[name]          for rank-2 traces (= Tr(M)/3)
+
+    Degree-2 (vector dot product):
+        SO3[dot_v_v] == SO2[v_z]**2 + SO2[d1_v_xy_v_xy]
+
+    Degree-2 (Frobenius of traceless rank-2 parts):
+        SO3[frob_A_B] == (3/2)*tzz_A*tzz_B + SO2[d2_Am2_Bm2]/2 + 2*SO2[d1_Axz_Bxz]
+
+        where  tzz_X = SO2[X_zz] - SO2[X]  (= M_zz - Tr(M)/3)
+    """
+
+    @pytest.fixture
+    def tensors(self):
+        return {
+            'w000': 1.5,
+            'w010': np.array([1.0, 2.0, 3.0]),
+            'w020': np.array([[2.0, 1.0, 0.5],
+                              [1.0, 3.0, 0.2],
+                              [0.5, 0.2, 1.0]]),
+            'w102': np.array([[1.0, 0.3, 0.1],
+                              [0.3, 2.0, 0.4],
+                              [0.1, 0.4, 0.5]]),
+        }
+
+    def test_degree1_rank0_match(self, tensors):
+        so3 = compute_invariants(tensors, max_degree=1, symmetry='SO3',
+                                 deduplicate_scalars=False)
+        so2 = compute_invariants(tensors, max_degree=1, symmetry='SO2',
+                                 deduplicate_scalars=False)
+        assert so3['w000'] == pytest.approx(so2['w000'])
+
+    def test_degree1_rank2_traces_match(self, tensors):
+        so3 = compute_invariants(tensors, max_degree=1, symmetry='SO3',
+                                 deduplicate_scalars=False)
+        so2 = compute_invariants(tensors, max_degree=1, symmetry='SO2',
+                                 deduplicate_scalars=False)
+        for name in ('w020', 'w102'):
+            assert so3[name] == pytest.approx(so2[name]), (
+                f"trace mismatch for '{name}': SO3={so3[name]}, SO2={so2[name]}"
+            )
+
+    def test_degree2_dot_product_reconstruction(self, tensors):
+        """SO(3) dot_v_v == SO(2) v_z^2 + dot(v_xy, v_xy)."""
+        so3 = compute_invariants(tensors, max_degree=2, symmetry='SO3',
+                                 deduplicate_scalars=False)
+        so2 = compute_invariants(tensors, max_degree=2, symmetry='SO2',
+                                 deduplicate_scalars=False)
+        expected = so2['w010_z'] ** 2 + so2['d1_w010_xy_w010_xy']
+        assert so3['dot_w010_w010'] == pytest.approx(expected)
+
+    @pytest.mark.parametrize('na,nb', [
+        ('w020', 'w020'),
+        ('w020', 'w102'),
+        ('w102', 'w102'),
+    ])
+    def test_degree2_frobenius_reconstruction(self, tensors, na, nb):
+        """SO(3) frob_A_B == (3/2)*tzz_A*tzz_B + d2_Am2_Bm2/2 + 2*d1_Axz_Bxz."""
+        so3 = compute_invariants(tensors, max_degree=2, symmetry='SO3',
+                                 deduplicate_scalars=False)
+        so2 = compute_invariants(tensors, max_degree=2, symmetry='SO2',
+                                 deduplicate_scalars=False)
+        frob = so3[f'frob_{na}_{nb}']
+        tzz_a = so2[f'{na}_zz'] - so2[na]
+        tzz_b = so2[f'{nb}_zz'] - so2[nb]
+        reconstructed = (
+            1.5 * tzz_a * tzz_b
+            + so2[f'd2_{na}_m2_{nb}_m2'] / 2.0
+            + 2.0 * so2[f'd1_{na}_xz_{nb}_xz']
+        )
+        assert frob == pytest.approx(reconstructed), (
+            f"Frobenius mismatch ({na},{nb}): SO3={frob:.6g}, "
+            f"reconstructed={reconstructed:.6g}"
+        )
