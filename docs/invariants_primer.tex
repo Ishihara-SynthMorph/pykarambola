@@ -45,7 +45,8 @@ Comparing the shapes of 3-D objects requires descriptors that do not depend on
 the object's orientation in space.
 A \emph{rotation-invariant} descriptor assigns the same number to a shape
 regardless of how it is rotated.
-Two software packages implement this idea for complementary data types:
+This primer develops the invariant construction for two complementary sources
+of shape data, both under active development in our group:
 
 \begin{itemize}
   \item \textbf{pykarambola} — computes \emph{Minkowski tensors}
@@ -57,6 +58,23 @@ Two software packages implement this idea for complementary data types:
 
 Both datasets are \emph{equivariant} under rotation: they do not stay constant,
 but they transform in a predictable, structured way.
+
+\paragraph{For readers already familiar with pykarambola.}
+The scalar functionals ($w_{000}$, $w_{100}$, \ldots), traces of rank-2 tensors,
+and eigenvalue-derived anisotropy measures that pykarambola currently reports are
+all special cases of the framework developed here.
+The scalar functionals and traces are degree-1 invariants that emerge from the
+irrep decomposition step for free, without any contraction.
+Eigenvalue-derived quantities (anisotropy indices, axis ratios) are algebraic
+functions of the three principal polynomial invariants of a single tensor at
+degrees~1, 2, and~3.
+The systematic framework's main contribution beyond current usage is the
+\emph{cross-tensor} invariants: contractions between two or three different
+tensors simultaneously, which cannot be recovered from the eigenvalues of any
+individual tensor.
+Section~\ref{sec:existing} at the end of this primer maps current outputs
+explicitly onto the framework.
+
 The central observation of this primer is that both packages follow the same
 abstract pipeline for extracting invariants:
 
@@ -94,8 +112,9 @@ Sections~\ref{sec:equivariants}--\ref{sec:parity} develop the mathematics in
 increasing detail.
 Section~\ref{sec:walkthrough} is a line-by-line walkthrough of the pykarambola
 implementation.
-Sections~\ref{sec:so2} and~\ref{sec:spharm} cover two extensions:
-axis-aware (SO(2)) invariants and spherical-harmonic invariants.
+Sections~\ref{sec:existing}--\ref{sec:spharm} cover three extensions:
+how current pykarambola outputs relate to the framework, axis-aware (SO(2))
+invariants, and spherical-harmonic invariants.
 
 % ---------------------------------------------------------------------------
 \section{Equivariants: quantities that transform predictably}
@@ -308,6 +327,14 @@ difference amounts to $64$ features: $4$ triple-vector determinants and
 $60$ commutator pseudo-scalars, giving $155$ features for O(3) and $219$ for
 SO(3).
 
+\paragraph{Implementation note.}
+Both \texttt{symmetry='O3'} and \texttt{symmetry='SO3'} follow the same
+\texttt{decompose\_all()} $\to$ contraction pipeline.
+O(3) is not a post-hoc filter on SO(3) output: the pseudo-scalar generators
+(\texttt{\_triple\_vector\_dets}, \texttt{\_commutator\_pseudoscalars}) are
+simply not called when \texttt{symmetry='O3'}, so the 64 pseudo-scalars are
+never computed.
+
 % ---------------------------------------------------------------------------
 \section{pykarambola Implementation Walkthrough}
 \label{sec:walkthrough}
@@ -427,14 +454,71 @@ $\times$ 10 unordered vector pairs) plus $\binom{8}{3} = 56$ triple traces
 determinants plus $\binom{6}{2} \times 4 = 60$ commutator pseudo-scalars.
 
 % ---------------------------------------------------------------------------
+\section{Relationship to existing pykarambola descriptors}
+\label{sec:existing}
+
+Table~\ref{tab:existing} maps the quantities currently reported by pykarambola
+onto the polynomial invariant framework developed in this primer.
+
+\begin{table}[h]
+\centering
+\caption{Current pykarambola outputs and their place in the CG framework.}
+\label{tab:existing}
+\begin{tabularx}{\linewidth}{p{0.36\linewidth}p{0.12\linewidth}X}
+\toprule
+Current output & CG degree & Notes \\
+\midrule
+Scalar functionals ($w_{000}$, $w_{100}$, $w_{200}$, $w_{300}$)
+  & 1 & Rank-0 tensors; already $l=0$ irreps. No contraction needed. \\
+Traces of rank-2 tensors ($\operatorname{Tr}(w_{020})/3$, \ldots)
+  & 1 & The $l=0$ component of the irrep decomposition.
+        $\operatorname{Tr}(w_{102})/3 = w_{100}$ is deduplicated. \\
+Eigenvalues of a rank-2 tensor ($\lambda_1, \lambda_2, \lambda_3$)
+  & algebraic in 1--3 & Roots of $\lambda^3 - I_1\lambda^2 + I_2\lambda - I_3 = 0$,
+        where $I_1$, $I_2$, $I_3$ are the degree-1, 2, 3 polynomial invariants
+        of that single tensor.
+        Not polynomial in the tensor entries themselves. \\
+Eigenvalue ratios / anisotropy indices
+  & rational in 1--3 & Rational functions of $I_1$, $I_2$, $I_3$.
+        Also not polynomial. \\
+\midrule
+Cross-tensor Frobenius products (degree-2)
+  & 2 & \emph{New.}
+        E.g.\ alignment between anisotropy of $w_{020}$ and $w_{102}$.
+        Not accessible from eigenvalues of individual tensors. \\
+Quadratic forms, triple traces, pseudo-scalars (degree-3)
+  & 3 & \emph{New.}
+        E.g.\ whether the centroid is displaced along the principal axis of $w_{020}$. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent
+The key distinction is between \emph{single-tensor} and \emph{cross-tensor}
+invariants.
+Eigenvalue-based analysis of individual tensors recovers the degree-1, 2, and~3
+polynomial invariants of each tensor in isolation, but as algebraic rather than
+polynomial quantities.
+The CG framework adds all cross-tensor invariants and provides a completeness
+guarantee: every polynomial invariant up to the chosen degree is included.
+
+% ---------------------------------------------------------------------------
 \section{Extending to SO(2): axis-aware invariants}
 \label{sec:so2}
 
 When the $z$-axis carries physical meaning — cell polarity, optical axis,
 gravitational direction — the relevant symmetry group shrinks from SO(3)
 to SO(2) (rotations about $z$).
-This breaks each SO(3) irrep into \emph{charges} $m$ under $z$-rotation:
-a rank-2 tensor contributes $m=0$, $|m|=1$, and $|m|=2$ components.
+Mathematically, this corresponds to branching each SO(3) irrep into
+\emph{charges} $m$ under $z$-rotation: a rank-2 tensor contributes
+$m=0$, $|m|=1$, and $|m|=2$ components.
+In the implementation, however, \texttt{\_decompose\_so2()} extracts these
+charges directly from the raw Cartesian tensor entries — bypassing the SO(3)
+irrep step entirely — since the $z$-axis components are natural reads of
+specific matrix entries (e.g.\ $M_{zz}$, $[M_{xz}, M_{yz}]$).
+The SO(2) and SO(3) pipelines in \texttt{compute\_invariants()} are therefore
+independent: each takes the raw tensors as input and produces invariants
+without calling the other.
 
 \texttt{\_decompose\_so2()} produces the following labels per tensor:
 
@@ -540,14 +624,11 @@ same parity distinction between SO(3) and O(3) invariants.
         Higher-degree contractions exist but grow combinatorially.
 
   \item \textbf{Generating set, not a minimal basis.}
-        The raw Minkowski tensors are equivariants, not invariants.
-        The output of \texttt{compute\_invariants()} is a generating set of invariants:
-        it contains all polynomial invariants up to the chosen degree, but it may include
-        algebraic dependencies (e.g.\ Cayley--Hamilton relations among triple traces).
-        Apart from the two trace identities removed by \texttt{deduplicate\_scalars},
-        redundancies are not eliminated.
-        A minimal integrity basis — the smallest generating set — is known to exist by the
-        Hilbert basis theorem but is not computed.
+        The output of \texttt{compute\_invariants()} contains all polynomial invariants
+        up to the chosen degree but may include algebraic dependencies; a minimal
+        integrity basis is not computed.
+        See Section~\ref{sec:existing} for how this output relates to the traces,
+        eigenvalues, and ratios that pykarambola currently reports.
 
   \item \textbf{Pseudo-scalars require a parity decision.}
         The determinant and commutator contractions are invariant under
