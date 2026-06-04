@@ -160,8 +160,12 @@ ways that produce an overall $l=0$ output.
 \section{Irreducible Representations of SO(3)}
 \label{sec:irreps}
 
+A \emph{representation} of a group $G$ is a homomorphism $\rho: G \to \mathrm{GL}(V)$ — a rule for how each group element acts as a linear map on a vector space $V$, consistently with the group structure.
+A representation is \emph{irreducible} (an irrep) if $V$ contains no proper subspace that is invariant under every $\rho(g)$: it cannot be decomposed into smaller representations.
+Irreps are the indivisible atoms of equivariance; any equivariant quantity decomposes uniquely into a direct sum of irreps.
+
 The irreducible representations of SO(3) are labeled by a non-negative integer
-$l = 0, 1, 2, \ldots$ called the \emph{angular momentum quantum number}.
+$l = 0, 1, 2, \ldots$ called the \emph{irrep degree} in group theory (or \emph{angular momentum number} in quantum physics).
 An $l$-irrep has dimension $2l+1$; under a rotation $R$ the representation
 matrix is the Wigner $D^{(l)}(R)$.
 
@@ -305,8 +309,9 @@ drops these two redundant traces.
 \section{Parity: O(3) versus SO(3)}
 \label{sec:parity}
 
-The orthogonal group $\mathrm{O}(3)$ includes reflections in addition to
-rotations.
+$\mathrm{SO}(3)$ denotes the \emph{Special Orthogonal} group in three dimensions:
+\emph{orthogonal} means every $R$ satisfies $R^\top R = I$ (lengths and angles are preserved), and \emph{special} means $\det R = +1$ (orientation-preserving; no reflections).
+The orthogonal group $\mathrm{O}(3)$ relaxes this to $\det R = \pm 1$, adding reflections and improper rotations.
 A function invariant under $\mathrm{O}(3)$ must also be unchanged by any
 reflection.
 \emph{Pseudo-scalars} (the determinant and commutator contractions above) are
@@ -604,6 +609,8 @@ The same contraction principle then applies directly:
         f_{l_1,m_1} f_{l_2,m_2} f^*_{l,m}$ with $m = m_1 + m_2$, where
         $C^{l,m}_{l_1,m_1;\,l_2,m_2}$ are Clebsch--Gordan coefficients.
         This is a degree-3 contraction coupling three irreps to $L=0$.
+        The name \emph{bi} refers to the two free input angular momenta $l_1$ and $l_2$ that are coupled via the Clebsch--Gordan coefficient; the third band $l$ is fixed by the coupling and enters through the conjugate array $f^*_{l,m}$.
+        Despite the name, three coefficient arrays appear in the product, making it degree~3.
 \end{itemize}
 
 The structure is identical to Sections~\ref{sec:contraction}--\ref{sec:parity}:
