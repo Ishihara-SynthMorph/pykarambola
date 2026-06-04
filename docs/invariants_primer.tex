@@ -67,6 +67,28 @@ abstract pipeline for extracting invariants:
   $\;\longrightarrow\;$ invariant scalar}
 \medskip
 
+\paragraph{Terminology stack.}
+Four levels appear throughout this primer and are worth naming precisely from the outset.
+\begin{enumerate}
+  \item \textbf{Equivariants} — the raw input data: Minkowski tensors
+        ($w_{000}$, $w_{020}$, \ldots) or spherical harmonic coefficients $f_{l,m}$.
+        These transform predictably under rotation but are not themselves invariant.
+  \item \textbf{Irreps} — the components obtained by decomposing equivariants into
+        irreducible representations (labeled \texttt{'0e'}, \texttt{'2e'}, \ldots).
+        Still equivariant, but now in a basis where the rotation action is block-diagonal;
+        individual components such as the traceless part of $w_{020}$ carry direct geometric meaning.
+  \item \textbf{Invariants} — scalar contractions of irreps that are unchanged under
+        rotation, produced by \texttt{compute\_invariants()}.
+        Degree-1 invariants (traces of rank-2 tensors) retain clear geometric interpretability;
+        degree-2 and degree-3 contractions are algebraically precise but largely opaque geometrically.
+  \item \textbf{Generating set vs.\ integrity basis} — a \emph{generating set} is a
+        collection of invariants from which every polynomial invariant can be recovered as a
+        polynomial in the generators; it may contain redundant members.
+        A \emph{minimal integrity basis} is a generating set with all redundancies removed.
+        The output of \texttt{compute\_invariants()} is a generating set up to the chosen
+        degree, not a minimal basis.
+\end{enumerate}
+
 \noindent
 Sections~\ref{sec:equivariants}--\ref{sec:parity} develop the mathematics in
 increasing detail.
@@ -120,6 +142,23 @@ The irreducible representations of SO(3) are labeled by a non-negative integer
 $l = 0, 1, 2, \ldots$ called the \emph{angular momentum quantum number}.
 An $l$-irrep has dimension $2l+1$; under a rotation $R$ the representation
 matrix is the Wigner $D^{(l)}(R)$.
+
+\paragraph{Irrep labels: $l$, \texttt{e}, and \texttt{o}.}
+Throughout this document and the pykarambola source code, irreps are labeled by a short string such as \texttt{'0e'}, \texttt{'1e'}, or \texttt{'2e'}.
+The integer prefix is the angular momentum number $l$ introduced above.
+The letter suffix encodes \emph{parity} under spatial inversion $P : \mathbf{x} \mapsto -\mathbf{x}$, the additional generator that distinguishes $\mathrm{O}(3)$ from $\mathrm{SO}(3)$:
+\begin{itemize}
+  \item \texttt{e} (\emph{even}, also called \emph{gerade} in the German physics tradition):
+        the irrep is unchanged by $P$; parity eigenvalue $+1$.
+        True scalars (\texttt{'0e'}), traceless symmetric rank-2 tensors (\texttt{'2e'}), and
+        axial vectors (e.g.\ cross products, \texttt{'1e'}) carry even parity.
+  \item \texttt{o} (\emph{odd}, also called \emph{ungerade}):
+        the irrep acquires a factor of $-1$ under $P$; parity eigenvalue $-1$.
+        Polar vectors such as position or displacement are \texttt{'1o'}, and
+        pseudo-scalars (e.g.\ the determinant of three polar vectors) are \texttt{'0o'}.
+\end{itemize}
+The spherical harmonic $Y_l^m$ has parity $(-1)^l$, so irreps built from purely polar-vector inputs naturally carry parity $(-1)^l$: rank-0 and rank-2 tensors are \texttt{e}, rank-1 and rank-3 tensors are \texttt{o}.
+Pykarambola departs from this convention by writing \texttt{e} on all tensor labels and handling parity separately through the \texttt{symmetry=} argument; see the label-convention note below.
 
 \paragraph{Rank-2 decomposition.}
 A rank-2 symmetric matrix $M$ carries the reducible representation
@@ -445,6 +484,27 @@ $f(\theta,\phi) = \sum_{l,m} f_{l,m}\, Y_l^m(\theta,\phi)$ and returns the
 coefficient array $\{f_{l,m}\}$.
 Because $Y_l^m$ itself transforms as a $D^{(l)}$ irrep, the coefficients are
 already decomposed into SO(3) irreps — no further decomposition step is needed.
+Each band $l$ is a $(2l+1)$-dimensional irrep; the table below shows what these
+look like for the first few values of $l$.
+
+\begin{center}
+\begin{tabular}{cll}
+\toprule
+$l$ & Dimension ($2l+1$) & Geometric character \\
+\midrule
+0 & 1 & scalar \\
+1 & 3 & 3-vector \\
+2 & 5 & traceless symmetric $3\times3$ matrix (6 entries minus 1 trace constraint) \\
+3 & 7 & rank-3 traceless symmetric object \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+Only $l=1$ coincides with an ordinary 3-vector.
+For $l \ge 2$ the irrep is stored as a higher-rank array but has fewer independent
+components than its ambient container: the $l=2$ irrep fits in a $3\times3$ matrix
+yet has only 5 degrees of freedom.
 
 The same contraction principle then applies directly:
 
@@ -480,12 +540,14 @@ same parity distinction between SO(3) and O(3) invariants.
         Higher-degree contractions exist but grow combinatorially.
 
   \item \textbf{Generating set, not a minimal basis.}
-        The output of \texttt{compute\_invariants()} is a generating set:
-        it contains all invariants up to the chosen degree, but it may include
-        algebraic dependencies (e.g.\ Cayley--Hamilton relations among triple
-        traces).
+        The raw Minkowski tensors are equivariants, not invariants.
+        The output of \texttt{compute\_invariants()} is a generating set of invariants:
+        it contains all polynomial invariants up to the chosen degree, but it may include
+        algebraic dependencies (e.g.\ Cayley--Hamilton relations among triple traces).
         Apart from the two trace identities removed by \texttt{deduplicate\_scalars},
         redundancies are not eliminated.
+        A minimal integrity basis — the smallest generating set — is known to exist by the
+        Hilbert basis theorem but is not computed.
 
   \item \textbf{Pseudo-scalars require a parity decision.}
         The determinant and commutator contractions are invariant under
