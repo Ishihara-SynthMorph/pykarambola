@@ -115,6 +115,9 @@ implementation.
 Sections~\ref{sec:existing}--\ref{sec:spharm} cover three extensions:
 how current pykarambola outputs relate to the framework, axis-aware (SO(2))
 invariants, and spherical-harmonic invariants.
+Section~\ref{sec:interp} examines when invariants or equivariants are preferable
+empirically, and draws analogies to NMR spectroscopy, diffusion tensor imaging,
+and materials-science interatomic potentials.
 
 % ---------------------------------------------------------------------------
 \section{Equivariants: quantities that transform predictably}
@@ -608,6 +611,150 @@ irrep channels, degree-$k$ couplings via Clebsch--Gordan coefficients, and the
 same parity distinction between SO(3) and O(3) invariants.
 
 % ---------------------------------------------------------------------------
+\section{Equivariants, Invariants, and Interpretability}
+\label{sec:interp}
+
+\subsection*{What contraction discards}
+
+The map from equivariants to invariants is many-to-one:
+it quotients by the group action, collapsing entire SO(3) orbits to a single point.
+The discarded information is precisely the $l > 0$ irrep content:
+the orientation of the principal axes, the handedness of asymmetric shapes,
+and the relative alignment between the reference frame and the object's intrinsic geometry.
+
+A concrete example is already in this primer.
+The traceless part of $w_{020}$ (the \texttt{'2e'} irrep) encodes both the
+anisotropy \emph{and} the orientation of the moment tensor.
+The Frobenius norm of that traceless part (\texttt{frob\_w020\_w020}) is the
+degree-2 invariant that survives; the five independent components of the
+traceless tensor are the equivariant information that does not.
+
+Degree-1 invariants (traces) are the most interpretable: each has a direct
+geometric reading (mean curvature, surface area, isotropic extent).
+Higher-degree contractions mix irreps from different tensors and lose direct
+geometric meaning rapidly.
+
+\subsection*{Can invariants outperform their parent equivariants?}
+
+An initially counterintuitive possibility is that polynomial invariants, which
+are a \emph{proper subset} of the information in the equivariants, can nevertheless
+outperform the full equivariant set as features for classification.
+Preliminary experiments on 3D biological shape datasets~\cite{Yang2023MedMNIST}
+suggest this may occur, though the evidence is tentative and the comparisons are
+not yet clean: common ``raw tensor'' baselines include eigenvalue-derived features
+(anisotropy indices, axis ratios), which are themselves algebraic invariants of
+individual tensors (Section~\ref{sec:existing}), so the comparison is between a
+mixed set and a systematic polynomial invariant set rather than a pure
+equivariant--invariant contrast.
+
+The mechanistic intuition is straightforward: when the class label depends only on
+intrinsic shape properties (elongation, surface roughness, topology) and not on
+how the shape is oriented in space, the orientation components of the equivariants
+are pure noise from the classifier's perspective.
+Quotienting them out via the invariant map can then reduce variance without a
+commensurate loss of signal.
+The converse holds when a canonical alignment (e.g.\ PCA) encodes biologically
+meaningful orientation information into the tensor components --- discarding it
+by contracting to invariants may hurt.
+Whether and when invariants are preferable is an open question that depends on the
+dataset, the alignment strategy, and the biological question being asked.
+
+\subsection*{Parallel discussions in other fields}
+
+\paragraph{NMR spectroscopy and the chemical shift tensor.}
+The chemical shift anisotropy (CSA) tensor is a rank-2 equivariant object;
+its isotropic part ($\operatorname{Tr}/3$) is the invariant scalar that appears
+in solution NMR spectra.
+Solid-state NMR recovers the full tensor, including the anisotropy $\delta_\sigma$
+and the asymmetry parameter $\eta$, which encode bond geometry and local symmetry
+that the isotropic shift conceals~\cite{Mehring1983}.
+This is structurally identical to the \texttt{'0e'} vs.\ \texttt{'2e'} irrep split
+of any Minkowski rank-2 tensor (Section~\ref{sec:irreps}).
+
+\paragraph{Diffusion tensor imaging (DTI).}
+The water diffusion tensor in biological tissue is a $3\times3$ symmetric
+positive-definite matrix --- an SO(3) equivariant.
+The FA, MD, AD, and RD indices commonly used in tract-based analysis are rotation
+invariants (algebraic functions of the three eigenvalues)~\cite{BasserPierpaoli1996}.
+Fibre tractography, by contrast, requires the eigenvectors --- equivariant
+information --- and loses biological meaning when only invariant scalars are used.
+This is exactly the tension in Section~\ref{sec:contraction}, instantiated in
+neuroscience.
+
+\paragraph{Equivariant vs.\ invariant interatomic potentials.}
+SchNet~\cite{Schutt2018SchNet} and SOAP/GAP~\cite{Bartok2013} are invariant:
+they predict scalar energies without orientation-sensitive intermediate representations.
+NequIP~\cite{Batzner2022} is equivariant: it propagates $l>0$ features between
+atoms and can therefore predict forces and stress tensors directly.
+The community consensus is that equivariance is \emph{necessary} when the target
+is itself equivariant (forces, dipole moments), but for scalar targets (energy per
+atom) both approaches achieve comparable accuracy.
+For \emph{classification} tasks --- as in biological morphometry --- the distinction
+collapses to the one we observe: use invariants when the label is
+orientation-independent, equivariants when a canonical frame carries biological
+information.
+
+\subsection*{Equivariants vs.\ invariants: trade-offs by task}
+
+The choice between equivariants and invariants is not merely a matter of
+classification accuracy --- it depends on the downstream task, the nature of the
+biological question, and the interpretability requirements.
+Table~\ref{tab:tradeoffs} summarises the main considerations.
+
+\begin{table}[h]
+\centering
+\caption{Trade-offs between equivariant and invariant representations across task types.}
+\label{tab:tradeoffs}
+\begin{tabularx}{\linewidth}{p{0.20\linewidth}p{0.35\linewidth}p{0.35\linewidth}}
+\toprule
+Task type & Equivariants & Invariants \\
+\midrule
+\textbf{Supervised classification} &
+  Retain orientation information; may introduce nuisance variance if labels are
+  orientation-independent; potentially more features than needed. &
+  Remove orientation nuisance; lower-dimensional; interpretable at degree~1;
+  risk discarding orientation signal when a canonical frame is meaningful. \\
+\addlinespace
+\textbf{Unsupervised / clustering} &
+  Preserve full geometric variation; but clusters may fragment by orientation
+  rather than intrinsic shape; alignment pre-processing becomes critical. &
+  Cluster by intrinsic shape regardless of pose; useful when the goal is shape
+  similarity independent of orientation. \\
+\addlinespace
+\textbf{Generative modelling} &
+  Necessary: generating a realistic shape requires specifying orientation and
+  anisotropy direction, not just scalar summaries. &
+  Insufficient alone: inverting invariants to a shape is ill-posed
+  (many shapes share the same invariant values). \\
+\addlinespace
+\textbf{Interpretability} &
+  Named irrep components (e.g.\ $w_{020,\text{traceless}}$) have direct geometric
+  readings at degree~1; higher-degree couplings become opaque. &
+  Degree-1 scalars (traces) are maximally interpretable; degree-3 contractions
+  obscure the geometric origin. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent
+For practical guidance in current workflows:
+\begin{itemize}
+  \item \textbf{Label is orientation-independent} (cell type, pathology stage):
+        degree-2 SO(3) or O(3) invariants are a natural first-line feature set.
+  \item \textbf{A canonical axis exists} (PCA alignment, cell polarity, coverslip
+        normal): SO(2)/O(2) invariants (Section~\ref{sec:so2}) retain $z$-axis
+        information while quotienting azimuthal rotation.
+  \item \textbf{Prediction target is a vector or tensor} (growth direction,
+        deformation field): preserve equivariants; contracting them away loses the
+        information the task requires.
+  \item \textbf{Generative or reconstruction task}: equivariants (or the full raw
+        tensors) are needed; invariant scalars alone cannot reconstruct a shape.
+  \item \textbf{Interpretability goal}: degree-1 invariants (traces) and named
+        irrep components are the most transparent; avoid degree-3 contractions for
+        explanation purposes.
+\end{itemize}
+
+% ---------------------------------------------------------------------------
 \section{Key Takeaways}
 \label{sec:takeaways}
 
@@ -640,6 +787,14 @@ same parity distinction between SO(3) and O(3) invariants.
         Whether the input is Minkowski tensors or spherical harmonic coefficients,
         the invariant construction is: irrep decomposition $\to$ degree-$k$
         Clebsch--Gordan coupling $\to$ scalar.
+
+  \item \textbf{Representation choice is task-dependent.}
+        Invariants are compact and remove orientation nuisance for supervised
+        classification when labels are pose-independent.
+        Equivariants are necessary for generative modelling and for predicting
+        equivariant targets (forces, growth directions).
+        Interpretability favours degree-1 features regardless of representation.
+        See Section~\ref{sec:interp} for a fuller discussion and cross-field analogies.
 \end{enumerate}
 
 \bibliographystyle{plain}
