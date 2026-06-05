@@ -8,7 +8,7 @@ subset or custom tensors, and the invariant enumeration adapts dynamically.
 The invariants are organized by polynomial degree:
 - Degree 1: Scalars (rank-0 tensors and traces of rank-2 tensors)
 - Degree 2: Dot products (vectors) and Frobenius inner products (matrices)
-- Degree 3: Quadratic forms, triple traces, and pseudo-scalars
+- Degree 3: Quadratic forms (qf_), triple traces (tr3_), and pseudo-scalars (det_, cpsc_)
 
 Note: This module labels all l=1 irreps as '1e'. Unlike e3nn which distinguishes
 '1e' (axial) from '1o' (polar), here the label indicates only the angular
@@ -27,7 +27,7 @@ from __future__ import annotations
 
 import warnings
 from itertools import combinations, combinations_with_replacement
-from typing import Literal
+from typing import Iterable, Literal
 
 import numpy as np
 
@@ -47,6 +47,59 @@ _KNOWN_TRACE_DEPS = {
 # the invariant enumeration silently yields features that are NOT rotation
 # invariant, so they are dropped on input. See issue #102 / PR #107.
 _NON_TENSOR_SUFFIXES = ('_eigvals', '_eigvecs')
+
+# Invariant key prefixes by polynomial degree.
+# Degree-1 keys have no prefix (bare tensor names ± _z / _zz suffixes).
+_DEGREE2_PREFIXES: frozenset[str] = frozenset([
+    'dot_', 'frob_',          # SO3/O3
+    'dot1_', 'wed1_',         # SO2/O2 |m|=1
+    'dot2_', 'wed2_',         # SO2/O2 |m|=2
+])
+_DEGREE3_PREFIXES: frozenset[str] = frozenset([
+    'qf_', 'tr3_', 'det_', 'cpsc_',   # SO3/O3
+    'tp_re_', 'tp_im_',               # SO2/O2
+])
+
+
+def filter_by_degree(
+    invs: dict[str, float],
+    degree: int | Iterable[int],
+) -> dict[str, float]:
+    """Return only invariants of the given polynomial degree(s).
+
+    Works for any symmetry group output from :func:`compute_invariants`.
+    Degree-1 keys are identified by exclusion: anything not matching a
+    known degree-2 or degree-3 prefix is considered degree-1.
+
+    Parameters
+    ----------
+    invs : dict[str, float]
+        Output of :func:`compute_invariants`.
+    degree : int or iterable of int
+        Degree(s) to select. Each value must be 1, 2, or 3.
+        E.g. ``degree=2``, ``degree=(1, 2)``, or ``degree=[1, 2]``.
+
+    Returns
+    -------
+    dict[str, float]
+        Subset of *invs* containing only invariants of the requested degree(s).
+    """
+    degrees = {degree} if isinstance(degree, int) else set(degree)
+    invalid = degrees - {1, 2, 3}
+    if invalid:
+        raise ValueError(f"degree values must be 1, 2, or 3; got {sorted(invalid)}")
+    all_prefixed = _DEGREE2_PREFIXES | _DEGREE3_PREFIXES
+    result = {}
+    if 1 in degrees:
+        result.update({k: v for k, v in invs.items()
+                       if not any(k.startswith(p) for p in all_prefixed)})
+    if 2 in degrees:
+        result.update({k: v for k, v in invs.items()
+                       if any(k.startswith(p) for p in _DEGREE2_PREFIXES)})
+    if 3 in degrees:
+        result.update({k: v for k, v in invs.items()
+                       if any(k.startswith(p) for p in _DEGREE3_PREFIXES)})
+    return result
 
 
 def _drop_non_tensor_keys(
@@ -276,7 +329,7 @@ def _triple_traces(decomposed: dict[tuple[str, str], np.ndarray | float]) -> dic
     for combo in combinations_with_replacement(range(len(matrices)), 3):
         name_i, name_j, name_k = names[combo[0]], names[combo[1]], names[combo[2]]
         Ti, Tj, Tk = mat_dict[name_i], mat_dict[name_j], mat_dict[name_k]
-        label = f"ttr_{name_i}_{name_j}_{name_k}"
+        label = f"tr3_{name_i}_{name_j}_{name_k}"
         result[label] = float(np.einsum('ij,jk,ki->', Ti, Tj, Tk))
     return result
 
@@ -322,7 +375,7 @@ def _commutator_pseudoscalars(decomposed: dict[tuple[str, str], np.ndarray | flo
         axial = np.array([comm[1, 2], comm[2, 0], comm[0, 1]])
 
         for name_k, vk in vectors:
-            label = f"comm_{name_a}_{name_b}_{name_k}"
+            label = f"cpsc_{name_a}_{name_b}_{name_k}"
             result[label] = float(np.dot(axial, vk))
 
     return result
@@ -441,10 +494,10 @@ def _so2_doublet_inner_products(so2_dec: dict[tuple[str, str], object]) -> dict[
 
     The wedge vanishes for a == b, so only i < j pairs are emitted for it.
 
-    d1_{ci}_{cj}: dot product of two |m|=1 doublets (from rank-1 _xy and rank-2 _xz)
-    x1_{ci}_{cj}: wedge of two distinct |m|=1 doublets
-    d2_{ci}_{cj}: dot product of two |m|=2 doublets (from rank-2 _m2)
-    x2_{ci}_{cj}: wedge of two distinct |m|=2 doublets
+    dot1_{ci}_{cj}: dot product of two |m|=1 doublets (from rank-1 _xy and rank-2 _xz)
+    wed1_{ci}_{cj}: wedge of two distinct |m|=1 doublets
+    dot2_{ci}_{cj}: dot product of two |m|=2 doublets (from rank-2 _m2)
+    wed2_{ci}_{cj}: wedge of two distinct |m|=2 doublets
     """
     result = {}
 
@@ -461,11 +514,11 @@ def _so2_doublet_inner_products(so2_dec: dict[tuple[str, str], object]) -> dict[
         _so2_collect_doublets(so2_dec, 'xy') + _so2_collect_doublets(so2_dec, 'xz'),
         key=lambda x: x[0],
     )
-    _emit(m1_doublets, 'd1', 'x1')
+    _emit(m1_doublets, 'dot1', 'wed1')
 
     # |m|=2 doublets: 'm2' from rank-2
     m2_doublets = _so2_collect_doublets(so2_dec, 'm2')
-    _emit(m2_doublets, 'd2', 'x2')
+    _emit(m2_doublets, 'dot2', 'wed2')
 
     return result
 
@@ -510,7 +563,7 @@ def _is_o2_parity_odd(key: str) -> bool:
 
     Odd features:
     - Degree-1 '{name}_z': rank-1 v_z components (z-reflection flips sign).
-    - Degree-2 'd1_{ci}_{cj}'/'x1_{ci}_{cj}': mixed-parity |m|=1 bilinears (one
+    - Degree-2 'dot1_{ci}_{cj}'/'wed1_{ci}_{cj}': mixed-parity |m|=1 bilinears (one
       '_xy', one '_xz'). The dot product and the wedge share the same parity.
     - Degree-3 'tp_re_...' / 'tp_im_...': triple products where the two |m|=1
       factors have different parity (one '_xy', one '_xz').
@@ -522,7 +575,7 @@ def _is_o2_parity_odd(key: str) -> bool:
     if key.endswith('_z') and not key.endswith('_zz'):
         return True
     # Degree-2/3: mixed parity iff exactly one '_xy' and one '_xz' in key
-    if (key.startswith('d1_') or key.startswith('x1_')
+    if (key.startswith('dot1_') or key.startswith('wed1_')
             or key.startswith('tp_re_') or key.startswith('tp_im_')):
         return key.count('_xy') == 1 and key.count('_xz') == 1
     return False
@@ -602,13 +655,13 @@ def compute_invariants(
     For symmetry='SO3'/'O3', invariant labels follow these patterns:
     - Degree 1: tensor name (e.g., 'w000', 'w020')
     - Degree 2: 'dot_{v1}_{v2}', 'frob_{T1}_{T2}'
-    - Degree 3: 'qf_{v1}_{T}_{v2}', 'ttr_{T1}_{T2}_{T3}',
-                'det_{v1}_{v2}_{v3}', 'comm_{T1}_{T2}_{v}'
+    - Degree 3: 'qf_{v1}_{T}_{v2}', 'tr3_{T1}_{T2}_{T3}',
+                'det_{v1}_{v2}_{v3}', 'cpsc_{T1}_{T2}_{v}'
 
     For symmetry='SO2', invariant labels follow these patterns:
     - Degree 1: '{name}' (scalars/traces), '{name}_z' (v_z), '{name}_zz' (M_zz)
-    - Degree 2: 'd1_{ci}_{cj}'/'x1_{ci}_{cj}' (|m|=1 dot/wedge),
-                'd2_{ci}_{cj}'/'x2_{ci}_{cj}' (|m|=2 dot/wedge)
+    - Degree 2: 'dot1_{ci}_{cj}'/'wed1_{ci}_{cj}' (|m|=1 dot/wedge),
+                'dot2_{ci}_{cj}'/'wed2_{ci}_{cj}' (|m|=2 dot/wedge)
     - Degree 3: 'tp_re_{ca}_{cb}_{cc}', 'tp_im_{ca}_{cb}_{cc}'
 
     Examples
