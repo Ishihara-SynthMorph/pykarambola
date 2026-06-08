@@ -22,12 +22,12 @@
 \begin{abstract}
 Three-dimensional biological morphologies encode functional and physiological state, yet the directional, orientational, and topological properties of these shapes are rarely captured by morphometric tools available for bioimage analysis.
 Minkowski tensors are mathematically rigorous tensor-valued measures that encode surface curvature and directionality for objects of arbitrary topology, with tensor eigensystems that directly quantify elongation axes and anisotropy.
-A C++ implementation, karambola~\cite{Schaller2020karambola}, computes Minkowski tensors for triangulated surfaces but is inaccessible within Python-based bioimage workflows: it requires a C++ build toolchain, is not distributed through a package manager, and provides no Python-native interface.
-Here we present pykarambola, a Python package installable via \texttt{pip install pykarambola} that accepts NumPy arrays and standard mesh formats and returns Minkowski tensors — including derived anisotropy and orientation quantities — as plain Python dicts.
-A high-level label-image API (\texttt{minkowski\_tensors\_from\_label\_image}) converts 3D integer segmentation arrays into per-object Minkowski tensors in a single call, making pykarambola directly compatible with standard segmentation tools such as cellpose and StarDist.
+A C++ implementation, karambola~\cite{Schaller2020karambola}, computes Minkowski tensors for triangulated surfaces but is inaccessible within Python-based bioimage workflows.
+Here we present pykarambola, a pip installable Python package that accepts NumPy arrays and standard mesh formats and returns Minkowski tensors, including derived anisotropy and orientation quantities.
+A high-level label-image API converts 3D integer segmentation arrays into per-object Minkowski tensors in a single call, making pykarambola directly compatible with standard segmentation tools.
 An optional Cython extension accelerates graph-traversal steps of mesh initialisation for large-scale analyses.
 Benchmarked on 1{,}584 adrenal gland meshes, pykarambola reproduces all 121 C++ karambola output features to near-floating-point agreement and, in the pure-Python build, is $2.8\times$ faster at $28^3$ and $1.5\times$ faster at $64^3$ voxel resolution, with speedups primarily attributable to karambola's sequential per-object file I/O.
-pykarambola is freely available at \url{https://github.com/Ishihara-SynthMorph/pykarambola} and archived on Zenodo (\url{https://doi.org/10.5281/zenodo.20418801}).
+pykarambola is freely available as an open-source software package.
 \end{abstract}
 %TC:break main
 
