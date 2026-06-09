@@ -47,7 +47,7 @@ ishihara\at pitt.edu
 Modern fluorescence microscopy and volumetric segmentation routinely produce three-dimensional representations of biological structures — organelles, nuclei, cells, and tissue regions — at single-object resolution, enabling systematic morphometric analysis at scale.
 Quantifying the shapes of these structures requires descriptors that go beyond size: elongation, surface orientation, and topological complexity often carry direct biological meaning, reflecting organelle function, cell polarity, or tissue organisation.
 Standard three-dimensional morphometric descriptors — including volume, surface area, sphericity, and inertia tensor eigenvalues as computed by tools such as scikit-image~\cite{vanderwalt2014scikit} — capture the geometry of the mass distribution but not the directed properties of the surface itself — its local curvature, normal orientation, and their spatial distribution.
-Spherical harmonics-based descriptors encode richer structural information~\cite{ruan2019evaluation, viana2023integrated}, but are restricted to genus-zero surfaces and cannot describe objects with handles, tunnels, or enclosed voids — morphological features that arise in multi-component segmentations and topologically complex organelles.
+Spherical harmonics-based descriptors encode richer structural information~\cite{Kazhdan2003, viana2023integrated}, but are restricted to genus-zero surfaces and cannot describe objects with handles, tunnels, or enclosed voids — morphological features that arise in multi-component segmentations and topologically complex organelles.
 A shape descriptor that is simultaneously orientation-sensitive, topology-aware, and directly interpretable in terms of elongation and anisotropy is therefore needed.
 
 Minkowski tensors provide this combination.
@@ -116,7 +116,7 @@ The optional \texttt{return\_count=True} argument changes the return value to a 
 The \texttt{center} argument controls the reference point for position-dependent tensors (those with $r > 0$: the vector family $W_\nu^{1,0}$ and the rank-2 family $W_\nu^{2,0}$~\cite{SchroderTurk2013}): \texttt{None} uses the array origin, \texttt{'reference\_centroid'} reproduces the C++ karambola \texttt{--reference\_centroid} flag, \texttt{'centroid\_mesh'} shifts each object to its volume-weighted center of mass before computing, and an explicit $(3,)$ array applies a fixed shift; the boolean \texttt{center\_per\_label} (default \texttt{True}) determines whether centroid shifts are computed independently per labeled object or from the whole mesh.
 The second, \texttt{minkowski\_tensors\_from\_label\_image}, accepts a three-dimensional integer NumPy array in which each nonzero value identifies an object.
 For each label, it extracts a triangulated isosurface via scikit-image marching cubes and passes the resulting mesh to \texttt{minkowski\_tensors}, returning a dict keyed by integer label with the same structure as the mesh API.
-The \texttt{spacing} argument propagates physical voxel dimensions to all length, area, and volume quantities.
+The \texttt{spacing} argument propagates physical voxel dimensions to all length, area, and volume quantities, ensuring results are reported in physical units and are comparable across datasets acquired at different resolutions.
 The \texttt{autolabel=True} flag treats the array as a binary mask and delegates connected-component splitting to the mesh API.
 
 
@@ -280,14 +280,16 @@ The full worked example including mesh visualisation and Minkowski tensor additi
 \includegraphics[width=\linewidth]{../assets/figure21.png}
 \caption{%
   Label-image API applied to the DNA channel of a 3D fluorescence microscopy segmentation
-  of a hiPSC in anaphase/telophase (Allen Cell Collection; isotropic voxel size 0.108\,\textmu m).
-  (\textbf{a}) The entire DNA channel assigned as a single label;
-  one set of Minkowski tensors describes the aggregate of all three DNA objects,
-  with the volumetric centroid marked~($\times$).
-  (\textbf{b}) Each DNA object assigned a distinct label via \texttt{scipy.ndimage.label};
-  three independent tensor sets resolve per-object volume~($V$), surface area~($A$),
+  of a hiPSC in anaphase/telophase (Allen Cell Collection~\cite{viana2023integrated};
+  isotropic voxel size 0.108\,\textmu m).
+  Per-object Minkowski tensors report volume~($V$), surface area~($A$),
   Euler characteristic~($\chi$), and anisotropy index~($\beta$),
-  with per-object centroids marked~($\times$).
+  with object centroids marked~($\times$).
+  (\textbf{a}) The entire DNA channel assigned as a single label;
+  one tensor set describes the aggregate of all three DNA objects.
+  (\textbf{b}) The binary DNA mask passed with \texttt{autolabel=True};
+  pykarambola detects three connected components internally and returns
+  three independent tensor sets, one per DNA object.
   Objects~2 and~3 occupy non-overlapping axial ranges (Z slices 40--72 and 78--110,
   respectively) and are likely segments of the same daughter chromosomal mass.
 }
@@ -299,20 +301,27 @@ The full worked example including mesh visualisation and Minkowski tensor additi
 \section*{Discussion}
 %% -------------------------------------------------------
 pykarambola makes Minkowski tensor morphometry directly accessible within the Python bioimage ecosystem by replacing a C++ binary with a pip-installable package that accepts NumPy arrays and returns plain Python dicts.
-Beyond the interface change, the reimplementation extends input support to Wavefront OBJ, binary glTF, and STL files and adds a high-level label-image API that converts 3D segmentation outputs into per-object tensors in a single call.
+Beyond making the tool pip-installable, the reimplementation extends input support to Wavefront OBJ, binary glTF, and STL files and adds a high-level label-image API that converts 3D segmentation outputs into per-object tensors in a single call.
+The hiPSC anaphase example in the Results section demonstrates that this analysis is accessible directly from the integer label arrays produced by standard segmentation tools, without any intermediate mesh preparation.
 The benchmark results show that on icospheres, the Cython-accelerated build was generally faster than C++ karambola ($1.0$--$1.15\times$ speedup for mesh sizes up to 2.6M vertices, with both within 3\% at the largest mesh tested), while the pure-Python build ran at $0.79$--$0.97\times$ of karambola's speed across all mesh sizes.
 On the AdrenalMNIST3D dataset, pykarambola was faster than C++ karambola (2.8$\times$ at 28$^3$, 1.5$\times$ at 64$^3$), primarily because C++ karambola writes one result folder per object to disk.
-The NumPy vectorization of the Minkowski tensor functionals over all triangles in a single array operation avoids per-triangle Python overhead and accounts for the compute-step parity with the C++ implementation.
+The NumPy vectorization of the Minkowski tensors over all triangles in a single array operation avoids per-triangle Python overhead, keeping the compute step comparable in speed to the C++ implementation.
 The optional Cython extension targets only the graph-traversal steps of mesh initialisation, which resist vectorization; its benefit is therefore most pronounced for large meshes and batch analyses where initialisation cost dominates.
 For interactive or small-scale use, the pure-Python build is sufficient and requires no compiled extension.
+A parallel-processing workflow for large-scale batch analyses, using joblib~\cite{joblib} — a lightweight Python library for transparent parallelisation across CPU cores — is also available and demonstrated in the project repository, saving additional computation time for large imaging datasets.
+
 
 The primary limitation of pykarambola, inherited from karambola, is that it operates exclusively on triangulated surface meshes.
 For label-image inputs, the surface is extracted by marching cubes, which introduces a discretization artefact: at typical fluorescence microscopy voxel sizes, the mesh is a piecewise-planar approximation of the true surface.
 Tensor values therefore converge to their continuous limits as voxel resolution increases, and users working with low-resolution data should interpret results with this in mind.
-Passing the physical voxel spacing via the \texttt{spacing} argument ensures that all length, area, and volume quantities are reported in physical units and are comparable across datasets acquired at different resolutions.
+A further limitation applies to the direct mesh API, where users may encounter open or non-manifold meshes in their biological datasets.
+In such cases pykarambola issues a warning, noting that for open surfaces, volume-dependent quantities (\texttt{w000}, \texttt{w020}) are set to NaN, while non-manifold geometries render all results unreliable; users should therefore verify mesh quality before interpreting tensor outputs.
+The label-image API is not affected, as marching cubes always produces closed, manifold surfaces by construction.
 
-Future development directions include a napari plugin for interactive visualisation of tensor outputs alongside raw image data --- pykarambola's speed makes it well-suited for real-time feedback as users explore and annotate 3D segmentations, support for additional Minkowski tensor families beyond those available in karambola, and a streaming batch-processing mode for datasets too large to hold in memory simultaneously.
-We invite the bioimage analysis community to adopt pykarambola as a drop-in morphometry step in existing segmentation pipelines and to contribute new measures, file format parsers, and downstream analysis notebooks via the project repository.
+Future development directions include a napari plugin for interactive visualisation of tensor outputs alongside raw image data, support for additional Minkowski tensor families beyond those available in karambola, and a streaming batch-processing mode for datasets too large to hold in memory simultaneously.
+pykarambola's speed makes it well-suited for real-time feedback as users explore and annotate 3D segmentations.
+We invite the bioimage analysis community to adopt pykarambola as a drop-in morphometry analysis tool in existing segmentation and image analysis pipelines, including napari~\cite{Sofroniew2026napari} workflows.
+We also welcome contributions of new measures, file format parsers, and downstream analysis notebooks via the project repository.
 
 
 %% -------------------------------------------------------
