@@ -47,7 +47,7 @@ ishihara\at pitt.edu
 Modern fluorescence microscopy and volumetric segmentation routinely produce three-dimensional representations of biological structures (e.g., organelles, nuclei, cells, and tissue regions) at single-object resolution, enabling systematic morphometric analysis at scale.
 Quantifying the shapes of these structures requires descriptors that go beyond size: elongation, surface orientation, and topological complexity often carry direct biological meaning, reflecting organelle function, cell polarity, or tissue organisation.
 Standard descriptors such as volume, surface area, sphericity, and inertia tensor eigenvalues (as computed in scikit-image~\cite{vanderwalt2014scikit}) capture the geometry of the mass distribution but not the directed properties of the surface itself: its local curvature, normal orientation, and their spatial distribution.
-Spherical harmonics-based descriptors encode richer structural information~\cite{Kazhdan2003, viana2023integrated}, but are restricted to genus-zero surfaces and cannot describe objects with handles, tunnels, or enclosed voids, which are morphological features that arise in multi-component segmentations and topologically complex organelles.
+Spherical harmonics-based descriptors encode richer structural information~\cite{Kazhdan2003, viana2023integrated}, but are restricted to genus-zero surfaces and cannot describe objects with handles, tunnels, or enclosed voids, which arise in multi-component segmentations and topologically complex organelles.
 A shape descriptor that is simultaneously orientation-sensitive, topology-aware, and directly interpretable in terms of elongation and anisotropy is therefore needed.
 
 Minkowski tensors provide this combination.
@@ -96,7 +96,7 @@ Numerical correctness of the port was further validated by extensive benchmarkin
 
 \subsection*{Acceleration strategy: NumPy vectorization and Cython}
 pykarambola achieves competitive runtime primarily through NumPy vectorization~\cite{harris2020numpy}: all mesh data are stored as contiguous arrays and bulk operations replace Python-level loops over individual triangles or edges.
-During \texttt{Triangulation} construction, triangle normals, face areas, triangle centroids, edge lengths, and dihedral angles are precomputed using vectorized array operations using batched cross-products and array-wise norm computations on $(F \times 3)$ arrays, where $F$ is the number of triangles and 3 reflects either the three Cartesian components (for normals and centroids) or the three edges per triangle (for edge lengths and dihedral angles).
+During \texttt{Triangulation} construction, triangle normals, face areas, triangle centroids, edge lengths, and dihedral angles are precomputed via batched cross-products and array-wise norm computations on $(F \times 3)$ arrays, where $F$ is the number of triangles and 3 reflects either the three Cartesian components (for normals and centroids) or the three edges per triangle (for edge lengths and dihedral angles).
 Each Minkowski tensor function then reduces these precomputed arrays to per-label scalar, vector, or matrix accumulators using \texttt{numpy.sum} over element-wise array products, with no Python-level loop over faces.
 
 Two graph-traversal steps resisted vectorization: building the triangle-adjacency table (a hash map indexed by vertex-pair keys) and constructing the vertex-to-triangle lookup table.
@@ -231,8 +231,8 @@ to floating-point precision.
 For odd-$l$ \texttt{msm\_wl} ($l = 1, 3, 5, 7$), a Wigner $3j$ parity selection
 rule~\cite{Steinhardt1983, Varshalovich1988}, a symmetry constraint on angular
 momentum coupling coefficients, requires $w_l = 0$ exactly.
-\texttt{pykarambola}'s implementation uses the Racah formula~\cite{Varshalovich1988}
-, a closed-form algebraic expression for Wigner $3j$ symbols that evaluates
+\texttt{pykarambola}'s implementation uses the Racah formula~\cite{Varshalovich1988},
+a closed-form algebraic expression for Wigner $3j$ symbols that evaluates
 them exactly using integer arithmetic, and applies the parity rule
 analytically, returning exactly zero.
 C++ \texttt{karambola} instead uses \texttt{gsl\_sf\_coupling\_3j}, which
@@ -269,7 +269,7 @@ In case~(ii), \texttt{scipy.ndimage.label(dna\_mask)} first assigns a unique int
 Equivalently, case~(ii) can be achieved in a single call by passing the binary mask with \texttt{autolabel=True}, which instructs the function to detect connected components on the mesh internally without any preprocessing; the per-object tensors are numerically identical, as confirmed by matching per-object volumes and $\beta$ values.
 Case~(ii) answers a fundamentally different morphometric question than case~(i): object~1 ($V = 56~\mu\text{m}^3$, $\beta_0^{2,0} = 0.194$) is approximately twice the volume of objects~2 and~3 ($V \approx 27~\mu\text{m}^3$ each), which are more elongated ($\beta_0^{2,0} \approx 0.144$--$0.151$).
 Objects~2 and~3 occupy non-overlapping axial ranges (Z slices 40--72 and 78--110) and together form segments of the same daughter chromosomal mass, consistent with a cell in early anaphase/telophase.
-The DNA objects are substantially more anisotropic than the cell membrane (DNA $\beta_0^{2,0} \approx 0.144$--$0.194$ versus cell membrane $\beta_0^{2,0} = 0.277$; lower $\beta$ indicates greater shape anisotropy), where $\beta_0^{2,0}$ is the anisotropy index of the volume moment tensor $W_0^{2,0}$ (ratio of smallest to largest absolute eigenvalue; $\beta = 1$ is isotropic, $\beta = 0$ maximally anisotropic).
+The DNA objects are substantially more anisotropic than the cell membrane (DNA $\beta_0^{2,0} \approx 0.144$--$0.194$ versus cell membrane $\beta_0^{2,0} = 0.277$; lower $\beta$ indicates greater shape anisotropy).
 
 This example demonstrates a general principle: identical binary image data yields fundamentally different morphometric results depending on label assignment, and the correct choice depends on the biological question.
 Whole-structure morphometry (case~i) is appropriate when the aggregate shape is the object of interest; per-object morphometry (case~ii) is required when individual instances must be resolved, as in cell counting, organelle tracking, or shape clustering.
