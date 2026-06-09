@@ -24,7 +24,7 @@ Three-dimensional biological morphologies encode functional and physiological st
 Minkowski tensors are mathematically rigorous tensor-valued measures that encode surface curvature and directionality for objects of arbitrary topology, with tensor eigensystems that directly quantify elongation axes and anisotropy.
 A C++ implementation, karambola~\cite{Schaller2020karambola}, computes Minkowski tensors for triangulated surfaces but is inaccessible within Python-based bioimage workflows.
 Here we present pykarambola, a pip installable Python package that accepts NumPy arrays and standard mesh formats and returns Minkowski tensors, including derived anisotropy and orientation quantities.
-A high-level label-image API converts 3D integer segmentation arrays into per-object Minkowski tensors in a single call, making pykarambola directly compatible with standard segmentation tools.
+A high-level label-image API converts 3D integer arrays into per-object Minkowski tensors in a single call, making pykarambola directly compatible with the output of widely used segmentation tools.
 An optional Cython extension accelerates graph-traversal steps of mesh initialisation for large-scale analyses.
 Benchmarked on 1{,}584 adrenal gland meshes, pykarambola reproduces all 121 C++ karambola output features to near-floating-point agreement and, in the pure-Python build, is $2.8\times$ faster at $28^3$ and $1.5\times$ faster at $64^3$ voxel resolution, with speedups primarily attributable to karambola's sequential per-object file I/O.
 pykarambola is freely available as an open-source software package.
@@ -44,26 +44,26 @@ ishihara\at pitt.edu
 \section*{Introduction}
 %% -------------------------------------------------------
 
-Modern fluorescence microscopy and volumetric segmentation routinely produce three-dimensional representations of biological structures — organelles, nuclei, cells, and tissue regions — at single-object resolution, enabling systematic morphometric analysis at scale.
+Modern fluorescence microscopy and volumetric segmentation routinely produce three-dimensional representations of biological structures (e.g., organelles, nuclei, cells, and tissue regions) at single-object resolution, enabling systematic morphometric analysis at scale.
 Quantifying the shapes of these structures requires descriptors that go beyond size: elongation, surface orientation, and topological complexity often carry direct biological meaning, reflecting organelle function, cell polarity, or tissue organisation.
-Standard three-dimensional morphometric descriptors — including volume, surface area, sphericity, and inertia tensor eigenvalues as computed by tools such as scikit-image~\cite{vanderwalt2014scikit} — capture the geometry of the mass distribution but not the directed properties of the surface itself — its local curvature, normal orientation, and their spatial distribution.
-Spherical harmonics-based descriptors encode richer structural information~\cite{Kazhdan2003, viana2023integrated}, but are restricted to genus-zero surfaces and cannot describe objects with handles, tunnels, or enclosed voids — morphological features that arise in multi-component segmentations and topologically complex organelles.
+Standard descriptors such as volume, surface area, sphericity, and inertia tensor eigenvalues (as computed in scikit-image~\cite{vanderwalt2014scikit}) capture the geometry of the mass distribution but not the directed properties of the surface itself: its local curvature, normal orientation, and their spatial distribution.
+Spherical harmonics-based descriptors encode richer structural information~\cite{Kazhdan2003, viana2023integrated}, but are restricted to genus-zero surfaces and cannot describe objects with handles, tunnels, or enclosed voids, which are morphological features that arise in multi-component segmentations and topologically complex organelles.
 A shape descriptor that is simultaneously orientation-sensitive, topology-aware, and directly interpretable in terms of elongation and anisotropy is therefore needed.
 
 Minkowski tensors provide this combination.
-The classical Minkowski functionals form a complete basis for continuous, additive, and motion-invariant scalar shape measures: by Hadwiger's theorem, any such functional on convex bodies in $\mathbb{R}^3$ is a linear combination of exactly four measures~\cite{Hadwiger1957, HugSchneider2017} — volume $V$, surface area $A$, integrated mean curvature $H$, and Euler characteristic $\chi$, a topological invariant equal to the number of connected components minus the number of handles plus the number of enclosed voids.
+The classical Minkowski functionals form a complete basis for continuous, additive, and motion-invariant scalar shape measures: by Hadwiger's theorem, any such functional on convex bodies in $\mathbb{R}^3$ is a linear combination of exactly four measures~\cite{Hadwiger1957, HugSchneider2017}: volume $V$, surface area $A$, integrated mean curvature $H$, and Euler characteristic $\chi$, a topological invariant equal to the number of connected components minus the number of handles plus the number of enclosed voids.
 These four scalars describe size, surface extent, bending, and topology, but carry no directional information: a sphere, a cigar-shaped ellipsoid, and a flat disc can share identical $V$, $A$, $H$, and $\chi$ while differing profoundly in elongation and orientation.
 Minkowski tensors extend this framework by accumulating directional contributions from surface geometry~\cite{SchroderTurk2013, Beisbart2002}, yielding a family of tensor-valued shape measures $W_\nu^{r,s}$ indexed by the geometric measure type $\nu$ ($\nu=0$: volume, $\nu=1$: surface area, $\nu=2$: mean curvature, $\nu=3$: Gaussian curvature weighted) and carrying total tensor rank $r+s$~\cite{SchroderTurk2013}: scalars ($r+s=0$), vectors ($r+s=1$), rank-2 tensors ($r+s=2$), and higher-rank tensors such as $W_\nu^{0,3}$ and $W_\nu^{0,4}$.
 Minkowski tensors are physically interpretable. In addition, the eigenvalues and eigenvectors of a tensor directly quantify the principal anisotropy magnitudes and orientation axes of the object.
-For example, the eigensystem of the rank-2 surface tensor $W_1^{0,2}$ — which accumulates outer products of surface normals weighted by area — directly quantifies elongation and anisotropy: the ratio of the smallest to the largest absolute eigenvalue defines the anisotropy index $\beta$.
+For example, the eigensystem of the rank-2 surface tensor $W_1^{0,2}$, which accumulates outer products of surface normals weighted by area, directly quantifies elongation and anisotropy: the ratio of the smallest to the largest absolute eigenvalue defines the anisotropy index $\beta$.
 $\beta_1^{0,2}$ equals one for a perfect sphere and approaches zero for increasingly elongated or oblate shapes.
 A further layer of description comes from decomposing the Cartesian Minkowski tensors into irreducible representations under rotation, giving rise to the Minkowski structure metrics $q_\ell$ and $w_\ell$~\cite{Steinhardt1983}: rotationally invariant scalars that characterise $\ell$-fold orientational order and have been applied to two-dimensional biological shape analysis~\cite{Happel2025}, opening analogous avenues for three-dimensional morphometry.
-In addition, Minkowski tensors are defined for triangulated surfaces of arbitrary topology~\cite{SchroderTurk2013}, making them applicable without restriction to the full diversity of three-dimensional morphologies encountered in biological image analysis — including multi-component objects, structures with enclosed voids, and surfaces of non-trivial genus.
+In addition, Minkowski tensors are defined for triangulated surfaces of arbitrary topology~\cite{SchroderTurk2013}, making them applicable without restriction to the full diversity of three-dimensional morphologies encountered in biological image analysis, including multi-component objects, structures with enclosed voids, and surfaces of non-trivial genus.
 
 A C++ implementation, karambola~\cite{Schaller2020karambola}, has been applied to characterise anisotropy in cellular foams, granular packings, and porous materials~\cite{SchroderTurk2013}, but is not accessible within the Python bioimage ecosystem.
 Modern bioimage analysis pipelines are predominantly built around Python, with acquisition, segmentation, and quantification tools forming an interconnected ecosystem of libraries that operate on in-memory data structures.
 karambola accepts meshes exclusively in the karambola-native \texttt{.poly} format and the Object File Format (\texttt{.off}), and writes results to plain-text files; it is not distributed through a package manager and requires a C++ build toolchain to compile.
-Crucially, it provides no Python-compatible interface: since modern bioimage pipelines produce in-memory three-dimensional integer segmentation arrays — from tools such as cellpose~\cite{Stringer2021cellpose} and StarDist~\cite{Schmidt2018stardist} — rather than mesh files, integrating karambola requires serialising each segmented object to disk in a supported mesh format, executing the binary as an external process, and parsing the resulting plain-text output files back into Python, introducing fragile intermediates that are difficult to integrate and maintain.
+Crucially, it provides no Python-compatible interface: since modern bioimage pipelines produce in-memory three-dimensional integer segmentation arrays from tools such as cellpose~\cite{Stringer2021cellpose} and StarDist~\cite{Schmidt2018stardist} rather than mesh files, integrating karambola requires serialising each segmented object to disk in a supported mesh format, executing the binary as an external process, and parsing the resulting plain-text output files back into Python, introducing fragile intermediates that are difficult to integrate and maintain.
 
 Here we present pykarambola, a complete Python reimplementation of karambola that integrates Minkowski tensor morphometry directly into the Python bioimage ecosystem.
 pykarambola is installable via \texttt{pip install pykarambola}, accepts vertex and face arrays as NumPy arrays as well as mesh files in \texttt{.poly}, \texttt{.off}, \texttt{.obj}, \texttt{.glb}, and \texttt{.stl} formats, and returns results as plain Python dicts.
@@ -140,9 +140,9 @@ The \texttt{autolabel=True} flag treats the array as a binary mask and delegates
   and evaluates the Minkowski tensors~\cite{SchroderTurk2013}.
   Outputs are organised into three families (physical interpretations after appropriate normalisation;
   see~\cite{SchroderTurk2013} for exact expressions):
-  \textbf{Scalars} ($W_\nu^{0,0}$) --- volume, surface area, integrated mean curvature,
+  \textbf{Scalars} ($W_\nu^{0,0}$): volume, surface area, integrated mean curvature,
   and Euler characteristic;
-  \textbf{Vectors} ($W_\nu^{1,0}$) --- curvature-weighted centroids;
+  \textbf{Vectors} ($W_\nu^{1,0}$): curvature-weighted centroids;
   and \textbf{Rank-2 tensors} ($W_\nu^{2,0}$: solid, hollow, wire, and vertex moment
   tensors; $W_\nu^{0,2}$: normal and curvature distribution tensors).
   With \texttt{compute=`standard'} (default), eigenvalues and eigenvectors are
@@ -229,11 +229,11 @@ They show a distinct accuracy pattern (Figure~\ref{fig:accuracy}).
 For \texttt{msm\_ql} and even-$l$ \texttt{msm\_wl}, both implementations agree
 to floating-point precision.
 For odd-$l$ \texttt{msm\_wl} ($l = 1, 3, 5, 7$), a Wigner $3j$ parity selection
-rule~\cite{Steinhardt1983, Varshalovich1988} --- a symmetry constraint on angular
-momentum coupling coefficients --- requires $w_l = 0$ exactly.
+rule~\cite{Steinhardt1983, Varshalovich1988}, a symmetry constraint on angular
+momentum coupling coefficients, requires $w_l = 0$ exactly.
 \texttt{pykarambola}'s implementation uses the Racah formula~\cite{Varshalovich1988}
---- a closed-form algebraic expression for Wigner $3j$ symbols that evaluates
-them exactly using integer arithmetic --- and applies the parity rule
+, a closed-form algebraic expression for Wigner $3j$ symbols that evaluates
+them exactly using integer arithmetic, and applies the parity rule
 analytically, returning exactly zero.
 C++ \texttt{karambola} instead uses \texttt{gsl\_sf\_coupling\_3j}, which
 evaluates numerically without an explicit parity check, producing spurious
@@ -265,7 +265,7 @@ The segmentation provides a two-channel binary mask at isotropic voxel spacing o
 
 Figure~\ref{fig:labelimage} illustrates how the choice of labelling scheme directly determines what the tensors measure, using the DNA channel as an example.
 In case~(i), the binary DNA mask is cast to an integer array (\texttt{dna\_mask.astype(int)}) and passed with the default \texttt{autolabel=False}; because all non-zero voxels share label value~1, the function returns one tensor set describing the aggregate geometry of all chromosomal material ($V = 110~\mu\text{m}^3$, $A = 435~\mu\text{m}^2$, $\chi = 2$ (a topologically closed, simply connected surface), $\beta_0^{2,0} = 0.118$).
-In case~(ii), \texttt{scipy.ndimage.label(dna\_mask)} first assigns a unique integer to each connected component; the resulting three-valued label image is passed with \texttt{autolabel=False} (default), and the function returns three independent tensor sets --- one per DNA object.
+In case~(ii), \texttt{scipy.ndimage.label(dna\_mask)} first assigns a unique integer to each connected component; the resulting three-valued label image is passed with \texttt{autolabel=False} (default), and the function returns three independent tensor sets, one per DNA object.
 Equivalently, case~(ii) can be achieved in a single call by passing the binary mask with \texttt{autolabel=True}, which instructs the function to detect connected components on the mesh internally without any preprocessing; the per-object tensors are numerically identical, as confirmed by matching per-object volumes and $\beta$ values.
 Case~(ii) answers a fundamentally different morphometric question than case~(i): object~1 ($V = 56~\mu\text{m}^3$, $\beta_0^{2,0} = 0.194$) is approximately twice the volume of objects~2 and~3 ($V \approx 27~\mu\text{m}^3$ each), which are more elongated ($\beta_0^{2,0} \approx 0.144$--$0.151$).
 Objects~2 and~3 occupy non-overlapping axial ranges (Z slices 40--72 and 78--110) and together form segments of the same daughter chromosomal mass, consistent with a cell in early anaphase/telophase.
@@ -308,7 +308,7 @@ On the AdrenalMNIST3D dataset, pykarambola was faster than C++ karambola (2.8$\t
 The NumPy vectorization of the Minkowski tensors over all triangles in a single array operation avoids per-triangle Python overhead, keeping the compute step comparable in speed to the C++ implementation.
 The optional Cython extension targets only the graph-traversal steps of mesh initialisation, which resist vectorization; its benefit is therefore most pronounced for large meshes and batch analyses where initialisation cost dominates.
 For interactive or small-scale use, the pure-Python build is sufficient and requires no compiled extension.
-A parallel-processing workflow for large-scale batch analyses, using joblib~\cite{joblib} — a lightweight Python library for transparent parallelisation across CPU cores — is also available and demonstrated in the project repository, saving additional computation time for large imaging datasets.
+A parallel-processing workflow for large-scale batch analyses using a lightweight Python library for transparent parallelisation across CPU cores (joblib~\cite{joblib}) is also available and demonstrated in the project repository, saving additional computation time for large imaging datasets.
 
 
 The primary limitation of pykarambola, inherited from karambola, is that it operates exclusively on triangulated surface meshes.
