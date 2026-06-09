@@ -313,7 +313,7 @@ A parallel-processing workflow for large-scale batch analyses, using joblib~\cit
 
 The primary limitation of pykarambola, inherited from karambola, is that it operates exclusively on triangulated surface meshes.
 For label-image inputs, the surface is extracted by marching cubes, which introduces a discretization artefact: at typical fluorescence microscopy voxel sizes, the mesh is a piecewise-planar approximation of the true surface.
-For smooth objects, tensor values converge asymptotically as voxel resolution increases, but rank-2 surface tensors are subject to an orientation bias from the anisotropy of the digital grid that can be significant at typical fluorescence microscopy resolutions \cite{Svane2017}.
+For smooth objects, tensor values converge asymptotically as voxel resolution increases, but rank-2 surface tensors are subject to an orientation bias from the anisotropy of the digital grid that can be significant at typical fluorescence microscopy resolutions \cite{Svane2017}; an alternative Voronoi-based approach that is asymptotically unbiased for binary voxel inputs without requiring surface reconstruction has recently been proposed \cite{Hug2025}.
 A further limitation applies to the direct mesh API, where users may encounter open or non-manifold meshes in their biological datasets.
 In such cases pykarambola issues a warning, noting that for open surfaces, volume-dependent quantities (\texttt{w000}, \texttt{w020}) are set to NaN, while non-manifold geometries render all results unreliable; users should therefore verify mesh quality before interpreting tensor outputs.
 The label-image API is not affected, as marching cubes always produces closed, manifold surfaces by construction.
