@@ -309,7 +309,7 @@ On the AdrenalMNIST3D dataset, pykarambola was faster than C++ karambola (2.8$\t
 The NumPy vectorization of the Minkowski tensors over all triangles in a single array operation avoids per-triangle Python overhead, keeping the compute step comparable in speed to the C++ implementation.
 The optional Cython extension targets only the graph-traversal steps of mesh initialization, which resist vectorization; its benefit is therefore most pronounced for large meshes and batch analyses where initialization cost dominates.
 For interactive or small-scale use, the pure-Python build is sufficient and requires no compiled extension.
-A parallel-processing workflow for large-scale batch analyses using a lightweight Python library for transparent parallelization across CPU cores (joblib~\cite{joblib}) is also available and demonstrated in the project repository, saving additional computation time for large imaging datasets.
+A parallel-processing workflow for large-scale batch analyses using a lightweight Python library for transparent parallelization across CPU cores is also available and demonstrated in the project repository, saving additional computation time for large imaging datasets.
 
 
 The primary limitation of pykarambola, inherited from karambola, is that it operates exclusively on triangulated surface meshes.
