@@ -319,10 +319,10 @@ A further limitation applies to the direct mesh API, where users may encounter o
 In such cases pykarambola issues a warning, noting that for open surfaces, volume-dependent quantities (\texttt{w000}, \texttt{w020}) are set to NaN, while non-manifold geometries render all results unreliable; users should therefore verify mesh quality before interpreting tensor outputs.
 The label-image API is not affected, as marching cubes always produces closed, manifold surfaces by construction.
 
-Future development directions include a napari plugin for interactive visualization of tensor outputs alongside raw image data, support for additional Minkowski tensor families beyond those available in karambola, and a streaming batch-processing mode for datasets too large to hold in memory simultaneously.
+Future development directions include support for additional Minkowski tensor families beyond those available in karambola and a streaming batch-processing mode for datasets too large to hold in memory simultaneously.
 pykarambola's speed makes it well-suited for real-time feedback as users explore and annotate 3D segmentations.
-We invite the bioimage analysis community to adopt pykarambola as a drop-in morphometry analysis tool in existing segmentation and image analysis pipelines, including napari~\cite{Sofroniew2026napari} workflows.
-We also welcome contributions of new measures, file format parsers, and downstream analysis notebooks via the project repository.
+Integration into interactive analysis environments is a particularly attractive direction, for example as a napari~\cite{Sofroniew2026napari} plugin that visualizes tensor outputs alongside raw image data and allows users to explore morphometric results in real time.
+Systematic descriptors of three-dimensional shape have been absent from the bioimage ecosystem. By closing that gap, pykarambola brings Minkowski tensor morphometry to the scale and diversity of modern biological imaging datasets, enabling studies of organelle geometry, cell shape, and tissue organization that were previously impractical.
 
 
 %% -------------------------------------------------------
