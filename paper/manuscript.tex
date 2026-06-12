@@ -319,14 +319,14 @@ K.I.: Conceptualization, Funding acquisition, Project administration, Supervisio
 %\detailtexcount
 
 %TC:endignore
-\newpage
+\clearpage
 
 \renewcommand{\thefigure}{S\arabic{figure}}
 \setcounter{figure}{0}
 
 \section*{Supplementary Material}
 
-\begin{figure*}
+\begin{figure*}[!ht]
 \centering
 \includegraphics[width=\textwidth]{notebooks/results/timing_comparison_option_a.pdf}
 \caption{Runtime benchmark on synthetic icospheres (subdivision levels 5--10; 10{,}242--10{,}485{,}762 vertices).
@@ -335,7 +335,7 @@ K.I.: Conceptualization, Funding acquisition, Project administration, Supervisio
 \label{fig:runtime}
 \end{figure*}
 
-\begin{figure*}
+\begin{figure*}[!ht]
 \centering
 \includegraphics[width=0.95\textwidth]{notebooks/results/scatter_accuracy_paper.pdf}
 \caption{Numerical accuracy of \texttt{pykarambola} relative to C++ \texttt{karambola}.
@@ -354,7 +354,7 @@ Equivalent agreement is observed at $64^3$ resolution (Supplementary Figure~\ref
 \label{fig:accuracy}
 \end{figure*}
 
-\begin{figure*}
+\begin{figure*}[!ht]
 \centering
 \includegraphics[width=0.95\textwidth]{notebooks/results/scatter_accuracy_paper_supplementary.pdf}
 \caption{Numerical accuracy of \texttt{pykarambola} relative to C++ \texttt{karambola} at $64^3$ voxel resolution.
@@ -362,7 +362,7 @@ All panels and groupings are identical to Supplementary Figure~\ref{fig:accuracy
 \label{fig:accuracy_supp}
 \end{figure*}
 
-\begin{figure*}
+\begin{figure*}[!ht]
 \centering
 \includegraphics[width=\linewidth]{../assets/figure21.png}
 \caption{%
