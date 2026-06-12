@@ -166,10 +166,10 @@ All measurements were performed on a single core of an Apple~M4 processor (macOS
 
 For the icospheres, the Cython-accelerated build (\texttt{pykarambola[accel]}) was
 generally faster than \texttt{karambola} ($1.0$--$1.15\times$ speedup for mesh sizes
-up to 2.6M vertices; Figure~\ref{fig:runtime}b, orange), with both within 3\% of
+up to 2.6M vertices; Supplementary Figure~\ref{fig:runtime}b), with both within 3\% of
 each other at the largest mesh size tested (10.5M vertices).
 The pure-Python build ran at $0.79$--$0.97\times$ of \texttt{karambola}'s speed
-across all mesh sizes (Figure~\ref{fig:runtime}b, blue).
+across all mesh sizes (Supplementary Figure~\ref{fig:runtime}b).
 Within \texttt{pykarambola}, Cython acceleration reduced compute time by
 $1.2$--$1.3\times$ relative to the pure-Python build, with the benefit most
 pronounced at larger mesh sizes.
@@ -181,15 +181,6 @@ The C++ \texttt{karambola} timing includes sequential file I/O (one result folde
 per mesh written to disk), whereas the \texttt{pykarambola} timing covers only
 in-memory computation; the file I/O overhead of the C++ binary accounts for most
 of the speedup observed on the adrenal dataset.
-
-\begin{figure*}
-\centering
-\includegraphics[width=\textwidth]{notebooks/results/timing_comparison_option_a.pdf}
-\caption{Runtime benchmark on synthetic icospheres (subdivision levels 5--10; 10{,}242--10{,}485{,}762 vertices).
-\textbf{Left}: absolute wall-clock time (log-log scale) for end-to-end execution (mesh parse + Minkowski tensor compute) for C++ karambola (green), pykarambola pure-Python (blue), and pykarambola Cython-accelerated (orange).
-\textbf{Right}: speedup ratio (karambola time / pykarambola time); values above the dashed line ($= 1$) indicate pykarambola is faster.}
-\label{fig:runtime}
-\end{figure*}
 
 \subsection*{Numerical accuracy}
 
@@ -211,7 +202,7 @@ subspace; the eigenvalues fully characterize the spectral geometry of each tenso
 
 Across all 121 features, all 1{,}584 meshes, and both resolutions,
 \texttt{pykarambola} and \texttt{karambola} outputs fall on the identity line in
-each scatter plot (Figure~\ref{fig:accuracy}).
+each scatter plot (Supplementary Figure~\ref{fig:accuracy}).
 Residual discrepancies are consistent with floating-point summation order
 differences between the C++ and Python implementations and with the substitution
 of the GNU Scientific Library eigenvalue solver with \texttt{numpy.linalg.eigh}.
@@ -226,7 +217,7 @@ The spherical Minkowski summary quantities (\texttt{msm\_ql} and
 \texttt{msm\_wl}, $l = 0, \ldots, 8$) are rotationally invariant scalars derived
 from the surface normal distribution: $q_l$ measures $l$-fold orientational order
 and $w_l$ captures its phase structure.
-They show a distinct accuracy pattern (Figure~\ref{fig:accuracy}).
+They show a distinct accuracy pattern (Supplementary Figure~\ref{fig:accuracy}).
 For \texttt{msm\_ql} and even-$l$ \texttt{msm\_wl}, both implementations agree
 to floating-point precision.
 For odd-$l$ \texttt{msm\_wl} ($l = 1, 3, 5, 7$), a Wigner $3j$ parity selection
@@ -240,31 +231,12 @@ C++ \texttt{karambola} instead uses \texttt{gsl\_sf\_coupling\_3j}, which
 evaluates numerically without an explicit parity check, producing spurious
 residuals of order $10^{-8}$--$10^{-7}$ on the AdrenalMNIST3D meshes.
 
-\begin{figure*}
-\centering
-\includegraphics[width=0.95\textwidth]{notebooks/results/scatter_accuracy_paper.pdf}
-\caption{Numerical accuracy of \texttt{pykarambola} relative to C++ \texttt{karambola}.
-Each panel shows a scatter plot of values from identical analyses run in C++
-(\texttt{karambola}, $x$-axis) and Python (\texttt{pykarambola}, $y$-axis) on
-the AdrenalMNIST3D dataset (1{,}584 meshes, $28^3$ voxel resolution).
-Columns correspond to feature groups: scalars ($W_\nu^{0,0}$),
-vectors ($W_\nu^{1,0}$), rank-2 tensors ($W_\nu^{2,0}$, $W_\nu^{0,2}$),
-and higher-rank quantities ($W_1^{0,3}$, $W_1^{0,4}$ eigenvalues, and spherical
-Minkowski summary quantities $q_l$ and $w_l$).
-Panel labels are shown in the top-left corner of each panel, colored by feature group.
-The red diagonal indicates perfect agreement; all points fall on this line except
-odd-$l$ \texttt{msm\_wl}, which \texttt{pykarambola} returns as exactly zero
-while \texttt{karambola} produces small spurious residuals (see text).
-Equivalent agreement is observed at $64^3$ resolution (Supplementary Figure~\ref{fig:accuracy_supp}).}
-\label{fig:accuracy}
-\end{figure*}
-
 \subsection*{Label-image API walkthrough}
 The label-image API (\texttt{minkowski\_tensors\_from\_label\_image}) accepts integer segmentation arrays directly, converting each labeled region to a triangulated mesh and returning Minkowski tensors in a single call (Figure~\ref{fig:pipeline}).
 To demonstrate the API, we applied it to a publicly available 3D fluorescence segmentation of a human induced pluripotent stem cell (hiPSC) in early anaphase/telophase from the Allen Cell Collection~\cite{viana2023integrated}.
 The segmentation provides a two-channel binary mask at isotropic voxel spacing of 0.108~$\mu$m: one channel for the DNA and one for the cell membrane.
 
-Figure~\ref{fig:labelimage} illustrates how the choice of labeling scheme directly determines what the tensors measure, using the DNA channel as an example.
+Supplementary Figure~\ref{fig:labelimage} illustrates how the choice of labeling scheme directly determines what the tensors measure, using the DNA channel as an example.
 In case~(i), the binary DNA mask is cast to an integer array (\texttt{dna\_mask.astype(int)}) and passed with the default \texttt{autolabel=False}; because all non-zero voxels share label value~1, the function returns one tensor set describing the aggregate geometry of all chromosomal material ($V = 110~\mu\text{m}^3$, $A = 435~\mu\text{m}^2$, $\chi = 2$ (a topologically closed, simply connected surface), $\beta_0^{2,0} = 0.118$).
 In case~(ii), \texttt{scipy.ndimage.label(dna\_mask)} first assigns a unique integer to each connected component; the resulting three-valued label image is passed with \texttt{autolabel=False} (default), and the function returns three independent tensor sets, one per DNA object.
 Equivalently, case~(ii) can be achieved in a single call by passing the binary mask with \texttt{autolabel=True}, which instructs the function to detect connected components on the mesh internally without any preprocessing; the per-object tensors are numerically identical, as confirmed by matching per-object volumes and $\beta$ values.
@@ -275,27 +247,6 @@ The DNA objects are substantially more anisotropic than the cell membrane (DNA $
 This example demonstrates a general principle: identical binary image data yields fundamentally different morphometric results depending on label assignment, and the correct choice depends on the biological question.
 Whole-structure morphometry (case~i) is appropriate when the aggregate shape is the object of interest; per-object morphometry (case~ii) is required when individual instances must be resolved, as in cell counting, organelle tracking, or shape clustering.
 The full worked example including mesh visualisation and Minkowski tensor additivity is provided in \texttt{multilabel\_image\_workflow.ipynb}, available in the project repository (\url{https://github.com/Ishihara-SynthMorph/pykarambola}).
-
-\begin{figure}
-\centering
-\includegraphics[width=\linewidth]{../assets/figure21.png}
-\caption{%
-  Label-image API applied to the DNA channel of a 3D fluorescence microscopy segmentation
-  of a hiPSC in anaphase/telophase (Allen Cell Collection~\cite{viana2023integrated};
-  isotropic voxel size 0.108\,\textmu m).
-  Per-object Minkowski tensors report volume~($V$), surface area~($A$),
-  Euler characteristic~($\chi$), and anisotropy index~($\beta$),
-  with object centroids marked~($\times$).
-  (\textbf{a}) The entire DNA channel assigned as a single label;
-  one tensor set describes the aggregate of all three DNA objects.
-  (\textbf{b}) The binary DNA mask passed with \texttt{autolabel=True};
-  pykarambola detects three connected components internally and returns
-  three independent tensor sets, one per DNA object.
-  Objects~2 and~3 occupy non-overlapping axial ranges (Z slices 40--72 and 78--110,
-  respectively) and are likely segments of the same daughter chromosomal mass.
-}
-\label{fig:labelimage}
-\end{figure}
 
 
 %% -------------------------------------------------------
@@ -373,14 +324,63 @@ K.I.: Conceptualization, Funding acquisition, Project administration, Supervisio
 \renewcommand{\thefigure}{S\arabic{figure}}
 \setcounter{figure}{0}
 
-\section{Supplementary Material}
+\section*{Supplementary Material}
+
+\begin{figure*}
+\centering
+\includegraphics[width=\textwidth]{notebooks/results/timing_comparison_option_a.pdf}
+\caption{Runtime benchmark on synthetic icospheres (subdivision levels 5--10; 10{,}242--10{,}485{,}762 vertices).
+\textbf{Left}: absolute wall-clock time (log-log scale) for end-to-end execution (mesh parse + Minkowski tensor compute) for C++ karambola (green), pykarambola pure-Python (blue), and pykarambola Cython-accelerated (orange).
+\textbf{Right}: speedup ratio (karambola time / pykarambola time); values above the dashed line ($= 1$) indicate pykarambola is faster.}
+\label{fig:runtime}
+\end{figure*}
+
+\begin{figure*}
+\centering
+\includegraphics[width=0.95\textwidth]{notebooks/results/scatter_accuracy_paper.pdf}
+\caption{Numerical accuracy of \texttt{pykarambola} relative to C++ \texttt{karambola}.
+Each panel shows a scatter plot of values from identical analyses run in C++
+(\texttt{karambola}, $x$-axis) and Python (\texttt{pykarambola}, $y$-axis) on
+the AdrenalMNIST3D dataset (1{,}584 meshes, $28^3$ voxel resolution).
+Columns correspond to feature groups: scalars ($W_\nu^{0,0}$),
+vectors ($W_\nu^{1,0}$), rank-2 tensors ($W_\nu^{2,0}$, $W_\nu^{0,2}$),
+and higher-rank quantities ($W_1^{0,3}$, $W_1^{0,4}$ eigenvalues, and spherical
+Minkowski summary quantities $q_l$ and $w_l$).
+Panel labels are shown in the top-left corner of each panel, colored by feature group.
+The red diagonal indicates perfect agreement; all points fall on this line except
+odd-$l$ \texttt{msm\_wl}, which \texttt{pykarambola} returns as exactly zero
+while \texttt{karambola} produces small spurious residuals (see text).
+Equivalent agreement is observed at $64^3$ resolution (Supplementary Figure~\ref{fig:accuracy_supp}).}
+\label{fig:accuracy}
+\end{figure*}
 
 \begin{figure*}
 \centering
 \includegraphics[width=0.95\textwidth]{notebooks/results/scatter_accuracy_paper_supplementary.pdf}
 \caption{Numerical accuracy of \texttt{pykarambola} relative to C++ \texttt{karambola} at $64^3$ voxel resolution.
-All panels and groupings are identical to Figure~\ref{fig:accuracy}.}
+All panels and groupings are identical to Supplementary Figure~\ref{fig:accuracy}.}
 \label{fig:accuracy_supp}
+\end{figure*}
+
+\begin{figure*}
+\centering
+\includegraphics[width=\linewidth]{../assets/figure21.png}
+\caption{%
+  Label-image API applied to the DNA channel of a 3D fluorescence microscopy segmentation
+  of a hiPSC in anaphase/telophase (Allen Cell Collection~\cite{viana2023integrated};
+  isotropic voxel size 0.108\,\textmu m).
+  Per-object Minkowski tensors report volume~($V$), surface area~($A$),
+  Euler characteristic~($\chi$), and anisotropy index~($\beta$),
+  with object centroids marked~($\times$).
+  (\textbf{a}) The entire DNA channel assigned as a single label;
+  one tensor set describes the aggregate of all three DNA objects.
+  (\textbf{b}) The binary DNA mask passed with \texttt{autolabel=True};
+  pykarambola detects three connected components internally and returns
+  three independent tensor sets, one per DNA object.
+  Objects~2 and~3 occupy non-overlapping axial ranges (Z slices 40--72 and 78--110,
+  respectively) and are likely segments of the same daughter chromosomal mass.
+}
+\label{fig:labelimage}
 \end{figure*}
 
 \end{document}
