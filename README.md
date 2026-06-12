@@ -14,6 +14,7 @@
 Given a mesh, it returns scalar, vector, and tensor quantities including volume, surface area, integrated mean curvature, and Euler characteristic (the Minkowski functionals), as well as higher-rank tensors that capture anisotropy and preferred orientation independently of coordinate frame.
 pykarambola is a Python implementation of [karambola](https://github.com/morphometry/karambola), the reference C++ package for Minkowski tensor computation on 3D triangulated surfaces.
 Minkowski tensors are widely applicable to analyzing 3D structures in biomedical imaging, astrophysics, and materials science.
+For background, see [Schroder-Turk et al. (2013)](https://doi.org/10.1088/1367-2630/15/8/083028), [Mickel et al. (2013)](https://doi.org/10.1063/1.4774084), and [morphometry.org](https://morphometry.org/).
 
 ### End-to-end pipeline: confocal nuclei → segmentation → shape clustering
 
