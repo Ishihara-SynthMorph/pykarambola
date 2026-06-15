@@ -1,4 +1,4 @@
-# input_file = /Users/yajushikhurana/Desktop/karambola_mac_m4/data/input_files/basic_shapes/runtime_tests/sphere_sub7.off
+# input_file = /Users/yajushikhurana/Desktop/pykarambola_ishiharalab_mac/pykarambola/dataset/basic_shapes/runtime_tests/sphere_sub7.off
 #
 # keyword explanations: (not all keywords have to show up)
 # closed = the labeled surface is closed
@@ -13,4 +13,3 @@
 # contact: karambola@physik.uni-erlangen.de
 #
 #           #1 label             #2 q(0)             #3 w(0)             #4 q(1)             #5 w(1)             #6 q(2)             #7 w(2)             #8 q(3)             #9 w(3)            #10 q(4)            #11 w(4)            #12 q(5)            #13 w(5)            #14 q(6)            #15 w(6)            #16 q(7)            #17 w(7)            #18 q(8)            #19 w(8)        #20 Keywords
-                 ALL                   1                   1   6.07747865281e-15   8.61907734184e-21   1.71103558442e-15   1.05864430614e-15   2.30502127604e-15   1.64979658429e-21    2.8273831531e-13   -1.5327526636e-13   1.23798617305e-15   7.88420151617e-22   6.74136101241e-06   3.73268064076e-06   4.03390568738e-16   4.40158739498e-22   1.45271548598e-12  -5.63794204534e-13                 msm              closed     reference_origin 

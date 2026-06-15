@@ -58,23 +58,32 @@ pykarambola/
 ├── eigensystem.py    ← eigenvalue/vector decomposition for rank-2 tensors
 ├── tensor.py         ← SymmetricMatrix3, Rank3Tensor, SymmetricRank4Tensor
 ├── results.py        ← MinkValResult, CalcOptions, SurfaceStatistics
+├── surface.py        ← surface validation and statistics (check_surface)
+├── output.py         ← output writers matching the C++ karambola format
+├── spherical.py      ← spherical Minkowski structure metrics
 ├── cli.py            ← command-line interface (separate code path from api.py)
 ├── io_poly.py        ← .poly parser
 ├── io_off.py         ← .off parser
 ├── io_obj.py         ← .obj parser
 ├── io_glb.py         ← .glb parser (requires trimesh)
-└── spherical.py      ← spherical Minkowski structure metrics
+└── io_stl.py         ← .stl parser, ASCII and binary (requires numpy-stl)
 
 tests/
-├── test_api.py       ← tests for the high-level API
-├── test_box.py       ← numerical accuracy tests against known box geometry
-├── test_readers.py   ← file format parser tests
-└── fixtures/         ← test mesh files (.poly, .off, .obj)
+├── conftest.py           ← shared fixtures
+├── test_api.py           ← tests for the high-level API
+├── test_box.py           ← numerical accuracy tests against known box geometry
+├── test_readers.py       ← file format parser tests
+├── test_accel.py         ← Cython acceleration vs. Python fallback
+├── test_mesh_quality.py  ← behavior on meshes with known quality issues
+├── test_nonconvex.py     ← non-convex mesh handling and degenerate triangles
+├── test_wigner3j.py      ← Wigner 3j coefficient implementation
+├── fixtures/             ← test mesh files (.poly, .off, .obj)
+└── notebooks/            ← Jupyter notebooks used in development / validation
 
 .github/workflows/
-├── ci.yml            ← runs pytest on every push and PR
-├── add-to-project.yml← automatically adds new issues to the project board
-└── slack-notify.yml  ← Slack notifications for merges and CI failures
+├── ci.yml             ← runs pytest on every push and PR (ubuntu, macOS, Windows × Python 3.9/3.11/3.13)
+├── add-to-project.yml ← automatically adds new issues to the project board
+└── slack-notify.yml   ← Slack notifications for merges and CI failures
 ```
 
 **Principle:** `api.py` is the only file that users should import from.
@@ -124,10 +133,10 @@ main  ──●─────────────────────�
    when the PR is merged.
 
 4. **Run the tests locally before pushing** (see [§7](#7-running-the-tests)).
-   GitHub Actions is currently disabled at the enterprise level, so there is no
-   automatic CI. Running `pytest tests/` locally is the substitute.
+   CI runs automatically on every push and PR via GitHub Actions, but a local green
+   run before pushing is still good practice.
 
-5. **Merge into main** once the PR is approved and tests pass locally.
+5. **Merge into main** once the PR is approved and CI passes.
 
 ### What goes directly on `main`
 
@@ -150,14 +159,14 @@ When filing an issue:
 
 ### Milestones
 
-Milestones group issues by release goal. Our current milestones, in order:
+Milestones group issues by release goal. Our milestones:
 
-| Milestone | Goal | Blocking |
-|-----------|------|---------|
-| **M0** — API changes and edge cases | Fix all known bugs and finalize the public API | M1 issues #5, #6, #10 |
-| **M1** — v1.0.0 stable release | PyPI publish | M2 |
-| **M2** — bioRxiv submission | Preprint | M3 |
-| **M3** — journal submission | Peer-reviewed paper | — |
+| Milestone | Goal | Status |
+|-----------|------|--------|
+| **M0** — API changes and edge cases | Fix all known bugs and finalize the public API | Closed |
+| **M1** — first PyPI release (v0.3.0) | PyPI publish | Closed |
+| **M2** — bioRxiv submission | Preprint | Open |
+| **M3** — journal submission | Peer-reviewed paper | Open |
 
 Close all issues in a milestone before moving to the next one.
 
@@ -170,10 +179,9 @@ is our shared view of progress across all milestones.
 **Important:** Milestones and the project board are independent systems in GitHub.
 Assigning a milestone to an issue does *not* add it to the board.
 
-We have a GitHub Actions workflow (`.github/workflows/add-to-project.yml`) that is
-intended to add every newly opened issue to the board automatically, but **GitHub
-Actions is currently disabled at the enterprise level**, so this workflow does not
-run. Until that changes, **add new issues to the board manually** via the issue's
+The `.github/workflows/add-to-project.yml` workflow adds every newly opened issue to
+the board automatically.
+If an issue is not appearing on the board, you can add it manually via the issue's
 sidebar (look for the "Projects" field on the right-hand side).
 
 ---
@@ -194,11 +202,13 @@ This is intentional — it signals to users that the API is still being finalize
 ### Our version roadmap
 
 ```
-0.1.0  current         (M0 work in progress)
-0.2.0  after M0 closes (all API bugs fixed, rename complete)
+0.3.0  M1 — first PyPI release       (released)
+0.4.0  ...                            (released)
+0.5.0  current                        (released)
  ...
-1.0.0  M1 milestone    (PyPI release + bioRxiv preprint)
 ```
+
+Future version bumps will be driven by M2/M3 milestones.
 
 ### How to bump the version
 
@@ -206,7 +216,7 @@ The version lives in exactly one place: `pyproject.toml`.
 
 ```toml
 [project]
-version = "0.2.0"   ← change this
+version = "0.5.0"   ← change this
 ```
 
 `pykarambola.__version__` reads it automatically at runtime via `importlib.metadata`,
@@ -218,19 +228,18 @@ The bump itself should be its own commit:
 ```bash
 # edit pyproject.toml, then:
 git add pyproject.toml
-git commit -m "Bump version to 0.2.0"
+git commit -m "Bump version to 0.6.0"
 ```
 
 Then tag the commit on `main` after merging:
 
 ```bash
-git tag v0.2.0
-git push origin v0.2.0
+git tag v0.6.0
+git push origin v0.6.0
 ```
 
 The tag creates a permanent reference to that state of the code and is visible on the
-GitHub releases page. At `v1.0.0` we will attach release notes and trigger the PyPI
-publish workflow (see issue #9).
+GitHub releases page (see [§8](#8-releasing-a-new-version) for the full release process).
 
 ---
 
@@ -315,15 +324,11 @@ Show print output (useful for debugging):
 pytest -s tests/test_api.py
 ```
 
-**GitHub Actions is currently disabled at the enterprise level**, so there is no
-automatic CI on push or PR. Running the tests locally before pushing is therefore
-a required step in our workflow — treat a local green run as the equivalent of
-passing CI.
-
-The workflows in `.github/workflows/` are kept in the repo so that everything will
-work automatically if Actions is enabled in the future. If you are able to get it
-enabled, the required status check (`ci-success`) can be re-added to branch
-protection and the gate will be enforced automatically.
+GitHub Actions runs the full test matrix automatically on every push and PR
+(Ubuntu, macOS, Windows × Python 3.9, 3.11, 3.13).
+The required status check is `ci-success`; a PR cannot be merged until it passes.
+Running `pytest tests/` locally before pushing is still good practice — it gives you
+faster feedback than waiting for CI.
 
 ### Writing a test for a bug fix
 
@@ -344,14 +349,19 @@ def test_get_ref_vec_flat_surface():
 
 ## 8. Releasing a new version
 
-This section will expand when we reach M1. For now the steps are:
-
 1. Confirm all milestone issues are closed.
 2. Bump the version in `pyproject.toml` (see [§5](#5-version-numbers)).
-3. Update `CITATION.cff` with the new version and date (issue #5).
-4. Open a PR titled `Release vX.Y.Z`, get it reviewed, merge.
-5. On `main`, create and push the tag: `git tag vX.Y.Z && git push origin vX.Y.Z`
+3. Update `CITATION.cff` with the new version and release date.
+4. Update `CHANGELOG.md`: replace `## [Unreleased]` with `## [X.Y.Z] - YYYY-MM-DD`,
+   add a fresh empty `## [Unreleased]` above it, and update the comparison links at
+   the bottom of the file (see [§6](#6-changelog)).
+5. Open a PR titled `Release vX.Y.Z`, get it reviewed, merge.
+6. On `main`, create and push the tag:
 
-For `v1.0.0` specifically, additional steps are tracked as GitHub issues:
-#6 (project metadata), #7 (Zenodo), #8 (PyPI Trusted Publisher),
-#9 (publish workflow), #10 (tag and verify), #11 (update CITATION.cff with DOI).
+   ```bash
+   git tag vX.Y.Z
+   git push origin vX.Y.Z
+   ```
+
+7. The PyPI publish workflow triggers automatically when a tag matching `v*` is pushed
+   to `main`. Verify the release appeared on PyPI and on the GitHub releases page.

@@ -43,8 +43,7 @@ dev = ["pytest", "scikit-image>=0.19"]
 accel = ["cython>=3.0"]
 glb = ["trimesh"]
 stl = ["numpy-stl"]
-notebooks = ["scikit-image>=0.19", "matplotlib", "seaborn", "pandas", "medmnist", "tifffile", "scikit-learn"]
-# aicsshparam is not yet on PyPI — uncomment and pin the version once released (issue #137)
+notebooks = ["scikit-image>=0.19", "matplotlib", "seaborn", "pandas", "medmnist", "tifffile", "scikit-learn", "pooch"]
 benchmark = ["scikit-learn", "imbalanced-learn", "scikit-optimize", "pandas"]
 
 [tool.setuptools.packages.find]
