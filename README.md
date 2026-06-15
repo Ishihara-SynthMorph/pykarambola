@@ -3,7 +3,7 @@
 <!-- [![CI](https://github.com/Ishihara-SynthMorph/pykarambola/actions/workflows/ci.yml/badge.svg)](https://github.com/Ishihara-SynthMorph/pykarambola/actions/workflows/ci.yml) -->
 [![PyPI version](https://img.shields.io/pypi/v/pykarambola)](https://pypi.org/project/pykarambola/)
 [![Python versions](https://img.shields.io/pypi/pyversions/pykarambola)](https://pypi.org/project/pykarambola/)
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![License: BSD-3-Clause](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
 **pykarambola** computes Minkowski tensors for 3D objects represented as triangulated meshes — a family of shape descriptors rooted in integral geometry that rigorously quantify size, shape, and orientation.
 
@@ -296,4 +296,6 @@ See [`CHANGELOG.md`](CHANGELOG.md) for a history of changes between versions.
 
 ## License
 
-See [`LICENSE`](LICENSE).
+pykarambola is released under the [BSD 3-Clause License](LICENSE).
+
+The authors of [karambola](https://github.com/morphometry/karambola) — Schaller, Kapfer, and Schröder-Turk — kindly agreed to pykarambola being distributed under the BSD 3-Clause License.
