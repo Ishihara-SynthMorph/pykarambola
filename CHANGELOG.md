@@ -11,6 +11,13 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.5.1] - 2026-06-14
+
+### Changed
+- License changed from GPL-3.0-or-later to BSD-3-Clause, with the consent of the karambola authors (Schaller, Kapfer, Schröder-Turk). (#146)
+
+---
+
 ## [0.5.0] - 2026-05-27
 
 ### Added

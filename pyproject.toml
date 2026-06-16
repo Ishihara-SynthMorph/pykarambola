@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pykarambola"
-version = "0.5.0"
+version = "0.5.1"
 description = "Python implementation of Karambola – Minkowski tensor morphometry of 3D structures"
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -16,7 +16,7 @@ keywords = [
     "minkowski-functionals", "triangulated-surface", "image-analysis",
 ]
 classifiers = [
-    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "License :: OSI Approved :: BSD License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
