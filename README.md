@@ -280,9 +280,10 @@ Once you have a mesh, pass its vertex and face arrays to `minkowski_tensors(vert
 
 If you use pykarambola in your work, please cite pykarambola and Schröder-Turk group's publication on Minkowski tensors:
 
-> Ishihara, K., & Khurana, Y.
-> *pykarambola: Minkowski tensor morphometry of 3D structures* (v0.5.0).
-> https://doi.org/10.5281/zenodo.20418801
+> Khurana, Y., & Ishihara, K.
+> *pykarambola: Minkowski tensor morphometry of 3D structures.*
+> bioRxiv (2026).
+> https://doi.org/10.64898/2026.06.16.730752
 
 > Schröder-Turk, G. E., Mickel, W., Kapfer, S. C., Schaller, F. M., Breidenbach, B., Hug, D., & Mecke, K.
 > *Minkowski tensors of anisotropic spatial structure.*
