@@ -32,5 +32,4 @@ from .eigensystem import calculate_eigensystem
 from .results import CalcOptions, SurfaceStatistics
 from .surface import check_surface
 from .api import minkowski_tensors, minkowski_tensors_from_label_image
-from .invariants import compute_invariants, decompose_all
-from .spharm_invariants import compute_spharm_invariants
+from .invariants import compute_invariants, decompose_all, filter_by_degree
