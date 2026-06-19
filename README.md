@@ -3,7 +3,7 @@
 <!-- [![CI](https://github.com/Ishihara-SynthMorph/pykarambola/actions/workflows/ci.yml/badge.svg)](https://github.com/Ishihara-SynthMorph/pykarambola/actions/workflows/ci.yml) -->
 [![PyPI version](https://img.shields.io/pypi/v/pykarambola)](https://pypi.org/project/pykarambola/)
 [![Python versions](https://img.shields.io/pypi/pyversions/pykarambola)](https://pypi.org/project/pykarambola/)
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![License: BSD-3-Clause](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
 **pykarambola** computes Minkowski tensors for 3D objects represented as triangulated meshes — a family of shape descriptors rooted in integral geometry that rigorously quantify size, shape, and orientation.
 
@@ -280,9 +280,10 @@ Once you have a mesh, pass its vertex and face arrays to `minkowski_tensors(vert
 
 If you use pykarambola in your work, please cite pykarambola and Schröder-Turk group's publication on Minkowski tensors:
 
-> Ishihara, K., & Khurana, Y.
-> *pykarambola: Minkowski tensor morphometry of 3D structures* (v0.5.0).
-> https://doi.org/10.5281/zenodo.20418801
+> Khurana, Y., & Ishihara, K.
+> *pykarambola: Minkowski tensor morphometry of 3D structures.*
+> bioRxiv (2026).
+> https://doi.org/10.64898/2026.06.16.730752
 
 > Schröder-Turk, G. E., Mickel, W., Kapfer, S. C., Schaller, F. M., Breidenbach, B., Hug, D., & Mecke, K.
 > *Minkowski tensors of anisotropic spatial structure.*
@@ -296,4 +297,6 @@ See [`CHANGELOG.md`](CHANGELOG.md) for a history of changes between versions.
 
 ## License
 
-See [`LICENSE`](LICENSE).
+pykarambola is released under the [BSD 3-Clause License](LICENSE).
+
+The authors of [karambola](https://github.com/morphometry/karambola) — Schaller, Kapfer, and Schröder-Turk — kindly agreed to pykarambola being distributed under the BSD 3-Clause License.
