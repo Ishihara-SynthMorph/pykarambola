@@ -6,7 +6,7 @@ date-released: 2026-06-14
 repository-code: "https://github.com/Ishihara-SynthMorph/pykarambola"
 identifiers:
   - type: doi
-    value: "10.5281/zenodo.20418801"
+    value: "10.5281/zenodo.19935285"
 license: BSD-3-Clause
 authors:
   - family-names: "Ishihara"
@@ -16,6 +16,17 @@ authors:
     given-names: "Yajushi"
     orcid: "https://orcid.org/0009-0001-9064-8008"
 references:
+  - type: preprint
+    title: "pykarambola: Minkowski tensor morphometry of 3D structures"
+    doi: "10.64898/2026.06.16.730752"
+    date-published: "2026-06-18"
+    authors:
+      - family-names: "Khurana"
+        given-names: "Yajushi"
+        orcid: "https://orcid.org/0009-0001-9064-8008"
+      - family-names: "Ishihara"
+        given-names: "Keisuke"
+        orcid: "https://orcid.org/0000-0002-8481-8680"
   - type: software
     title: "karambola - 3D Minkowski Tensor Package"
     version: 2.0
