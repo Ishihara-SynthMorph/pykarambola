@@ -283,7 +283,7 @@ The area-normalised moments are $Q_{\ell m} = D_{\ell m}\big/\!\bigl(A\sqrt{4\pi
 | **pykarambola key** | `msm_ql` (array shape `(12,)`, index $= \ell$, $\ell = 0,\ldots,8$) |
 | **Analytical** | $q_\ell = \sqrt{\dfrac{4\pi}{2\ell+1}\displaystyle\sum_{m=-\ell}^{\ell}\lvert Q_{\ell m}\rvert^2}$ |
 | **Computational** | $\text{msm\_ql}[\ell] = \dfrac{1}{A}\sqrt{\lvert D_{\ell 0}\rvert^2 + 2\displaystyle\sum_{m=1}^{\ell}\lvert D_{\ell m}\rvert^2}$ (exploits $\lvert D_{\ell,-m}\rvert = \lvert D_{\ell m}\rvert$) |
-| **Interpretation** | Strength of $\ell$-fold orientational order of surface normals. $q_0 = 1$ always; $q_\ell \approx 0$ for a smooth sphere; icosahedral symmetry yields a distinctive peak at $\ell = 6$. |
+| **Interpretation** | Strength of $\ell$-fold orientational order of surface normals. $q_0 = 1$ always; $q_\ell \approx 0$ for a smooth sphere; icosahedral symmetry yields a distinctive peak at $\ell = 6$. MSM $q_\ell$ and $w_\ell$ outperform the plain Steinhardt bond-order parameters for characterising disordered particulate matter (Mickel et al. 2013). |
 
 #### msm_wl — $w_\ell$
 
@@ -348,6 +348,10 @@ For every rank-2 tensor $W$ above, pykarambola additionally computes:
   [doi:10.1103/PhysRevB.28.784](https://doi.org/10.1103/PhysRevB.28.784)
 - Schröder-Turk, G. E. et al. *Minkowski Tensors of Anisotropic Spatial Structure.*
   New J. Phys. **15**, 083028 (2013). [doi:10.1088/1367-2630/15/8/083028](https://doi.org/10.1088/1367-2630/15/8/083028)
+- Mickel, W., Kapfer, S. C., Schröder-Turk, G. E., & Mecke, K. (2013).
+  Shortcomings of the bond orientational order parameters for the analysis of disordered particulate matter.
+  *J. Chem. Phys.*, **138**(4), 044501.
+  [doi:10.1063/1.4774084](https://doi.org/10.1063/1.4774084)
 - Schaller, F. M., Kapfer, S. C., & Schröder-Turk, G. E.
   *karambola — 3D Minkowski Tensor Package* (v2.0).
   <https://github.com/morphometry/karambola>
