@@ -19,7 +19,7 @@ except ImportError:
     from scipy.special import sph_harm as _sph_harm
 from .results import MinkValResult
 
-MAX_L = 8
+MAX_L = 11
 
 
 @lru_cache(maxsize=None)
@@ -27,7 +27,7 @@ def _wigner3j(j1, j2, j3, m1, m2, m3):
     """Wigner 3j symbol via the Racah formula.
 
     All arguments must be integers (not half-integers).
-    Sufficient for l <= 8 used in spherical Minkowski tensors.
+    Sufficient for l <= 11 used in spherical Minkowski tensors.
     """
     # Selection rules
     if m1 + m2 + m3 != 0:

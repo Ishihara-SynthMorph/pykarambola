@@ -9,6 +9,9 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- `MAX_L` raised from 8 to 11 in `spherical.py`, enabling MSM computation up to l=11. `SphMinkData` already allocated 12 slots (indices 0–11); only the loop bound was increased.
+
 ---
 
 ## [0.5.1] - 2026-06-14
