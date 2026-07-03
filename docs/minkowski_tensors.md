@@ -225,7 +225,7 @@ Note: `{key}_trace_ratio` is **not** defined for normal-weighted tensors (no nat
 | **Interpretation** | Curvature-weighted normal distribution; sensitive to both orientation and bending magnitude. `w202_beta` = anisotropy of curvature-weighted normals. |
 
 $$
-w_{202,ij} = \sum_e \left[ \frac{\ell_e(\alpha_e + \sin\alpha_e)}{24}\,\bar{n}_{e,i}\bar{n}_{e,j} + \frac{\ell_e(\alpha_e - \sin\alpha_e)}{24}\,n_{\perp,e,i}\,n_{\perp,e,j} \right]
+w_{202,ij} = \sum_e \left[ \frac{\ell_e(\alpha_e + \sin\alpha_e)}{12}\,\bar{n}_{e,i}\bar{n}_{e,j} + \frac{\ell_e(\alpha_e - \sin\alpha_e)}{12}\,n_{\perp,e,i}\,n_{\perp,e,j} \right]
 $$
 
 The $\alpha \pm \sin\alpha$ split follows from the exact integral of $n \otimes n$ over the cylindrical patch at the edge.
@@ -265,8 +265,8 @@ Mickel et al. 2013; Schröder-Turk et al. 2013). Both are computed from area-wei
 moments of face normals for $\ell = 0, \ldots, 8$ and returned only with `compute='all'`.
 
 **Shared intermediate accumulation.**
-Let $(\theta_f, \phi_f)$ be the polar and azimuthal angles of face normal $\hat{n}_{f}$,
-and let $A = \sum_{f} A_{f} = 3 w_{100}$ be the total surface area.
+Let $(\theta_f, \phi_f)$ be the polar and azimuthal angles of face normal $\hat{n}_f$.
+Let $A = \sum_f A_f = 3 w_{100}$ be the total surface area.
 For each $\ell$ and $m = 0, 1, \ldots, \ell$, the code accumulates:
 
 $$D_{\ell m} = \sqrt{\frac{4\pi}{2\ell+1}}\sum_f A_f\, Y_\ell^m(\theta_f,\,\phi_f)$$
@@ -275,7 +275,9 @@ where $Y_\ell^m$ are complex spherical harmonics in the Condon–Shortley conven
 Only $m \ge 0$ is stored; negative-$m$ values are recovered via
 $D_{\ell,-m} = (-1)^m\,\overline{D_{\ell m}}$ (exact for the real-valued normal
 distribution of a closed mesh).
-The area-normalised moments are $Q_{\ell m} = D_{\ell m}\big/\!\bigl(A\sqrt{4\pi/(2\ell+1)}\bigr)$.
+The area-normalised moments are:
+
+$$Q_{\ell m} = \frac{D_{\ell m}}{A\sqrt{\dfrac{4\pi}{2\ell+1}}}$$
 
 #### msm_ql — $q_\ell$
 
@@ -303,7 +305,7 @@ $(m_1, m_2, m_3)$ with $m_i \in \{-\ell,\ldots,\ell\}$ and $m_1+m_2+m_3 = 0$:
 
 $$
 \tilde{w}_\ell = \sum_{m_1+m_2+m_3=0}
-\begin{pmatrix}\ell & \ell & \ell \\ m_1 & m_2 & m_3\end{pmatrix}
+\left(\begin{array}{ccc}\ell & \ell & \ell \\ m_1 & m_2 & m_3\end{array}\right)
 Q_{\ell m_1}\,Q_{\ell m_2}\,Q_{\ell m_3}
 $$
 
@@ -324,7 +326,7 @@ Computational form: let
 
 $$
 v = \sum_{m_1+m_2+m_3=0}
-\begin{pmatrix}\ell & \ell & \ell \\ m_1 & m_2 & m_3\end{pmatrix}
+\left(\begin{array}{ccc}\ell & \ell & \ell \\ m_1 & m_2 & m_3\end{array}\right)
 D_{\ell m_1}\,D_{\ell m_2}\,D_{\ell m_3}
 $$
 
@@ -334,8 +336,10 @@ $$
 \mathtt{msm\_wl}[\ell] = \text{sgn}(\text{Re}(v))\cdot|v|^{1/3}/A
 $$
 
-**Parity selection rule.** The Wigner 3j symbol vanishes for all $m_1, m_2, m_3$
-whenever $J = 3\ell$ is odd (i.e., $\ell$ odd), so:
+**Parity selection rule.** For odd $\ell$, the Wigner 3j symbol above is antisymmetric
+under exchange of any two columns (each exchange contributes $(-1)^{3\ell}=-1$),
+while $Q_{\ell m_1}Q_{\ell m_2}Q_{\ell m_3}$ is symmetric.
+Every term in $\tilde{w}_\ell$ therefore cancels exactly with its column-swapped partner, so:
 
 $$w_\ell = 0 \quad \text{exactly for all odd } \ell$$
 
