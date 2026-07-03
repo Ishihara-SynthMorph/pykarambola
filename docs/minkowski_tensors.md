@@ -264,8 +264,9 @@ $\ell$-fold orientational order of surface normals (Steinhardt, Nelson & Ronchet
 Mickel et al. 2013; Schröder-Turk et al. 2013). Both are computed from area-weighted spherical harmonic
 moments of face normals for $\ell = 0, \ldots, 8$ and returned only with `compute='all'`.
 
-**Shared intermediate accumulation.** Let $(\theta_f, \phi_f)$ be the polar and azimuthal
-angles of $\hat{n}_f$, and let $A = \sum_f A_f = 3\,w_{100}$.
+**Shared intermediate accumulation.**
+Let $(\theta_f, \phi_f)$ be the polar and azimuthal angles of face normal $\hat{n}_{f}$,
+and let $A = \sum_{f} A_{f} = 3 w_{100}$ be the total surface area.
 For each $\ell$ and $m = 0, 1, \ldots, \ell$, the code accumulates:
 
 $$D_{\ell m} = \sqrt{\frac{4\pi}{2\ell+1}}\sum_f A_f\, Y_\ell^m(\theta_f,\,\phi_f)$$
@@ -292,7 +293,7 @@ $$
 Computational form (exploits $|D_{\ell,-m}| = |D_{\ell m}|$):
 
 $$
-\text{msm\_ql}[\ell] = \frac{1}{A}\sqrt{|D_{\ell 0}|^2 + 2\sum_{m=1}^{\ell}|D_{\ell m}|^2}
+\mathtt{msm\_ql}[\ell] = \frac{1}{A}\sqrt{|D_{\ell 0}|^2 + 2\sum_{m=1}^{\ell}|D_{\ell m}|^2}
 $$
 
 #### msm_wl — $w_\ell$
@@ -306,13 +307,7 @@ $$
 Q_{\ell m_1}\,Q_{\ell m_2}\,Q_{\ell m_3}
 $$
 
-where
-
-$$
-\begin{pmatrix}\ell & \ell & \ell \\ m_1 & m_2 & m_3\end{pmatrix}
-$$
-
-is the Wigner 3j symbol evaluated via the Racah formula.
+where the parenthesised quantity is the Wigner 3j symbol evaluated via the Racah formula.
 
 | | |
 |---|---|
@@ -333,7 +328,11 @@ v = \sum_{m_1+m_2+m_3=0}
 D_{\ell m_1}\,D_{\ell m_2}\,D_{\ell m_3}
 $$
 
-then $\text{msm\_wl}[\ell] = \text{sgn}(\text{Re}(v))\cdot|v|^{1/3}/A$.
+then:
+
+$$
+\mathtt{msm\_wl}[\ell] = \text{sgn}(\text{Re}(v))\cdot|v|^{1/3}/A
+$$
 
 **Parity selection rule.** The Wigner 3j symbol vanishes for all $m_1, m_2, m_3$
 whenever $J = 3\ell$ is odd (i.e., $\ell$ odd), so:
