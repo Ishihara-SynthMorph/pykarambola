@@ -343,10 +343,17 @@ pykarambola enforces this analytically via the `J % 2 != 0` branch of the Racah 
 The C++ karambola accumulates small spurious residuals for odd $\ell$ due to floating-point
 rounding in its separate code path.
 
-**Connection to w104.** The rank-4 normal tensor `w104` ($W_1^{0,4}$) encodes the
-$\ell = 0, 2, 4$ irreducible SO(3) components of the normal distribution, so $q_4$ and $w_4$
-are implicitly contained in it. The $\ell = 6, 8$ MSM require spherical harmonic evaluation
-beyond what `w104` encodes and are computed independently from face normals.
+**Connection to Cartesian moment tensors.**
+The MSM $q_\ell$, $w_\ell$ and the Cartesian moment tensors $W_1^{0,\ell}$ are different
+representations of the same Minkowski tensors and can therefore be related to each other
+(Mickel et al. 2013):
+
+$$
+W_1^{0,\ell} = \sum_{f \in F} \underbrace{\hat{n}_f \otimes \cdots \otimes \hat{n}_f}_{\ell \text{ times}} A_f
+$$
+
+In pykarambola, all MSM are computed via an independent spherical harmonic accumulation
+directly from face normals (see `spherical.py`), not derived from any $W_1^{0,\ell}$.
 
 ---
 
