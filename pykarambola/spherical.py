@@ -19,7 +19,7 @@ except ImportError:
     from scipy.special import sph_harm as _sph_harm
 from .results import MinkValResult
 
-MAX_L = 11
+MAX_L = 8
 
 
 @lru_cache(maxsize=None)
@@ -27,7 +27,6 @@ def _wigner3j(j1, j2, j3, m1, m2, m3):
     """Wigner 3j symbol via the Racah formula.
 
     All arguments must be integers (not half-integers).
-    Sufficient for l <= 11 used in spherical Minkowski tensors.
     """
     # Selection rules
     if m1 + m2 + m3 != 0:
@@ -74,23 +73,29 @@ def _wigner3j(j1, j2, j3, m1, m2, m3):
 
 
 class SphMinkData:
-    """Container for ql and wl arrays."""
-    def __init__(self):
-        self.ql = [0.0] * 12
-        self.wl = [0.0] * 12
+    """Container for ql and wl arrays.
+
+    Always allocates at least 12 slots (indices 0–11) to match the original
+    C++ karambola output shape. Grows beyond 12 only when max_l >= 12.
+    """
+    def __init__(self, max_l=8):
+        size = max(12, max_l + 1)
+        self.ql = [0.0] * size
+        self.wl = [0.0] * size
 
 
-def _default_sphmink():
-    return MinkValResult(result=SphMinkData())
+def _default_sphmink(max_l=8):
+    return MinkValResult(result=SphMinkData(max_l=max_l))
 
 
 class SphericalMinkowskis:
     """Accumulates spherical harmonic coefficients for Minkowski tensors."""
 
-    def __init__(self):
+    def __init__(self, max_l=8):
+        self._max_l = max_l
         # Store d_lm coefficients: for each l, store m = 0..l as complex
         self._d = {}  # (l, m) -> complex
-        for l in range(MAX_L + 1):
+        for l in range(self._max_l + 1):
             for m in range(l + 1):
                 self._d[(l, m)] = 0.0 + 0.0j
         self.total_area = 0.0
@@ -113,7 +118,7 @@ class SphericalMinkowskis:
         theta = np.arccos(np.clip(cos_th, -1.0, 1.0))
         self.total_area += float(np.sum(f_norms))
 
-        for l in range(MAX_L + 1):
+        for l in range(self._max_l + 1):
             l_prefactor = np.sqrt(4.0 * np.pi / (2 * l + 1))
             for m in range(l + 1):
                 ylm = _sph_harm(m, l, phi, theta)  # (N,) complex
@@ -127,7 +132,7 @@ class SphericalMinkowskis:
         phi = np.arctan2(f_normalized[1], f_normalized[0])
         self.total_area += area
 
-        for l in range(MAX_L + 1):
+        for l in range(self._max_l + 1):
             l_prefactor = np.sqrt(4.0 * np.pi / (2 * l + 1))
             for m in range(l + 1):
                 theta = np.arccos(np.clip(cos_th, -1, 1))
@@ -185,8 +190,16 @@ class SphericalMinkowskis:
             return val
 
 
-def calculate_sphmink(surface):
-    """Calculate spherical Minkowski tensors for each label."""
+def calculate_sphmink(surface, max_l=8):
+    """Calculate spherical Minkowski tensors for each label.
+
+    Parameters
+    ----------
+    surface : Triangulation
+    max_l : int, optional
+        Maximum spherical harmonic order. Default is 8 (matching C++ karambola).
+        The output arrays ``ql`` and ``wl`` have length ``max_l + 1``.
+    """
     results = {}
     data = {}
 
@@ -195,13 +208,13 @@ def calculate_sphmink(surface):
     for lab in unique_labels:
         lab = int(lab)
         mask = surface._labels == lab
-        sm = SphericalMinkowskis()
+        sm = SphericalMinkowskis(max_l=max_l)
         sm.add_facets_batch(surface._normals[mask], surface._areas[mask])
         data[lab] = sm
 
     for label, sm in data.items():
-        r = _default_sphmink()
-        for l in range(MAX_L + 1):
+        r = _default_sphmink(max_l=max_l)
+        for l in range(max_l + 1):
             r.result.ql[l] = sm.ql(l)
             r.result.wl[l] = sm.wl(l)
         results[label] = r

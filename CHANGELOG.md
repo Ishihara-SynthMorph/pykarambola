@@ -9,8 +9,8 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-### Changed
-- `MAX_L` raised from 8 to 11 in `spherical.py`, enabling MSM computation up to l=11. `SphMinkData` already allocated 12 slots (indices 0–11); only the loop bound was increased.
+### Added
+- `msm_max_l` parameter on `minkowski_tensors` and `minkowski_tensors_from_label_image` (default 8, matching C++ karambola) to control the maximum spherical harmonic order for MSM. Output arrays `msm_ql`/`msm_wl` always have at least 12 elements (preserving existing shape); they grow beyond 12 only when `msm_max_l >= 12`. The `--msm-max-l` flag exposes this option on the CLI.
 
 ---
 

@@ -270,19 +270,21 @@ def write_sphmink_file(co, sphmink, append=False):
     filename = os.path.join(co.outfoldername, "msm_ql")
     mode = "a" if append else "w"
     with open(filename, mode) as f:
+        n_l = len(next(iter(sphmink.values())).result.ql) if sphmink else 9
         if not append:
             _print_explanations(f, co.infilename)
             f.write("#\n")
             f.write(f"#{'#1 label':>{SW-1}}")
-            for i in range(9):
+            for i in range(n_l):
                 f.write(f"{'#' + str(2 + 2*i) + ' q(' + str(i) + ')':>{SW}}")
                 f.write(f"{'#' + str(3 + 2*i) + ' w(' + str(i) + ')':>{SW}}")
-            f.write(f"{'#20 Keywords':>{SW}}")
+            kw_col = 2 + 2 * n_l
+            f.write(f"{'#' + str(kw_col) + ' Keywords':>{SW}}")
             f.write("\n")
         for label in sorted(sphmink.keys()):
             result = sphmink[label]
             f.write(_format_label(label))
-            for i in range(9):
+            for i in range(len(result.result.ql)):
                 f.write(_format_value(result.result.ql[i]))
                 f.write(_format_value(result.result.wl[i]))
             f.write(f"{result.name:>{SW}}")

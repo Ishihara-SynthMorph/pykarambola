@@ -212,7 +212,7 @@ def _get_open_and_nonmanifold(surface):
 
 
 def minkowski_tensors(verts: Union[np.ndarray, Triangulation], faces=None, labels=None, center=None, center_per_label=True,
-                      compute='standard', compute_eigensystems=True, return_count=False):
+                      compute='standard', compute_eigensystems=True, return_count=False, msm_max_l=8):
     """Compute Minkowski tensors on a triangulated surface.
 
     Parameters
@@ -282,6 +282,11 @@ def minkowski_tensors(verts: Union[np.ndarray, Triangulation], faces=None, label
         If True, return a ``(results, n_objects)`` tuple where ``n_objects``
         is the total number of connected components across all labels,
         determined by vertex-adjacency graph traversal. Default is False.
+    msm_max_l : int, optional
+        Maximum spherical harmonic order for spherical Minkowski tensors
+        (``msm``). Default is 8, matching C++ karambola. The output arrays
+        ``msm_ql`` and ``msm_wl`` always have at least 12 elements (indices
+        0–11); they grow beyond 12 only when ``msm_max_l >= 12``.
 
     Returns
     -------
@@ -400,7 +405,7 @@ def minkowski_tensors(verts: Union[np.ndarray, Triangulation], faces=None, label
             per_label_out[lab] = minkowski_tensors(
                 shifted_verts, sub_faces, labels=None, center=None,
                 compute=compute, compute_eigensystems=compute_eigensystems,
-                return_count=False,
+                return_count=False, msm_max_l=msm_max_l,
             )
         if return_count:
             return per_label_out, n_objects
@@ -529,7 +534,7 @@ def minkowski_tensors(verts: Union[np.ndarray, Triangulation], faces=None, label
     # --- Optional higher-order ---
     raw_w103 = calculate_w103(surface) if 'w103' in wanted else {}
     raw_w104 = calculate_w104(surface) if 'w104' in wanted else {}
-    raw_msm = calculate_sphmink(surface) if 'msm' in wanted else {}
+    raw_msm = calculate_sphmink(surface, max_l=msm_max_l) if 'msm' in wanted else {}
 
     # Map names to raw results
     all_raw = {
@@ -662,7 +667,7 @@ def minkowski_tensors_from_label_image(
     label_image, level=None, spacing=(1.0, 1.0, 1.0),
     center='centroid_mesh', center_per_label=True,
     compute='standard', compute_eigensystems=True, return_count=False,
-    autolabel=False, pad=True,
+    autolabel=False, pad=True, msm_max_l=8,
 ):
     """Compute Minkowski tensors for each label in a 3D label image.
 
@@ -735,6 +740,9 @@ def minkowski_tensors_from_label_image(
         the output is in the original image coordinate system. Set ``pad=False``
         only if the image has already been padded, or if open surfaces at
         the boundary are intentional.
+    msm_max_l : int, optional
+        Maximum spherical harmonic order for spherical Minkowski tensors.
+        Default is 8. See ``minkowski_tensors`` for details.
 
     Returns
     -------
@@ -803,7 +811,7 @@ def minkowski_tensors_from_label_image(
             verts, faces, labels='auto',
             center=mt_center, center_per_label=center_per_label,
             compute=compute, compute_eigensystems=compute_eigensystems,
-            return_count=return_count,
+            return_count=return_count, msm_max_l=msm_max_l,
         )
 
     # --- Count connected components upfront if requested ---
@@ -911,7 +919,7 @@ def minkowski_tensors_from_label_image(
 
             results[result_key] = minkowski_tensors(
                 verts, faces, center=label_center, compute=compute,
-                compute_eigensystems=compute_eigensystems,
+                compute_eigensystems=compute_eigensystems, msm_max_l=msm_max_l,
             )
 
     if return_count:
