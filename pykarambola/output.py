@@ -270,7 +270,7 @@ def write_sphmink_file(co, sphmink, append=False):
     filename = os.path.join(co.outfoldername, "msm_ql")
     mode = "a" if append else "w"
     with open(filename, mode) as f:
-        n_l = len(next(iter(sphmink.values())).result.ql) if sphmink else 9
+        n_l = len(next(iter(sphmink.values())).result.ql) if sphmink else 12
         if not append:
             _print_explanations(f, co.infilename)
             f.write("#\n")

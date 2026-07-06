@@ -19,9 +19,6 @@ except ImportError:
     from scipy.special import sph_harm as _sph_harm
 from .results import MinkValResult
 
-MAX_L = 8
-
-
 @lru_cache(maxsize=None)
 def _wigner3j(j1, j2, j3, m1, m2, m3):
     """Wigner 3j symbol via the Racah formula.
@@ -198,7 +195,8 @@ def calculate_sphmink(surface, max_l=8):
     surface : Triangulation
     max_l : int, optional
         Maximum spherical harmonic order. Default is 8 (matching C++ karambola).
-        The output arrays ``ql`` and ``wl`` have length ``max_l + 1``.
+        The output arrays ``ql`` and ``wl`` have length ``max(12, max_l + 1)``
+        (always at least 12 elements to match the original C++ output shape).
     """
     results = {}
     data = {}
