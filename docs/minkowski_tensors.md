@@ -284,7 +284,7 @@ $$Q_{\ell m} = \frac{D_{\ell m}}{A\sqrt{\dfrac{4\pi}{2\ell+1}}}$$
 | | |
 |---|---|
 | **pykarambola key** | `msm_ql` (array shape `(12,)`, index $= \ell$, $\ell = 0,\ldots,8$; indices 9–11 are always zero padding) |
-| **Interpretation** | Strength of $\ell$-fold orientational order of surface normals. $q_0 = 1$ always; $q_\ell \approx 0$ for a smooth sphere; icosahedral symmetry yields a distinctive peak at $\ell = 6$. The series stops at $\ell = 8$ (`MAX_L = 8` in `spherical.py`), matching the default of the karambola C++ reference implementation. MSM $q_\ell$ and $w_\ell$ outperform the plain Steinhardt bond-order parameters for characterising disordered particulate matter (Mickel et al. 2013). |
+| **Interpretation** | Strength of $\ell$-fold orientational order of surface normals. $q_0 = 1$ always; $q_\ell \approx 0$ for a smooth sphere; icosahedral symmetry yields a distinctive peak at $\ell = 6$. The series stops at $\ell = 8$ (`MAX_L = 8` in `spherical.py`), matching the default of the karambola C++ reference implementation. MSM $q_\ell$ outperforms the plain Steinhardt bond-order parameters for characterising disordered particulate matter (Mickel et al. 2013). |
 
 Analytical definition:
 
@@ -322,11 +322,13 @@ $$
 w_\ell = \sqrt{\frac{4\pi}{2\ell+1}}\cdot\text{sgn}(\tilde{w}_\ell)\cdot|\tilde{w}_\ell|^{1/3}
 $$
 
-> **Convention note.** pykarambola's $w_\ell$ is the *unnormalized* cube-root form above and is
-> **not** divided by $q_\ell^3$. The Steinhardt (1983) and Mickel et al. (2013) convention is
+> **Convention note.** pykarambola's $w_\ell$ is the *unnormalized* cube-root form above.
+> The Steinhardt (1983) convention is the normalized form
 > $w_\ell^{\text{std}} = \tilde{w}_\ell / \bigl(\sum_m |Q_{\ell m}|^2\bigr)^{3/2}$.
-> These two quantities differ by a factor of $q_\ell^3$; numerical values will not match the
-> FCC/BCC tables in either paper when using pykarambola's output directly.
+> The two are related by a cubic, not a linear, rescaling:
+> $$w_\ell^{\text{std}} = \left(\frac{w_\ell}{q_\ell}\right)^3$$
+> Numerical values will not match the FCC/BCC tables in Steinhardt (1983) when using
+> pykarambola's output directly.
 
 Computational form: let
 
@@ -361,12 +363,14 @@ limitation. The C++ karambola accumulates small spurious residuals for odd $\ell
 floating-point rounding in its separate code path.
 
 **Connection to Cartesian moment tensors.**
-The MSM $q_\ell$, $w_\ell$ and the Cartesian moment tensors $W_1^{0,\ell}$ are different
+The MSM $q_\ell$ and the Cartesian moment tensors $W_1^{0,\ell}$ are different
 representations of the same Minkowski tensors and are therefore mathematically related
 (Mickel et al. 2013). However, in pykarambola this relationship is **not** used
 computationally: `msm_ql` and `msm_wl` are computed via a separate spherical harmonic
 accumulation in `spherical.py` that reads face normals directly and shares no code with
-the `w104` computation path. The formula below is provided for cross-checking only:
+the `w104` computation path. The formula below is provided for cross-checking only
+(Schröder-Turk et al. 2013 convention with the $\tfrac{1}{3}$ Steiner prefactor; Mickel et al. 2013
+eq. (4) uses the same tensor without this prefactor):
 
 $$
 W_1^{0,\ell} = \frac{1}{3}\sum_{f \in F} \underbrace{\hat{n}_f \otimes \cdots \otimes \hat{n}_f}_{\ell \text{ times}} A_f
