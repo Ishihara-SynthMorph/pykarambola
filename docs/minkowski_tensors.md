@@ -404,7 +404,7 @@ For every rank-2 tensor $W$ above, pykarambola additionally computes:
   *Phys. Rev. B*, **28**(2), 784–805.
   [doi:10.1103/PhysRevB.28.784](https://doi.org/10.1103/PhysRevB.28.784)
 - Mickel, W., Kapfer, S. C., Schröder-Turk, G. E., & Mecke, K. (2013).
-  Shortcomings of the bond orientational order parameters for the study of disordered
+  Shortcomings of the bond orientational order parameters for the analysis of disordered
   particulate matter.
   *J. Chem. Phys.*, **138**(4), 044501.
   [doi:10.1063/1.4774084](https://doi.org/10.1063/1.4774084)
