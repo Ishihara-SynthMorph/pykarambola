@@ -76,6 +76,7 @@ class SphMinkData:
     C++ karambola output shape. Grows beyond 12 only when max_l >= 12.
     """
     def __init__(self, max_l=8):
+        self.max_l = max_l
         size = max(12, max_l + 1)
         self.ql = [0.0] * size
         self.wl = [0.0] * size
@@ -197,7 +198,14 @@ def calculate_sphmink(surface, max_l=8):
         Maximum spherical harmonic order. Default is 8 (matching C++ karambola).
         The output arrays ``ql`` and ``wl`` have length ``max(12, max_l + 1)``
         (always at least 12 elements to match the original C++ output shape).
+
+    Raises
+    ------
+    ValueError
+        If ``max_l < 0``.
     """
+    if max_l < 0:
+        raise ValueError(f"max_l must be >= 0, got {max_l}")
     results = {}
     data = {}
 

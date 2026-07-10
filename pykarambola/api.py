@@ -356,6 +356,9 @@ def minkowski_tensors(verts: Union[np.ndarray, Triangulation], faces=None, label
                 f"Valid names: {sorted(_ALL)}"
             )
 
+    if msm_max_l < 0:
+        raise ValueError(f"msm_max_l must be >= 0, got {msm_max_l}")
+
     # Guard: beta quantities require eigensystems
     beta_keys = {name for name in wanted if name.endswith('_beta')}
     if beta_keys and not compute_eigensystems:
