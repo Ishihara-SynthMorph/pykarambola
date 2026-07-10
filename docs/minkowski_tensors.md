@@ -225,7 +225,7 @@ Note: `{key}_trace_ratio` is **not** defined for normal-weighted tensors (no nat
 | **Interpretation** | Curvature-weighted normal distribution; sensitive to both orientation and bending magnitude. `w202_beta` = anisotropy of curvature-weighted normals. |
 
 $$
-w_{202,ij} = \sum_e \left[ \frac{\ell_e(\alpha_e + \sin\alpha_e)}{24}\,\bar{n}_{e,i}\bar{n}_{e,j} + \frac{\ell_e(\alpha_e - \sin\alpha_e)}{24}\,n_{\perp,e,i}\,n_{\perp,e,j} \right]
+w_{202,ij} = \sum_e \left[ \frac{\ell_e(\alpha_e + \sin\alpha_e)}{12}\,\bar{n}_{e,i}\bar{n}_{e,j} + \frac{\ell_e(\alpha_e - \sin\alpha_e)}{12}\,n_{\perp,e,i}\,n_{\perp,e,j} \right]
 $$
 
 The $\alpha \pm \sin\alpha$ split follows from the exact integral of $n \otimes n$ over the cylindrical patch at the edge.
@@ -257,6 +257,125 @@ w_{104} = \frac{1}{3}\sum_f A_f\, \mathbf{t}_f \mathbf{t}_f^\top, \qquad
 \mathbf{t}_f = \bigl[n_x^2,\; n_y^2,\; n_z^2,\; \sqrt{2}\,n_yn_z,\; \sqrt{2}\,n_xn_z,\; \sqrt{2}\,n_xn_y\bigr]^\top
 $$
 
+### msm_ql, msm_wl — Minkowski Structure Metrics
+
+The Minkowski Structure Metrics (MSM) are rotationally invariant scalars that quantify
+$\ell$-fold orientational order of surface normals (Steinhardt, Nelson & Ronchetti 1983;
+Mickel et al. 2013; Schröder-Turk et al. 2013). Both are computed from area-weighted spherical harmonic
+moments of face normals for $\ell = 0, \ldots, 8$ and returned only with `compute='all'`.
+
+**Shared intermediate accumulation.**
+Let $(\theta_f, \phi_f)$ be the polar and azimuthal angles of face normal $\hat{n}_f$.
+Let $A = \sum_f A_f = 3 w_{100}$ be the total surface area.
+For each $\ell$ and $m = 0, 1, \ldots, \ell$, the code accumulates:
+
+$$D_{\ell m} = \sqrt{\frac{4\pi}{2\ell+1}}\sum_f A_f\, Y_\ell^m(\theta_f,\,\phi_f)$$
+
+where $Y_\ell^m$ are complex spherical harmonics in the Condon–Shortley convention.
+Only $m \ge 0$ is stored; negative-$m$ values are recovered via
+$D_{\ell,-m} = (-1)^m\,\overline{D_{\ell m}}$ (exact for the real-valued normal
+distribution of a closed mesh).
+The area-normalised moments are:
+
+$$Q_{\ell m} = \frac{D_{\ell m}}{A\sqrt{\dfrac{4\pi}{2\ell+1}}}$$
+
+#### msm_ql — $q_\ell$
+
+| | |
+|---|---|
+| **pykarambola key** | `msm_ql` (array shape `(12,)`, index $= \ell$, $\ell = 0,\ldots,8$; indices 9–11 are always zero padding) |
+| **Interpretation** | Strength of $\ell$-fold orientational order of surface normals. $q_0 = 1$ always; $q_\ell \approx 0$ for a smooth sphere; icosahedral symmetry yields a distinctive peak at $\ell = 6$. The series stops at $\ell = 8$ (`MAX_L = 8` in `spherical.py`), matching the default of the karambola C++ reference implementation. MSM $q_\ell$ outperforms the plain Steinhardt bond-order parameters for characterising disordered particulate matter (Mickel et al. 2013). |
+
+Analytical definition:
+
+$$
+q_\ell = \sqrt{\frac{4\pi}{2\ell+1}\sum_{m=-\ell}^{\ell}|Q_{\ell m}|^2}
+$$
+
+Computational form (exploits $|D_{\ell,-m}| = |D_{\ell m}|$):
+
+$$
+\mathtt{msm\_ql}[\ell] = \frac{1}{A}\sqrt{|D_{\ell 0}|^2 + 2\sum_{m=1}^{\ell}|D_{\ell m}|^2}
+$$
+
+#### msm_wl — $w_\ell$
+
+Define the third-order invariant before cube-root normalisation, where the sum runs over all
+$(m_1, m_2, m_3)$ with $m_i \in \{-\ell,\ldots,\ell\}$ and $m_1+m_2+m_3 = 0$:
+
+$$
+\tilde{w}_\ell = \sum_{m_1+m_2+m_3=0}
+\left(\begin{array}{ccc}\ell & \ell & \ell \\ m_1 & m_2 & m_3\end{array}\right)
+Q_{\ell m_1}\,Q_{\ell m_2}\,Q_{\ell m_3}
+$$
+
+where the parenthesised quantity is the Wigner 3j symbol evaluated via the Racah formula.
+
+| | |
+|---|---|
+| **pykarambola key** | `msm_wl` (array shape `(12,)`, index $= \ell$, $\ell = 0,\ldots,8$; indices 9–11 are always zero padding) |
+| **Interpretation** | Phase structure of $\ell$-fold orientational order. $w_\ell = 0$ exactly for all odd $\ell$ (parity rule below). Distinguishes crystal symmetries that share the same $q_\ell$ value. |
+
+Analytical definition:
+
+$$
+w_\ell = \sqrt{\frac{4\pi}{2\ell+1}}\cdot\text{sgn}(\tilde{w}_\ell)\cdot|\tilde{w}_\ell|^{1/3}
+$$
+
+> **Convention note.** pykarambola's $w_\ell$ is the *unnormalized* cube-root form above.
+> The Steinhardt (1983) convention is the normalized form
+> $w_\ell^{\text{std}} = \tilde{w}_\ell / \bigl(\sum_m |Q_{\ell m}|^2\bigr)^{3/2}$.
+> The two are related by a cubic, not a linear, rescaling:
+> $$w_\ell^{\text{std}} = \left(\frac{w_\ell}{q_\ell}\right)^3$$
+> Numerical values will not match the FCC/BCC tables in Steinhardt (1983) when using
+> pykarambola's output directly.
+
+Computational form: let
+
+$$
+v = \sum_{m_1+m_2+m_3=0}
+\left(\begin{array}{ccc}\ell & \ell & \ell \\ m_1 & m_2 & m_3\end{array}\right)
+D_{\ell m_1}\,D_{\ell m_2}\,D_{\ell m_3}
+$$
+
+then:
+
+$$
+\mathtt{msm\_wl}[\ell] = \text{sgn}(\text{Re}(v))\cdot|v|^{1/3}/A
+$$
+
+($v$ is real for any closed mesh — imaginary parts cancel by the conjugation symmetry
+$D_{\ell,-m} = (-1)^m\,\overline{D_{\ell m}}$ — so $\operatorname{sgn}(\operatorname{Re}(v)) = \operatorname{sgn}(v)$.)
+
+**Parity selection rule.** For odd $\ell$, the Wigner 3j symbol above is antisymmetric
+under exchange of any two columns (each exchange contributes $(-1)^{3\ell}=-1$),
+while $Q_{\ell m_1}Q_{\ell m_2}Q_{\ell m_3}$ is symmetric.
+Every term in $\tilde{w}_\ell$ therefore cancels exactly with its column-swapped partner, so:
+
+$$w_\ell = 0 \quad \text{exactly for all odd } \ell$$
+
+The internal `_wigner3j` helper uses a `J % 2 != 0` early-return as a performance shortcut;
+this shortcut gives the correct result for `msm_wl` (where the full sum cancels by the
+antisymmetry argument above) but is **not** a general Wigner 3j selection rule and returns
+incorrect values for callers with odd $j_1+j_2+j_3$ outside this context — see
+[#137](https://github.com/Ishihara-SynthMorph/pykarambola/issues/137) for the known
+limitation. The C++ karambola accumulates small spurious residuals for odd $\ell$ due to
+floating-point rounding in its separate code path.
+
+**Connection to Cartesian moment tensors.**
+The MSM $q_\ell$ and the Cartesian moment tensors $W_1^{0,\ell}$ are different
+representations of the same Minkowski tensors and are therefore mathematically related
+(Mickel et al. 2013). However, in pykarambola this relationship is **not** used
+computationally: `msm_ql` and `msm_wl` are computed via a separate spherical harmonic
+accumulation in `spherical.py` that reads face normals directly and shares no code with
+the `w104` computation path. The formula below is provided for cross-checking only
+(Schröder-Turk et al. 2013 convention with the $\tfrac{1}{3}$ Steiner prefactor; Mickel et al. 2013
+eq. (4) uses the same tensor without this prefactor):
+
+$$
+W_1^{0,\ell} = \frac{1}{3}\sum_{f \in F} \underbrace{\hat{n}_f \otimes \cdots \otimes \hat{n}_f}_{\ell \text{ times}} A_f
+$$
+
 ---
 
 ## Derived scalars (`compute='all'`)
@@ -280,6 +399,15 @@ For every rank-2 tensor $W$ above, pykarambola additionally computes:
 
 ## References
 
+- Steinhardt, P. J., Nelson, D. R., & Ronchetti, M. (1983).
+  Bond-orientational order in liquids and glasses.
+  *Phys. Rev. B*, **28**(2), 784–805.
+  [doi:10.1103/PhysRevB.28.784](https://doi.org/10.1103/PhysRevB.28.784)
+- Mickel, W., Kapfer, S. C., Schröder-Turk, G. E., & Mecke, K. (2013).
+  Shortcomings of the bond orientational order parameters for the analysis of disordered
+  particulate matter.
+  *J. Chem. Phys.*, **138**(4), 044501.
+  [doi:10.1063/1.4774084](https://doi.org/10.1063/1.4774084)
 - Schröder-Turk, G. E. et al. *Minkowski Tensors of Anisotropic Spatial Structure.*
   New J. Phys. **15**, 083028 (2013). [doi:10.1088/1367-2630/15/8/083028](https://doi.org/10.1088/1367-2630/15/8/083028)
 - Schaller, F. M., Kapfer, S. C., & Schröder-Turk, G. E.
