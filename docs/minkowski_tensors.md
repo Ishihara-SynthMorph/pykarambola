@@ -262,7 +262,7 @@ $$
 The Minkowski Structure Metrics (MSM) are rotationally invariant scalars that quantify
 $\ell$-fold orientational order of surface normals (Steinhardt, Nelson & Ronchetti 1983;
 Mickel et al. 2013; Schröder-Turk et al. 2013). Both are computed from area-weighted spherical harmonic
-moments of face normals for $\ell = 0, \ldots, 8$ and returned only with `compute='all'`.
+moments of face normals for $\ell = 0, \ldots, \texttt{msm\_max\_l}$ and returned only with `compute='all'`.
 
 **Shared intermediate accumulation.**
 Let $(\theta_f, \phi_f)$ be the polar and azimuthal angles of face normal $\hat{n}_f$.
@@ -283,7 +283,7 @@ $$Q_{\ell m} = \frac{D_{\ell m}}{A\sqrt{\dfrac{4\pi}{2\ell+1}}}$$
 
 | | |
 |---|---|
-| **pykarambola key** | `msm_ql` (array shape `(max(12, msm_max_l + 1),)`, index $= \ell$, $\ell = 0,\ldots,\texttt{msm\_max\_l}$; indices beyond `msm_max_l` are always zero padding) |
+| **pykarambola key** | `msm_ql` (array shape `(msm_max_l + 1,)`, index $= \ell$, $\ell = 0,\ldots,\texttt{msm\_max\_l}$) |
 | **Interpretation** | Strength of $\ell$-fold orientational order of surface normals. $q_0 = 1$ always; $q_\ell \approx 0$ for a smooth sphere; icosahedral symmetry yields a distinctive peak at $\ell = 6$. The default `msm_max_l=8` matches the karambola C++ reference implementation; pass a larger value to extend the series. MSM $q_\ell$ outperforms the plain Steinhardt bond-order parameters for characterising disordered particulate matter (Mickel et al. 2013). |
 
 Analytical definition:
@@ -313,7 +313,7 @@ where the parenthesised quantity is the Wigner 3j symbol evaluated via the Racah
 
 | | |
 |---|---|
-| **pykarambola key** | `msm_wl` (array shape `(max(12, msm_max_l + 1),)`, index $= \ell$, $\ell = 0,\ldots,\texttt{msm\_max\_l}$; indices beyond `msm_max_l` are always zero padding) |
+| **pykarambola key** | `msm_wl` (array shape `(msm_max_l + 1,)`, index $= \ell$, $\ell = 0,\ldots,\texttt{msm\_max\_l}$) |
 | **Interpretation** | Phase structure of $\ell$-fold orientational order. $w_\ell = 0$ exactly for all odd $\ell$ (parity rule below). Distinguishes crystal symmetries that share the same $q_\ell$ value. |
 
 Analytical definition:

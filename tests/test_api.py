@@ -264,19 +264,19 @@ class TestComputeOptions:
         assert 'w102_eigvecs' in result
 
     def test_msm_max_l_default_shape(self):
-        """msm_max_l=8 (default) produces shape (12,) — minimum of 12 elements."""
+        """msm_max_l=8 (default) produces shape (9,) — one slot per ℓ."""
         result = minkowski_tensors(self.verts, self.faces, compute='all', msm_max_l=8)
-        assert result['msm_ql'].shape == (12,)
-        assert result['msm_wl'].shape == (12,)
+        assert result['msm_ql'].shape == (9,)
+        assert result['msm_wl'].shape == (9,)
 
-    def test_msm_max_l_below_minimum_shape(self):
-        """msm_max_l=11 still produces shape (12,) — floor at 12 elements."""
+    def test_msm_max_l_11_shape(self):
+        """msm_max_l=11 produces shape (12,)."""
         result = minkowski_tensors(self.verts, self.faces, compute='all', msm_max_l=11)
         assert result['msm_ql'].shape == (12,)
         assert result['msm_wl'].shape == (12,)
 
-    def test_msm_max_l_above_minimum_shape(self):
-        """msm_max_l=14 produces shape (15,) — grows beyond the 12-element floor."""
+    def test_msm_max_l_14_shape(self):
+        """msm_max_l=14 produces shape (15,)."""
         result = minkowski_tensors(self.verts, self.faces, compute='all', msm_max_l=14)
         assert result['msm_ql'].shape == (15,)
         assert result['msm_wl'].shape == (15,)

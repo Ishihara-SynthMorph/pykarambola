@@ -70,14 +70,10 @@ def _wigner3j(j1, j2, j3, m1, m2, m3):
 
 
 class SphMinkData:
-    """Container for ql and wl arrays.
-
-    Always allocates at least 12 slots (indices 0–11) to match the original
-    C++ karambola output shape. Grows beyond 12 only when max_l >= 12.
-    """
+    """Container for ql and wl arrays of length max_l + 1."""
     def __init__(self, max_l=8):
         self.max_l = max_l
-        size = max(12, max_l + 1)
+        size = max_l + 1
         self.ql = [0.0] * size
         self.wl = [0.0] * size
 
@@ -196,8 +192,7 @@ def calculate_sphmink(surface, max_l=8):
     surface : Triangulation
     max_l : int, optional
         Maximum spherical harmonic order. Default is 8 (matching C++ karambola).
-        The output arrays ``ql`` and ``wl`` have length ``max(12, max_l + 1)``
-        (always at least 12 elements to match the original C++ output shape).
+        The output arrays ``ql`` and ``wl`` have length ``max_l + 1``.
 
     Raises
     ------
