@@ -284,9 +284,8 @@ def minkowski_tensors(verts: Union[np.ndarray, Triangulation], faces=None, label
         determined by vertex-adjacency graph traversal. Default is False.
     msm_max_l : int, optional
         Maximum spherical harmonic order for spherical Minkowski tensors
-        (``msm``). Default is 8, matching C++ karambola. The output arrays
-        ``msm_ql`` and ``msm_wl`` always have at least 12 elements (indices
-        0–11); they grow beyond 12 only when ``msm_max_l >= 12``.
+        (``msm``). Default is 8, matching C++ karambola. Output arrays
+        ``msm_ql`` and ``msm_wl`` have shape ``(msm_max_l + 1,)``.
 
     Returns
     -------
