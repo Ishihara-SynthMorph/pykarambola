@@ -263,6 +263,29 @@ class TestComputeOptions:
         assert 'w102_eigvals' in result
         assert 'w102_eigvecs' in result
 
+    def test_msm_max_l_default_shape(self):
+        """msm_max_l=8 (default) produces shape (9,) — one slot per ℓ."""
+        result = minkowski_tensors(self.verts, self.faces, compute='all', msm_max_l=8)
+        assert result['msm_ql'].shape == (9,)
+        assert result['msm_wl'].shape == (9,)
+
+    def test_msm_max_l_11_shape(self):
+        """msm_max_l=11 produces shape (12,)."""
+        result = minkowski_tensors(self.verts, self.faces, compute='all', msm_max_l=11)
+        assert result['msm_ql'].shape == (12,)
+        assert result['msm_wl'].shape == (12,)
+
+    def test_msm_max_l_14_shape(self):
+        """msm_max_l=14 produces shape (15,)."""
+        result = minkowski_tensors(self.verts, self.faces, compute='all', msm_max_l=14)
+        assert result['msm_ql'].shape == (15,)
+        assert result['msm_wl'].shape == (15,)
+
+    def test_msm_max_l_negative_raises(self):
+        """msm_max_l < 0 raises ValueError."""
+        with pytest.raises(ValueError, match="msm_max_l"):
+            minkowski_tensors(self.verts, self.faces, compute='all', msm_max_l=-1)
+
 
 class TestNumericSafety:
     """Zero-guard fixes: #42 get_ref_vec, #43 angle_sum==0, #49 toroidal w300=0."""

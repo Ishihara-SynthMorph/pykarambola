@@ -108,6 +108,9 @@ def main(argv=None):
     parser.add_argument("--reference-centroid", "--reference_centroid",
                         action="store_true",
                         help="Use centroid instead of origin as reference")
+    parser.add_argument("--msm-max-l", "--msm_max_l",
+                        type=int, default=8, dest="msm_max_l",
+                        help="Maximum spherical harmonic order for MSM (default: 8)")
 
     args = parser.parse_args(argv)
 
@@ -278,7 +281,7 @@ def main(argv=None):
     # Spherical Minkowski tensors
     print("calculate msm ...", end="", flush=True)
     if co.get_compute("msm") or co.get_force("msm"):
-        sphmink = calculate_sphmink(surface)
+        sphmink = calculate_sphmink(surface, max_l=args.msm_max_l)
         _set_result_metadata(sphmink, "msm", co)
         _apply_surface_check(sphmink, "msm", co)
     else:

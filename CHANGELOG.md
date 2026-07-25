@@ -9,6 +9,9 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- `msm_max_l` parameter on `minkowski_tensors` and `minkowski_tensors_from_label_image` (default 8, matching C++ karambola) to control the maximum spherical harmonic order for MSM. Output arrays `msm_ql`/`msm_wl` have shape `(msm_max_l + 1,)`. The `--msm-max-l` flag exposes this option on the CLI.
+
 ---
 
 ## [0.5.1] - 2026-06-14
