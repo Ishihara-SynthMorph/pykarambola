@@ -14,6 +14,7 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ### Performance
 - `minkowski_tensors_from_label_image` now pre-computes per-label bounding boxes via `skimage.measure.regionprops` (one O(image_size) pass) and crops the image to each object's bounding box before calling `marching_cubes`. This eliminates the previous O(N_labels × image_size) cost and yields a ~13× wall-time speedup on a representative 77×576×576 image with 4334 labels (from ~10 min to ~0.7 min). (#156)
+- `_get_open_and_nonmanifold` (called once per `minkowski_tensors` invocation) now uses a vectorized NumPy fan-traversal: the per-vertex loop replaces ~5 Python method calls per edge step with a pre-built `entry_succ` array and a local dict lookup, eliminating generator overhead. This reduces the non-manifold check from ~2.7 ms/label to sub-millisecond on typical nuclei. (#158)
 
 ---
 
