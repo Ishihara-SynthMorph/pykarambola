@@ -12,6 +12,9 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 ### Added
 - `msm_max_l` parameter on `minkowski_tensors` and `minkowski_tensors_from_label_image` (default 8, matching C++ karambola) to control the maximum spherical harmonic order for MSM. Output arrays `msm_ql`/`msm_wl` have shape `(msm_max_l + 1,)`. The `--msm-max-l` flag exposes this option on the CLI.
 
+### Performance
+- `minkowski_tensors_from_label_image` now pre-computes per-label bounding boxes via `skimage.measure.regionprops` (one O(image_size) pass) and crops the image to each object's bounding box before calling `marching_cubes`. This eliminates the previous O(N_labels × image_size) cost and yields a ~13× wall-time speedup on a representative 77×576×576 image with 4334 labels (from ~10 min to ~0.7 min). (#156)
+
 ---
 
 ## [0.5.1] - 2026-06-14
