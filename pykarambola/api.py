@@ -817,6 +817,13 @@ def minkowski_tensors_from_label_image(
             y1 = min(_shape[1], y1 + 1)
             x1 = min(_shape[2], x1 + 1)
         else:
+            warnings.warn(
+                f"Label {lab_int} not found in regionprops bounding-box cache; "
+                "falling back to full-image crop (performance may degrade). "
+                "This is unexpected - please file a bug report.",
+                RuntimeWarning,
+                stacklevel=3,
+            )
             z0, y0, x0 = 0, 0, 0
             z1, y1, x1 = _shape
         crop = label_image[z0:z1, y0:y1, x0:x1]
