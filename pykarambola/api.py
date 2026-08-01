@@ -174,37 +174,75 @@ def _get_open_and_nonmanifold(surface):
         else set()
     )
 
-    # Non-manifold detection via vertex fan traversal
+    # Non-manifold detection via fan traversal.
+    #
+    # Precompute in one O(F) NumPy pass: for every CSR entry (vertex v,
+    # triangle t), the "fan-next" triangle obtained by crossing the edge of t
+    # that starts at v (i.e. nb[t, slot_of_v_in_t]).  The per-vertex loop then
+    # uses a tiny dict (d ≤ ~12 entries) instead of Python method calls and a
+    # generator expression, eliminating ~5 Python function calls per fan step.
+    V = surface.n_vertices()
+    F = surface.n_triangles()
+    if V == 0 or F == 0:
+        return open_labels, False
+
+    faces_arr = surface._faces  # (F, 3) int64
+
+    if surface._vt_offsets is not None:
+        vt_off = surface._vt_offsets    # (V+1,) int64
+        vt_idx = surface._vt_indices    # (3F,)  int64
+        # vertex that owns each CSR entry
+        deg = np.diff(vt_off).astype(np.int64)
+        entry_vert = np.repeat(np.arange(V, dtype=np.int64), deg)   # (3F,)
+        # slot of that vertex in the corresponding triangle
+        entry_slot = np.argmax(
+            faces_arr[vt_idx] == entry_vert[:, None], axis=1
+        )                                                            # (3F,)
+        # fan-next triangle for each CSR entry
+        entry_succ = nb[vt_idx, entry_slot]                          # (3F,)
+        use_csr = True
+    else:
+        vt_off = vt_idx = entry_succ = None
+        use_csr = False
+
     is_non_manifold = False
-    for i in range(surface.n_vertices()):
-        tris = list(surface.get_triangles_of_vertex(i))
-        if len(tris) <= 1:
-            continue
+    for i in range(V):
+        if use_csr:
+            s = int(vt_off[i])
+            e = int(vt_off[i + 1])
+            d = e - s
+            if d <= 1:
+                continue
+            tris_i = vt_idx[s:e]       # (d,) triangle indices
+            succs_i = entry_succ[s:e]  # (d,) fan-next triangles
+        else:
+            tris_list = surface._vertex_triangles[i]
+            d = len(tris_list)
+            if d <= 1:
+                continue
+            tris_i = np.asarray(tris_list, dtype=np.int64)
+            slots_i = np.argmax(faces_arr[tris_i] == i, axis=1)
+            succs_i = nb[tris_i, slots_i]
+
+        # Build triangle-id → local-index map (d ≤ ~12, so dict overhead is negligible)
+        local = {int(tris_i[j]): j for j in range(d)}
+
+        start_t = int(tris_i[0])
+        cur_t = start_t
         sum_tris = 1
-        start = tris[0]
-        cur_t = tris[0]
         neigh_un = False
-        for _ in range(len(tris)):
-            vid = next(
-                (k for k in range(3) if surface.ith_vertex_of_triangle(cur_t, k) == i),
-                -1,
-            )
-            # vid == -1 is a data-integrity error: vertex i was not found in a
-            # triangle reported to contain it. Should never occur in a valid
-            # Triangulation; treat conservatively as an open boundary.
-            assert vid != -1, f"Vertex {i} not found in any slot of triangle {cur_t}"
-            # NEIGHBOUR_UNASSIGNED signals a normal open (boundary) edge.
-            if surface.ith_neighbour_of_triangle(cur_t, vid) == NEIGHBOUR_UNASSIGNED:
+
+        for _ in range(d):
+            nxt = int(succs_i[local[cur_t]])
+            if nxt == NEIGHBOUR_UNASSIGNED:
                 neigh_un = True
                 break
-            nxt = surface.ith_neighbour_of_triangle(cur_t, vid)
-            if nxt == start:
+            if nxt == start_t:
                 break
             sum_tris += 1
             cur_t = nxt
-        if is_non_manifold:
-            break
-        if not neigh_un and len(tris) != sum_tris:
+
+        if not neigh_un and d != sum_tris:
             is_non_manifold = True
             break
 
