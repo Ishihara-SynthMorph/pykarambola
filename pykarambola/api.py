@@ -195,9 +195,10 @@ def _get_open_and_nonmanifold(surface):
         deg = np.diff(vt_off).astype(np.int64)
         entry_vert = np.repeat(np.arange(V, dtype=np.int64), deg)   # (3F,)
         # slot of that vertex in the corresponding triangle
-        entry_slot = np.argmax(
-            faces_arr[vt_idx] == entry_vert[:, None], axis=1
-        )                                                            # (3F,)
+        _match = faces_arr[vt_idx] == entry_vert[:, None]           # (3F, 3)
+        if not np.all(np.any(_match, axis=1)):
+            raise AssertionError("CSR integrity error: vertex not found in its own triangle.")
+        entry_slot = np.argmax(_match, axis=1)                      # (3F,)
         # fan-next triangle for each CSR entry
         entry_succ = nb[vt_idx, entry_slot]                          # (3F,)
         use_csr = True
