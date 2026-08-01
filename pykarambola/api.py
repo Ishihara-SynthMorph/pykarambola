@@ -763,7 +763,7 @@ def minkowski_tensors_from_label_image(
     Requires *scikit-image*.
     """
     try:
-        from skimage.measure import marching_cubes, label as sk_label
+        from skimage.measure import marching_cubes, label as sk_label, regionprops
     except ImportError:
         raise ImportError(
             "scikit-image is required for minkowski_tensors_from_label_image. "
@@ -791,6 +791,43 @@ def minkowski_tensors_from_label_image(
 
     unique_labels = np.unique(label_image)
     unique_labels = unique_labels[unique_labels != 0]
+
+    # Pre-compute per-label bounding boxes in one pass so the per-label loop
+    # can crop the image before calling marching_cubes instead of operating on
+    # the full image each time.  This is O(image_size) once rather than
+    # O(N_labels × image_size).  (#156)
+    _shape = label_image.shape
+    _sp = np.array(spacing, dtype=np.float64)
+    if len(unique_labels) > 0:
+        _label_bboxes = {p.label: p.bbox for p in regionprops(label_image)}
+    else:
+        _label_bboxes = {}
+
+    def _crop_label(lab_int):
+        """Return (cropped_float64_mask, crop_origin_physical).
+
+        crop_origin_physical is added to marching_cubes vertices (which are in
+        crop-local space) to restore full-image coordinates before subtracting
+        _pad_offset.
+        """
+        if lab_int in _label_bboxes:
+            z0, y0, x0, z1, y1, x1 = _label_bboxes[lab_int]
+            z0 = max(0, z0 - 1); y0 = max(0, y0 - 1); x0 = max(0, x0 - 1)
+            z1 = min(_shape[0], z1 + 1)
+            y1 = min(_shape[1], y1 + 1)
+            x1 = min(_shape[2], x1 + 1)
+        else:
+            warnings.warn(
+                f"Label {lab_int} not found in regionprops bounding-box cache; "
+                "falling back to full-image crop (performance may degrade). "
+                "This is unexpected - please file a bug report.",
+                RuntimeWarning,
+                stacklevel=3,
+            )
+            z0, y0, x0 = 0, 0, 0
+            z1, y1, x1 = _shape
+        crop = label_image[z0:z1, y0:y1, x0:x1]
+        return (crop == lab_int).astype(np.float64), np.array([z0, y0, x0], dtype=np.float64) * _sp
 
     # --- autolabel=True: treat image as binary, delegate to minkowski_tensors ---
     if autolabel:
@@ -820,7 +857,8 @@ def minkowski_tensors_from_label_image(
     n_objects_total = 0
     if return_count:
         for lab in unique_labels:
-            _, n = sk_label((label_image == int(lab)), return_num=True)
+            crop_mask, _ = _crop_label(int(lab))
+            _, n = sk_label(crop_mask, return_num=True)
             n_objects_total += n
 
     # --- Compute global center upfront for center_scope='global' ---
@@ -838,11 +876,11 @@ def minkowski_tensors_from_label_image(
             all_verts_list, all_faces_list, vert_offset = [], [], 0
             for lab in unique_labels:
                 lab_int = int(lab)
-                mask = (label_image == lab_int).astype(np.float64)
+                mask, crop_origin = _crop_label(lab_int)
                 try:
                     v, f, _, _ = marching_cubes(mask, level=level, spacing=spacing,
                                                 gradient_direction='ascent')
-                    v = v - _pad_offset
+                    v = v + crop_origin - _pad_offset
                     f = _ensure_outward_normals(v, f)
                     label_meshes[lab_int] = (v, f)
                     all_verts_list.append(v)
@@ -877,14 +915,18 @@ def minkowski_tensors_from_label_image(
             cached = label_meshes[lab]
         else:
             cached = None
-        items = [(lab, (label_image == lab).astype(np.float64), cached)]
 
-        for result_key, mask, cached_mesh in items:
+        if cached is None:
+            crop_mask, crop_origin = _crop_label(lab)
+        else:
+            crop_mask = crop_origin = None
+
+        for result_key, cached_mesh in [(lab, cached)]:
             if cached_mesh is not None:
                 verts, faces = cached_mesh
             else:
                 try:
-                    verts, faces, _, _ = marching_cubes(mask, level=level, spacing=spacing,
+                    verts, faces, _, _ = marching_cubes(crop_mask, level=level, spacing=spacing,
                                                         gradient_direction='ascent')
                 except Exception as exc:
                     warnings.warn(
@@ -892,7 +934,7 @@ def minkowski_tensors_from_label_image(
                         stacklevel=2,
                     )
                     continue
-                verts = verts - _pad_offset
+                verts = verts + crop_origin - _pad_offset
                 faces = _ensure_outward_normals(verts, faces)
 
             # Determine center for this entry
@@ -912,8 +954,14 @@ def minkowski_tensors_from_label_image(
                 else:
                     label_center = centroid
             elif isinstance(center, str) and center == 'centroid_voxel':
-                voxel_coords = np.argwhere(mask > 0)  # (N, 3)
-                label_center = voxel_coords.mean(axis=0) * np.array(spacing) - _pad_offset
+                if cached_mesh is not None:
+                    # Recompute from the full image when using a cached mesh
+                    # (crop_mask is not available in this branch).
+                    voxel_coords = np.argwhere(label_image == lab)
+                    label_center = voxel_coords.mean(axis=0) * _sp - _pad_offset
+                else:
+                    voxel_coords = np.argwhere(crop_mask > 0)  # (N, 3)
+                    label_center = voxel_coords.mean(axis=0) * _sp + crop_origin - _pad_offset
             elif isinstance(center, str) and center == 'reference_centroid':
                 label_center = 'reference_centroid'
             else:
