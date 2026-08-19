@@ -2,14 +2,15 @@
 %% Addresses issues #162, #163, #164, #165, #166, #167, #169
 %% Issues #168 and #170: text deferred until notebooks and results are available.
 \documentclass[times, twoside, watermark]{zHenriquesLab-StyleBioRxiv}
-\usepackage[addedmarkup=colored,deletedmarkup=sout,authormarkup=none]{changes}
+\usepackage[deletedmarkup=sout,authormarkup=none]{changes}
 \definecolor{chgadded}{RGB}{34,139,34}   % forest green for additions
 \definecolor{chgdeleted}{RGB}{180,0,0}   % red for deletions
-\colorlet{Changes@Color@added}{chgadded}
 \colorlet{Changes@Color@deleted}{chgdeleted}
-% For sentences containing \cite{}, use \newtxt{} instead of \added{} to avoid
-% natbib/changes package conflicts with citation argument parsing.
+% Standardise all addition markup to plain green text (no underline).
+% \newtxt{} and \added{} are identical; \newtxt{} is used where \cite{}
+% appears inside the argument to avoid natbib/changes conflicts.
 \newcommand{\newtxt}[1]{\textcolor{chgadded}{#1}}
+\renewcommand{\added}[2][]{\newtxt{#2}}
 
 % Note: Write each sentence on its own line (makes diffs easier to read).
 
