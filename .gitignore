@@ -21,6 +21,9 @@ paper/*.fdb_latexmk
 paper/*.synctex.gz
 paper/*.pdf
 paper/*.xwm
+paper/*.loc
+paper/*.soc
+*.bak
 
 # Generated datasets and benchmark outputs (large, not tracked)
 dataset/medmnist_benchmarking/
