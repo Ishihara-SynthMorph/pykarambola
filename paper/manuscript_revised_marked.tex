@@ -3,10 +3,13 @@
 %% Issues #168 and #170: text deferred until notebooks and results are available.
 \documentclass[times, twoside, watermark]{zHenriquesLab-StyleBioRxiv}
 \usepackage[addedmarkup=colored,deletedmarkup=sout,authormarkup=none]{changes}
-\definecolor{chgadded}{RGB}{0,100,200}
-\definecolor{chgdeleted}{RGB}{180,0,0}
+\definecolor{chgadded}{RGB}{34,139,34}   % forest green for additions
+\definecolor{chgdeleted}{RGB}{180,0,0}   % red for deletions
 \colorlet{Changes@Color@added}{chgadded}
 \colorlet{Changes@Color@deleted}{chgdeleted}
+% For sentences containing \cite{}, use \newtxt{} instead of \added{} to avoid
+% natbib/changes package conflicts with citation argument parsing.
+\newcommand{\newtxt}[1]{\textcolor{chgadded}{#1}}
 
 % Note: Write each sentence on its own line (makes diffs easier to read).
 
@@ -75,7 +78,7 @@ $\beta_1^{0,2}$ equals one for a perfect sphere and approaches zero for increasi
 A further layer of description comes from decomposing the Cartesian Minkowski tensors into irreducible representations under rotation, giving rise to the Minkowski structure metrics $q_\ell$ and $w_\ell$~\cite{Steinhardt1983, Mickel2013}: rotationally invariant scalars that characterize $\ell$-fold orientational order.
 In addition, Minkowski tensors are defined for triangulated surfaces of arbitrary topology~\cite{SchroderTurk2013}, making them applicable without restriction to the full diversity of three-dimensional morphologies encountered in biological image analysis, including multi-component objects, structures with enclosed voids, and surfaces of non-trivial genus.
 
-\added{Minkowski tensor analysis has been applied across biological length scales and structural contexts: from the local and global geometry of trabecular bone~\cite{Callens2021} and the morphology of individual neuronal cells~\cite{Beisbart2006} to the collective shape ordering of epithelial tissues~\cite{Happel2025}, demonstrating that the framework is broadly applicable regardless of the type of biological structure under study.}
+\newtxt{Minkowski tensor analysis has been applied across biological length scales and structural contexts: from the local and global geometry of trabecular bone~\cite{Callens2021} and the morphology of individual neuronal cells~\cite{Beisbart2006} to the collective shape ordering of epithelial tissues~\cite{Happel2025}, demonstrating that the framework is broadly applicable regardless of the type of biological structure under study.}
 A C++ implementation, karambola~\cite{Schaller2020karambola}, has been applied to characterize anisotropy in cellular foams, granular packings, and porous materials~\cite{SchroderTurk2013}, but is not accessible within the Python bioimage ecosystem.
 Modern bioimage analysis pipelines are predominantly built around Python, with acquisition, segmentation, and quantification tools forming an interconnected ecosystem of libraries that operate on in-memory data structures.
 karambola accepts meshes exclusively in the karambola-native \texttt{.poly} format and the Object File Format (\texttt{.off}), and writes results to plain-text files; it is not distributed through a package manager and requires a C++ build toolchain to compile.
@@ -281,7 +284,7 @@ For smooth objects, tensor values converge asymptotically as voxel resolution in
 A further limitation applies to the direct mesh API, where users may encounter open or non-manifold meshes in their biological datasets.
 In such cases pykarambola issues a warning, noting that for open surfaces, volume-dependent quantities (\texttt{w000}, \texttt{w020}) are set to NaN, while non-manifold geometries render all results unreliable; users should therefore verify mesh quality before interpreting tensor outputs.
 The label-image API is not affected, as marching cubes always produces closed, manifold surfaces by construction.
-\added{Users encountering open or non-manifold meshes in their own datasets can repair them using established mesh-processing tools such as MeshLab~\cite{Cignoni2008meshlab}, Open3D~\cite{Zhou2018open3d}, or PyVista~\cite{Sullivan2019pyvista} prior to passing the mesh to pykarambola.}
+\newtxt{Users encountering open or non-manifold meshes in their own datasets can repair them using established mesh-processing tools such as MeshLab~\cite{Cignoni2008meshlab}, Open3D~\cite{Zhou2018open3d}, or PyVista~\cite{Sullivan2019pyvista} prior to passing the mesh to pykarambola.}
 
 Future development directions include support for additional Minkowski tensor families beyond those available in karambola and a streaming batch-processing mode for datasets too large to hold in memory simultaneously.
 pykarambola's speed makes it well-suited for real-time feedback as users explore and annotate 3D segmentations.
