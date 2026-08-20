@@ -1,0 +1,810 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=1.0in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{hyperref}
+\usepackage{microtype}
+\usepackage{parskip}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\lstset{
+  language=Python,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue!70!black},
+  stringstyle=\color{green!50!black},
+  commentstyle=\color{gray},
+  showstringspaces=false,
+  breaklines=true,
+  frame=single,
+  framesep=4pt,
+  xleftmargin=8pt,
+  xrightmargin=8pt,
+}
+
+\hypersetup{colorlinks=true,linkcolor=blue!60!black,citecolor=blue!60!black,urlcolor=blue!60!black}
+
+\title{From Equivariants to Invariants:\\
+       A Primer on SO(3) Representation Theory\\
+       for Shape Descriptors}
+%\author{}
+\date{}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\bigskip
+
+% ---------------------------------------------------------------------------
+\section{Introduction}
+\label{sec:intro}
+
+Comparing the shapes of 3-D objects requires descriptors that do not depend on
+the object's orientation in space.
+A \emph{rotation-invariant} descriptor assigns the same number to a shape
+regardless of how it is rotated.
+This primer develops the invariant construction for two complementary sources
+of shape data, both under active development in our group:
+
+\begin{itemize}
+  \item \textbf{pykarambola} — computes \emph{Minkowski tensors}
+        \cite{SchroderTurk2013,HugSchneider2017}, a family of rank-0, 1, and~2
+        tensors derived from a triangulated surface mesh.
+  \item \textbf{aics-shparam} — works instead with \emph{spherical harmonic
+        coefficients} of a surface parametrisation.
+\end{itemize}
+
+Both datasets are \emph{equivariant} under rotation: they do not stay constant,
+but they transform in a predictable, structured way.
+
+\paragraph{For readers already familiar with pykarambola.}
+The scalar functionals ($w_{000}$, $w_{100}$, \ldots), traces of rank-2 tensors,
+and eigenvalue-derived anisotropy measures that pykarambola currently reports are
+all special cases of the framework developed here.
+The scalar functionals and traces are degree-1 invariants that emerge from the
+irrep decomposition step for free, without any contraction.
+Eigenvalue-derived quantities (anisotropy indices, axis ratios) are algebraic
+functions of the three principal polynomial invariants of a single tensor at
+degrees~1, 2, and~3.
+The systematic framework's main contribution beyond current usage is the
+\emph{cross-tensor} invariants: contractions between two or three different
+tensors simultaneously, which cannot be recovered from the eigenvalues of any
+individual tensor.
+Section~\ref{sec:existing} at the end of this primer maps current outputs
+explicitly onto the framework.
+
+The central observation of this primer is that both packages follow the same
+abstract pipeline for extracting invariants:
+
+\medskip
+\centerline{equivariant data
+  $\;\longrightarrow\;$ irrep decomposition
+  $\;\longrightarrow\;$ contraction to $l=0$
+  $\;\longrightarrow\;$ invariant scalar}
+\medskip
+
+\paragraph{Terminology stack.}
+Four levels appear throughout this primer and are worth naming precisely from the outset.
+\begin{enumerate}
+  \item \textbf{Equivariants} — the raw input data: Minkowski tensors
+        ($w_{000}$, $w_{020}$, \ldots) or spherical harmonic coefficients $f_{l,m}$.
+        These transform predictably under rotation but are not themselves invariant.
+  \item \textbf{Irreps} — the components obtained by decomposing equivariants into
+        irreducible representations (labeled \texttt{'0e'}, \texttt{'2e'}, \ldots).
+        Still equivariant, but now in a basis where the rotation action is block-diagonal;
+        individual components such as the traceless part of $w_{020}$ carry direct geometric meaning.
+  \item \textbf{Invariants} — scalar contractions of irreps that are unchanged under
+        rotation, produced by \texttt{compute\_invariants()}.
+        Degree-1 invariants (traces of rank-2 tensors) retain clear geometric interpretability;
+        degree-2 and degree-3 contractions are algebraically precise but largely opaque geometrically.
+  \item \textbf{Generating set vs.\ integrity basis} — a \emph{generating set} is a
+        collection of invariants from which every polynomial invariant can be recovered as a
+        polynomial in the generators; it may contain redundant members.
+        A \emph{minimal integrity basis} is a generating set with all redundancies removed.
+        The output of \texttt{compute\_invariants()} is a generating set up to the chosen
+        degree, not a minimal basis.
+\end{enumerate}
+
+\noindent
+Sections~\ref{sec:equivariants}--\ref{sec:parity} develop the mathematics in
+increasing detail.
+Section~\ref{sec:walkthrough} is a line-by-line walkthrough of the pykarambola
+implementation.
+Sections~\ref{sec:existing}--\ref{sec:spharm} cover three extensions:
+how current pykarambola outputs relate to the framework, axis-aware (SO(2))
+invariants, and spherical-harmonic invariants.
+Section~\ref{sec:interp} examines when invariants or equivariants are preferable
+empirically, and draws analogies to NMR spectroscopy, diffusion tensor imaging,
+and materials-science interatomic potentials.
+
+% ---------------------------------------------------------------------------
+\section{Equivariants: quantities that transform predictably}
+\label{sec:equivariants}
+
+Let $G$ be a group acting on a space $X$ of geometric objects (e.g.\
+$G = \mathrm{SO}(3)$, $X = \mathbb{R}^3$).
+A function $f : X \to V$ into a vector space $V$ is \emph{equivariant} with
+respect to a representation $\rho : G \to \mathrm{GL}(V)$ if
+\begin{equation}
+  f(g \cdot x) = \rho(g)\, f(x) \qquad \forall\, g \in G,\; x \in X.
+  \label{eq:equivariance}
+\end{equation}
+It is \emph{invariant} when $\rho$ is the trivial representation ($\rho(g) = 1$
+for all $g$), i.e.\ $f(g \cdot x) = f(x)$.
+
+\paragraph{Examples at each rank.}
+\begin{itemize}
+  \item \textbf{Rank-0 (scalar)}: volume $w_{000}$, surface area $w_{100}$, etc.\ are
+        invariant (no factor of $R$).
+  \item \textbf{Rank-1 (vector)}: the surface centroid $\mathbf{c} = w_{010}/w_{000}$
+        satisfies $\mathbf{c}(R\cdot K) = R\,\mathbf{c}(K)$, so it is equivariant
+        with $\rho(R) = R$ (the defining representation of SO(3)).
+  \item \textbf{Rank-2 (matrix)}: the moment tensor $w_{020}$ satisfies
+        $w_{020}(R \cdot K) = R\, w_{020}(K)\, R^\top$, equivariant with
+        $\rho(R) = R \otimes R$.
+  \item \textbf{Spherical harmonic coefficients}: $f_{l,m}(R \cdot K) =
+        \sum_{m'} D^{(l)}_{m'm}(R)\, f_{l,m'}(K)$, equivariant with the
+        Wigner $D$-matrix $\rho = D^{(l)}$.
+\end{itemize}
+
+\paragraph{Why equivariants suffice.}
+Any invariant that is polynomial in the underlying geometric data can be
+written as a polynomial contraction of equivariants \cite{Weyl1946}.
+So the problem of finding all invariants reduces to: (1) decompose equivariants
+into \emph{irreducible representations} (irreps), then (2) contract irreps in
+ways that produce an overall $l=0$ output.
+
+% ---------------------------------------------------------------------------
+\section{Irreducible Representations of SO(3)}
+\label{sec:irreps}
+
+A \emph{representation} of a group $G$ is a homomorphism $\rho: G \to \mathrm{GL}(V)$ — a rule for how each group element acts as a linear map on a vector space $V$, consistently with the group structure.
+A representation is \emph{irreducible} (an irrep) if $V$ contains no proper subspace that is invariant under every $\rho(g)$: it cannot be decomposed into smaller representations.
+Irreps are the indivisible atoms of equivariance; any equivariant quantity decomposes uniquely into a direct sum of irreps.
+
+The irreducible representations of SO(3) are labeled by a non-negative integer
+$l = 0, 1, 2, \ldots$ called the \emph{irrep degree} in group theory (or \emph{angular momentum number} in quantum physics).
+An $l$-irrep has dimension $2l+1$; under a rotation $R$ the representation
+matrix is the Wigner $D^{(l)}(R)$.
+
+\paragraph{Irrep labels: $l$, \texttt{e}, and \texttt{o}.}
+Throughout this document and the pykarambola source code, irreps are labeled by a short string such as \texttt{'0e'}, \texttt{'1e'}, or \texttt{'2e'}.
+The integer prefix is the angular momentum number $l$ introduced above.
+The letter suffix encodes \emph{parity} under spatial inversion $P : \mathbf{x} \mapsto -\mathbf{x}$, the additional generator that distinguishes $\mathrm{O}(3)$ from $\mathrm{SO}(3)$:
+\begin{itemize}
+  \item \texttt{e} (\emph{even}, also called \emph{gerade} in the German physics tradition):
+        the irrep is unchanged by $P$; parity eigenvalue $+1$.
+        True scalars (\texttt{'0e'}), traceless symmetric rank-2 tensors (\texttt{'2e'}), and
+        axial vectors (e.g.\ cross products, \texttt{'1e'}) carry even parity.
+  \item \texttt{o} (\emph{odd}, also called \emph{ungerade}):
+        the irrep acquires a factor of $-1$ under $P$; parity eigenvalue $-1$.
+        Polar vectors such as position or displacement are \texttt{'1o'}, and
+        pseudo-scalars (e.g.\ the determinant of three polar vectors) are \texttt{'0o'}.
+\end{itemize}
+The spherical harmonic $Y_l^m$ has parity $(-1)^l$, so irreps built from purely polar-vector inputs naturally carry parity $(-1)^l$: rank-0 and rank-2 tensors are \texttt{e}, rank-1 and rank-3 tensors are \texttt{o}.
+Pykarambola departs from this convention by writing \texttt{e} on all tensor labels and handling parity separately through the \texttt{symmetry=} argument; see the label-convention note below.
+
+\paragraph{Rank-2 decomposition.}
+A rank-2 symmetric matrix $M$ carries the reducible representation
+$\mathbf{1} \otimes \mathbf{1} = \mathbf{0} \oplus \mathbf{2}$ (i.e.\
+$l=0 \oplus l=2$).
+The decomposition is
+\begin{equation}
+  M = \underbrace{\frac{\operatorname{Tr} M}{3}\, I}_{l=0,\;\text{isotropic}}
+    + \underbrace{\!\left(M_\mathrm{sym} - \frac{\operatorname{Tr} M}{3}\, I\right)\!}_{l=2,\;\text{traceless symmetric}}
+  \label{eq:rank2decomp}
+\end{equation}
+where $M_\mathrm{sym} = (M + M^\top)/2$.
+In pykarambola (\texttt{pykarambola/invariants.py}):
+\begin{lstlisting}
+def _trace_rank2(M):
+    return np.trace(M) / 3.0          # l=0 component (float)
+
+def _traceless_rank2(M):
+    M_sym = (M + M.T) / 2.0
+    return M_sym - (np.trace(M_sym) / 3.0) * np.eye(3)  # l=2 component
+\end{lstlisting}
+
+\paragraph{Tensor--irrep table.}
+Table~\ref{tab:irreps} shows how each Minkowski tensor is decomposed by
+\texttt{decompose\_all()} and what code keys it produces.
+
+\begin{table}[h]
+\centering
+\caption{Minkowski tensor irrep decomposition.
+         \texttt{decompose\_all()} returns entries keyed by
+         \texttt{(name, irrep\_label)}.}
+\label{tab:irreps}
+\begin{tabularx}{\linewidth}{llllX}
+\toprule
+Tensor & Rank & Physical meaning & Irreps & Code keys \\
+\midrule
+\texttt{w000} & 0 & Volume & $l=0$ & \texttt{('w000','0e')} \\
+\texttt{w010} & 1 & Volume moment (centroid $\times$ vol) & $l=1$ & \texttt{('w010','1e')} \\
+\texttt{w020} & 2 & Moment tensor & $l=0 \oplus l=2$ & \texttt{('w020','0e')}, \texttt{('w020','2e')} \\
+\texttt{w102} & 2 & Normal distribution & $l=0 \oplus l=2$ & \texttt{('w102','0e')}, \texttt{('w102','2e')} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Label convention.}
+pykarambola labels all $l=1$ irreps as \texttt{'1e'}, regardless of parity
+(polar vs.\ axial vectors).
+This differs from the e3nn library \cite{Geiger2022e3nn}, which uses
+\texttt{'1o'} for polar (odd-parity) and \texttt{'1e'} for axial (even-parity)
+vectors.
+In pykarambola, parity is controlled by the \texttt{symmetry=} argument to
+\texttt{compute\_invariants()}, not by the irrep label.
+
+\paragraph{Spherical harmonic coefficients.}
+The $f_{l,m}$ produced by aics-shparam are already irreps by construction —
+each coefficient band $l$ transforms as a $(2l+1)$-dimensional $D^{(l)}$
+representation.
+No further decomposition step is required.
+
+% ---------------------------------------------------------------------------
+\section{The Contraction Principle: coupling irreps to scalars}
+\label{sec:contraction}
+
+\paragraph{Clebsch--Gordan selection rule.}
+When two irreps of angular momenta $l_1$ and $l_2$ are coupled, the possible
+outputs are $|l_1 - l_2| \le L \le l_1 + l_2$.
+To obtain a scalar ($L=0$) we need $l_1 = l_2$ (and a matching parity).
+This immediately constrains which contractions are possible:
+
+\medskip
+\begin{center}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{cll}
+\toprule
+Coupling & Contraction & pykarambola function \\
+\midrule
+\multicolumn{3}{l}{\textit{Degree~2 (bilinear)}} \\
+$1 \otimes 1 \to 0$ & dot product $\mathbf{u} \cdot \mathbf{v}$ & \texttt{\_vector\_dot\_products} \\
+$2 \otimes 2 \to 0$ & Frobenius product $\operatorname{Tr}(T^\top S)$ & \texttt{\_frobenius\_inner\_products} \\
+\multicolumn{3}{l}{\textit{Degree~3 — O(3) true scalars}} \\
+$1 \otimes 2 \otimes 1 \to 0$ & quadratic form $\mathbf{u}^\top T\, \mathbf{v}$ & \texttt{\_quadratic\_forms} \\
+$2 \otimes 2 \otimes 2 \to 0$ & triple trace $\operatorname{Tr}(TUS)$ & \texttt{\_triple\_traces} \\
+\multicolumn{3}{l}{\textit{Degree~3 — SO(3) pseudo-scalars only}} \\
+$1 \otimes 1 \otimes 1 \to \tilde{0}$ & determinant $\det[\mathbf{u},\mathbf{v},\mathbf{w}]$ & \texttt{\_triple\_vector\_dets} \\
+$2 \otimes 2 \otimes 1 \to \tilde{0}$ & commutator $[T,U]_{\text{axial}} \cdot \mathbf{v}$ & \texttt{\_commutator\_pseudoscalars} \\
+\bottomrule
+\end{tabular}
+\end{center}
+\medskip
+
+\paragraph{Why each contraction gives $l=0$.}
+For degree-2 couplings the argument is direct: the Frobenius product
+$\operatorname{Tr}(T^\top S)$ satisfies
+\[
+  \operatorname{Tr}\!\bigl((RT R^\top)^\top (RS R^\top)\bigr)
+  = \operatorname{Tr}\!\bigl(R T^\top R^\top R S R^\top\bigr)
+  = \operatorname{Tr}(T^\top S)
+\]
+using $R^\top R = I$ and the cyclic property of trace.
+The same argument applies to dot products and to all degree-3 O(3) contractions.
+
+\paragraph{Commutator pseudo-scalar.}
+For two traceless symmetric matrices $T_a$, $T_b$, the commutator
+$C = T_a T_b - T_b T_a$ is antisymmetric.
+Every antisymmetric $3\times3$ matrix has an associated axial vector
+$\mathbf{a} = (C_{12}, C_{20}, C_{01})$ such that $C_{ij} = \varepsilon_{ijk} a_k$.
+The dot product $\mathbf{a} \cdot \mathbf{v}$ is invariant under proper rotations
+but changes sign under a reflection, making it a pseudo-scalar.
+
+\paragraph{Degree-1 invariants.}
+The $l=0$ component of any tensor is already an invariant (it is a scalar that
+transforms trivially).
+For rank-0 tensors this is the value itself; for rank-2 tensors it is the trace
+$\operatorname{Tr}(M)/3$.
+One linear dependency is removed: $\operatorname{Tr}(w_{102})/3 = w_{100}$
+and $\operatorname{Tr}(w_{202})/3 = w_{200}$ hold for any closed mesh
+(since $|\hat{n}|^2 = 1$).
+When \texttt{deduplicate\_scalars=True} (the default), \texttt{compute\_invariants}
+drops these two redundant traces.
+
+% ---------------------------------------------------------------------------
+\section{Parity: O(3) versus SO(3)}
+\label{sec:parity}
+
+$\mathrm{SO}(3)$ denotes the \emph{Special Orthogonal} group in three dimensions:
+\emph{orthogonal} means every $R$ satisfies $R^\top R = I$ (lengths and angles are preserved), and \emph{special} means $\det R = +1$ (orientation-preserving; no reflections).
+The orthogonal group $\mathrm{O}(3)$ relaxes this to $\det R = \pm 1$, adding reflections and improper rotations.
+A function invariant under $\mathrm{O}(3)$ must also be unchanged by any
+reflection.
+\emph{Pseudo-scalars} (the determinant and commutator contractions above) are
+invariant under proper rotations but change sign under an improper rotation
+(reflection or roto-reflection).
+They therefore appear in SO(3)-invariant feature sets but not O(3)-invariant ones.
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Feature subset & Symmetry \\
+\midrule
+\texttt{symmetry='O3'} & True scalars only (no \texttt{det\_}, no \texttt{comm\_}) \\
+\texttt{symmetry='SO3'} & True scalars $\cup$ pseudo-scalars \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+For the standard 14-tensor set (4 rank-0, 4 rank-1, 6 rank-2 tensors) the
+difference amounts to $64$ features: $4$ triple-vector determinants and
+$60$ commutator pseudo-scalars, giving $155$ features for O(3) and $219$ for
+SO(3).
+
+\paragraph{Implementation note.}
+Both \texttt{symmetry='O3'} and \texttt{symmetry='SO3'} follow the same
+\texttt{decompose\_all()} $\to$ contraction pipeline.
+O(3) is not a post-hoc filter on SO(3) output: the pseudo-scalar generators
+(\texttt{\_triple\_vector\_dets}, \texttt{\_commutator\_pseudoscalars}) are
+simply not called when \texttt{symmetry='O3'}, so the 64 pseudo-scalars are
+never computed.
+
+% ---------------------------------------------------------------------------
+\section{pykarambola Implementation Walkthrough}
+\label{sec:walkthrough}
+
+All invariant code lives in \texttt{pykarambola/invariants.py}.
+The public entry point is \texttt{compute\_invariants()}.
+
+\subsection*{Step 1 — Decompose into irreps}
+
+\begin{lstlisting}
+def decompose_all(tensors_dict):
+    result = {}
+    for name, tensor in tensors_dict.items():
+        rank = _infer_rank(tensor)
+        if rank == 0:
+            result[(name, '0e')] = float(tensor)
+        elif rank == 1:
+            result[(name, '1e')] = np.asarray(tensor, dtype=float)
+        elif rank == 2:
+            M = np.asarray(tensor, dtype=float)
+            result[(name, '0e')] = _trace_rank2(M)    # Tr(M)/3
+            result[(name, '2e')] = _traceless_rank2(M)
+    return result
+\end{lstlisting}
+
+The function returns a dictionary keyed by \texttt{(tensor\_name, irrep\_label)}.
+A rank-2 tensor produces two entries; a rank-0 or rank-1 tensor produces one.
+
+\subsection*{Step 2 — Contract by degree}
+
+\texttt{compute\_invariants()} calls the contraction helpers in order:
+
+\begin{lstlisting}
+def compute_invariants(tensors_dict, max_degree=3,
+                       symmetry='SO3', deduplicate_scalars=True):
+    decomposed = decompose_all(tensors_dict)
+    result = {}
+    result.update(_degree1_scalars(decomposed, deduplicate=deduplicate_scalars))
+    if max_degree >= 2:
+        result.update(_vector_dot_products(decomposed))
+        result.update(_frobenius_inner_products(decomposed))
+    if max_degree >= 3:
+        result.update(_quadratic_forms(decomposed))
+        result.update(_triple_traces(decomposed))
+        if symmetry == 'SO3':
+            result.update(_triple_vector_dets(decomposed))
+            result.update(_commutator_pseudoscalars(decomposed))
+    return result
+\end{lstlisting}
+
+\subsection*{Worked example}
+
+Given the small tensor set
+\begin{lstlisting}
+tensors = {
+    'w000': 1.0,                         # rank 0
+    'w010': np.array([0.5, 0.5, 0.5]),   # rank 1
+    'w020': np.eye(3) * 0.1,             # rank 2
+}
+inv = compute_invariants(tensors, max_degree=2, symmetry='O3')
+\end{lstlisting}
+the pipeline produces:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Key & Source & Formula \\
+\midrule
+\texttt{w000} & degree-1, rank-0 & $w_{000} = 1.0$ \\
+\texttt{w020} & degree-1, rank-2 trace & $\operatorname{Tr}(w_{020})/3 = 0.1$ \\
+\texttt{dot\_w010\_w010} & degree-2 & $\mathbf{w}_{010} \cdot \mathbf{w}_{010} = 0.75$ \\
+\texttt{frob\_w020\_w020} & degree-2 & $\operatorname{Tr}(T_{\text{tl}}^\top T_{\text{tl}})$
+  (zero here, since \texttt{w020} is a multiple of $I$) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+Because $w_{020} = 0.1\,I$, its traceless part $T_{\text{tl}}$ is zero and the
+Frobenius product is~0.
+
+\subsection*{Feature count for the standard 14-tensor set}
+
+With all 14 standard Minkowski tensors (4 rank-0, 4 rank-1, 6 rank-2),
+\texttt{deduplicate\_scalars=True}, the feature counts below are verified by
+\texttt{tests/test\_invariants.py::TestInvariantCounts}.
+
+\begin{table}[h]
+\centering
+\caption{Invariant feature counts for the 14-tensor standard set.
+         Columns: degree-1 = scalars/traces; degree-2 = dot products and Frobenius
+         products; degree-3 = all cubic contractions.}
+\label{tab:counts}
+\begin{tabular}{lrrrr}
+\toprule
+Symmetry & Degree 1 & Degree 2 & Degree 3 & Total \\
+\midrule
+O(3)  & 8 & 31 & 116 & 155 \\
+SO(3) & 8 & 31 & 180 & 219 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent
+\textbf{Degree-1} (8): four rank-0 scalars plus six matrix traces, minus two
+removed by deduplication ($\operatorname{Tr}(w_{102})/3 = w_{100}$ and
+$\operatorname{Tr}(w_{202})/3 = w_{200}$).
+
+\textbf{Degree-2} (31): $\binom{4}{2}+4 = 10$ vector dot products plus
+$\binom{6}{2}+6 = 21$ Frobenius products.
+
+\textbf{Degree-3, O(3)} (116): $6 \times 10 = 60$ quadratic forms (6 matrices
+$\times$ 10 unordered vector pairs) plus $\binom{8}{3} = 56$ triple traces
+($\binom{n+r-1}{r}$ with $n=6$ matrices, $r=3$).
+
+\textbf{Degree-3, SO(3) additional} (64): $\binom{4}{3} = 4$ triple-vector
+determinants plus $\binom{6}{2} \times 4 = 60$ commutator pseudo-scalars.
+
+% ---------------------------------------------------------------------------
+\section{Relationship to existing pykarambola descriptors}
+\label{sec:existing}
+
+Table~\ref{tab:existing} maps the quantities currently reported by pykarambola
+onto the polynomial invariant framework developed in this primer.
+
+\begin{table}[h]
+\centering
+\caption{Current pykarambola outputs and their place in the CG framework.}
+\label{tab:existing}
+\begin{tabularx}{\linewidth}{p{0.36\linewidth}p{0.12\linewidth}X}
+\toprule
+Current output & CG degree & Notes \\
+\midrule
+Scalar functionals ($w_{000}$, $w_{100}$, $w_{200}$, $w_{300}$)
+  & 1 & Rank-0 tensors; already $l=0$ irreps. No contraction needed. \\
+Traces of rank-2 tensors ($\operatorname{Tr}(w_{020})/3$, \ldots)
+  & 1 & The $l=0$ component of the irrep decomposition.
+        $\operatorname{Tr}(w_{102})/3 = w_{100}$ is deduplicated. \\
+Eigenvalues of a rank-2 tensor ($\lambda_1, \lambda_2, \lambda_3$)
+  & algebraic in 1--3 & Roots of $\lambda^3 - I_1\lambda^2 + I_2\lambda - I_3 = 0$,
+        where $I_1$, $I_2$, $I_3$ are the degree-1, 2, 3 polynomial invariants
+        of that single tensor.
+        Not polynomial in the tensor entries themselves. \\
+Eigenvalue ratios / anisotropy indices
+  & rational in 1--3 & Rational functions of $I_1$, $I_2$, $I_3$.
+        Also not polynomial. \\
+\midrule
+Cross-tensor Frobenius products (degree-2)
+  & 2 & \emph{New.}
+        E.g.\ alignment between anisotropy of $w_{020}$ and $w_{102}$.
+        Not accessible from eigenvalues of individual tensors. \\
+Quadratic forms, triple traces, pseudo-scalars (degree-3)
+  & 3 & \emph{New.}
+        E.g.\ whether the centroid is displaced along the principal axis of $w_{020}$. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent
+The key distinction is between \emph{single-tensor} and \emph{cross-tensor}
+invariants.
+Eigenvalue-based analysis of individual tensors recovers the degree-1, 2, and~3
+polynomial invariants of each tensor in isolation, but as algebraic rather than
+polynomial quantities.
+The CG framework adds all cross-tensor invariants and provides a completeness
+guarantee: every polynomial invariant up to the chosen degree is included.
+
+% ---------------------------------------------------------------------------
+\section{Extending to SO(2): axis-aware invariants}
+\label{sec:so2}
+
+When the $z$-axis carries physical meaning — cell polarity, optical axis,
+gravitational direction — the relevant symmetry group shrinks from SO(3)
+to SO(2) (rotations about $z$).
+Mathematically, this corresponds to branching each SO(3) irrep into
+\emph{charges} $m$ under $z$-rotation: a rank-2 tensor contributes
+$m=0$, $|m|=1$, and $|m|=2$ components.
+In the implementation, however, \texttt{\_decompose\_so2()} extracts these
+charges directly from the raw Cartesian tensor entries — bypassing the SO(3)
+irrep step entirely — since the $z$-axis components are natural reads of
+specific matrix entries (e.g.\ $M_{zz}$, $[M_{xz}, M_{yz}]$).
+The SO(2) and SO(3) pipelines in \texttt{compute\_invariants()} are therefore
+independent: each takes the raw tensors as input and produces invariants
+without calling the other.
+
+\texttt{\_decompose\_so2()} produces the following labels per tensor:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Label & Content & Rank \\
+\midrule
+\texttt{'sc'} & scalar value & 0 \\
+\texttt{'z'} & $v_z$ & 1 \\
+\texttt{'xy'} & $[v_x, v_y]$ doublet ($|m|=1$) & 1 \\
+\texttt{'tr'} & $\operatorname{Tr}(M)/3$ isotropic & 2 \\
+\texttt{'tzz'} & $M_{zz} - \operatorname{Tr}(M)/3$ ($m=0$ traceless) & 2 \\
+\texttt{'xz'} & $[M_{xz}, M_{yz}]$ ($|m|=1$) & 2 \\
+\texttt{'m2'} & $[M_{xx}-M_{yy},\, 2M_{xy}]$ ($|m|=2$) & 2 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+SO(2)-invariant contractions work by charge conservation:
+\begin{itemize}
+  \item \textbf{Degree-2}: dot products and wedge products of same-charge doublets
+        (\texttt{d1\_}, \texttt{x1\_} for $|m|=1$; \texttt{d2\_}, \texttt{x2\_} for $|m|=2$).
+        For doublets $\mathbf{a} = a_x + i\,a_y$ and $\mathbf{b} = b_x + i\,b_y$
+        (read as complex numbers), $\operatorname{Re}(\bar{a}b) = \mathbf{a}\cdot\mathbf{b}$
+        and $\operatorname{Im}(\bar{a}b) = a_x b_y - a_y b_x$ are both SO(2)-invariant.
+  \item \textbf{Degree-3}: $|m|=1 \otimes |m|=1 \otimes |m|=2$ couplings via complex
+        multiplication (\texttt{tp\_re\_}, \texttt{tp\_im\_}).
+        For $\mathbf{a},\mathbf{b}$ ($|m|=1$) and $\mathbf{c}$ ($|m|=2$):
+        $\operatorname{Re}(\bar{\mathbf{c}} \cdot \mathbf{a}\mathbf{b})$ and
+        $\operatorname{Im}(\bar{\mathbf{c}} \cdot \mathbf{a}\mathbf{b})$, where
+        $\mathbf{a}\mathbf{b}$ is complex multiplication.
+\end{itemize}
+
+For the standard 14-tensor set the total SO(2) feature count is $18 + 136 + 660 = \mathbf{814}$,
+verified by \texttt{TestSO2Invariants.test\_so2\_invariant\_count\_14\_tensors}.
+O(2) is obtained by filtering out features that are odd under $z \to -z$
+(the $v_z$ degree-1 components, mixed-parity $|m|=1$ bilinears, and
+mixed-parity triple products).
+
+% ---------------------------------------------------------------------------
+\section{Parallel: Spherical Harmonic Invariants}
+\label{sec:spharm}
+
+The aics-shparam package parametrises a surface as a spherical harmonic expansion
+$f(\theta,\phi) = \sum_{l,m} f_{l,m}\, Y_l^m(\theta,\phi)$ and returns the
+coefficient array $\{f_{l,m}\}$.
+Because $Y_l^m$ itself transforms as a $D^{(l)}$ irrep, the coefficients are
+already decomposed into SO(3) irreps — no further decomposition step is needed.
+Each band $l$ is a $(2l+1)$-dimensional irrep; the table below shows what these
+look like for the first few values of $l$.
+
+\begin{center}
+\begin{tabular}{cll}
+\toprule
+$l$ & Dimension ($2l+1$) & Geometric character \\
+\midrule
+0 & 1 & scalar \\
+1 & 3 & 3-vector \\
+2 & 5 & traceless symmetric $3\times3$ matrix (6 entries minus 1 trace constraint) \\
+3 & 7 & rank-3 traceless symmetric object \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+Only $l=1$ coincides with an ordinary 3-vector.
+For $l \ge 2$ the irrep is stored as a higher-rank array but has fewer independent
+components than its ambient container: the $l=2$ irrep fits in a $3\times3$ matrix
+yet has only 5 degrees of freedom.
+
+The same contraction principle then applies directly:
+
+\begin{itemize}
+  \item \textbf{Power spectrum} (degree-2): $S_l = \sum_{m=-l}^{l} |f_{l,m}|^2$
+        is the $l \otimes l \to 0$ Frobenius contraction; it is invariant under
+        SO(3).
+  \item \textbf{Bispectrum} (degree-3): $B_{l_1 l_2 l} =
+        \operatorname{Re}\!\sum_{m_1, m_2} C^{l,m}_{l_1,m_1;\, l_2,m_2}\,
+        f_{l_1,m_1} f_{l_2,m_2} f^*_{l,m}$ with $m = m_1 + m_2$, where
+        $C^{l,m}_{l_1,m_1;\,l_2,m_2}$ are Clebsch--Gordan coefficients.
+        This is a degree-3 contraction coupling three irreps to $L=0$.
+        The name \emph{bi} refers to the two free input angular momenta $l_1$ and $l_2$ that are coupled via the Clebsch--Gordan coefficient; the third band $l$ is fixed by the coupling and enters through the conjugate array $f^*_{l,m}$.
+        Despite the name, three coefficient arrays appear in the product, making it degree~3.
+\end{itemize}
+
+The structure is identical to Sections~\ref{sec:contraction}--\ref{sec:parity}:
+irrep channels, degree-$k$ couplings via Clebsch--Gordan coefficients, and the
+same parity distinction between SO(3) and O(3) invariants.
+
+% ---------------------------------------------------------------------------
+\section{Equivariants, Invariants, and Interpretability}
+\label{sec:interp}
+
+\subsection*{What contraction discards}
+
+The map from equivariants to invariants is many-to-one:
+it quotients by the group action, collapsing entire SO(3) orbits to a single point.
+The discarded information is precisely the $l > 0$ irrep content:
+the orientation of the principal axes, the handedness of asymmetric shapes,
+and the relative alignment between the reference frame and the object's intrinsic geometry.
+
+A concrete example is already in this primer.
+The traceless part of $w_{020}$ (the \texttt{'2e'} irrep) encodes both the
+anisotropy \emph{and} the orientation of the moment tensor.
+The Frobenius norm of that traceless part (\texttt{frob\_w020\_w020}) is the
+degree-2 invariant that survives; the five independent components of the
+traceless tensor are the equivariant information that does not.
+
+Degree-1 invariants (traces) are the most interpretable: each has a direct
+geometric reading (mean curvature, surface area, isotropic extent).
+Higher-degree contractions mix irreps from different tensors and lose direct
+geometric meaning rapidly.
+
+\subsection*{Can invariants outperform their parent equivariants?}
+
+An initially counterintuitive possibility is that polynomial invariants, which
+are a \emph{proper subset} of the information in the equivariants, can nevertheless
+outperform the full equivariant set as features for classification.
+Preliminary experiments on 3D biological shape datasets~\cite{Yang2023MedMNIST}
+suggest this may occur, though the evidence is tentative and the comparisons are
+not yet clean: common ``raw tensor'' baselines include eigenvalue-derived features
+(anisotropy indices, axis ratios), which are themselves algebraic invariants of
+individual tensors (Section~\ref{sec:existing}), so the comparison is between a
+mixed set and a systematic polynomial invariant set rather than a pure
+equivariant--invariant contrast.
+
+The mechanistic intuition is straightforward: when the class label depends only on
+intrinsic shape properties (elongation, surface roughness, topology) and not on
+how the shape is oriented in space, the orientation components of the equivariants
+are pure noise from the classifier's perspective.
+Quotienting them out via the invariant map can then reduce variance without a
+commensurate loss of signal.
+The converse holds when a canonical alignment (e.g.\ PCA) encodes biologically
+meaningful orientation information into the tensor components --- discarding it
+by contracting to invariants may hurt.
+Whether and when invariants are preferable is an open question that depends on the
+dataset, the alignment strategy, and the biological question being asked.
+
+\subsection*{Parallel discussions in other fields}
+
+\paragraph{NMR spectroscopy and the chemical shift tensor.}
+The chemical shift anisotropy (CSA) tensor is a rank-2 equivariant object;
+its isotropic part ($\operatorname{Tr}/3$) is the invariant scalar that appears
+in solution NMR spectra.
+Solid-state NMR recovers the full tensor, including the anisotropy $\delta_\sigma$
+and the asymmetry parameter $\eta$, which encode bond geometry and local symmetry
+that the isotropic shift conceals~\cite{Mehring1983}.
+This is structurally identical to the \texttt{'0e'} vs.\ \texttt{'2e'} irrep split
+of any Minkowski rank-2 tensor (Section~\ref{sec:irreps}).
+
+\paragraph{Diffusion tensor imaging (DTI).}
+The water diffusion tensor in biological tissue is a $3\times3$ symmetric
+positive-definite matrix --- an SO(3) equivariant.
+The FA, MD, AD, and RD indices commonly used in tract-based analysis are rotation
+invariants (algebraic functions of the three eigenvalues)~\cite{BasserPierpaoli1996}.
+Fibre tractography, by contrast, requires the eigenvectors --- equivariant
+information --- and loses biological meaning when only invariant scalars are used.
+This is exactly the tension in Section~\ref{sec:contraction}, instantiated in
+neuroscience.
+
+\paragraph{Equivariant vs.\ invariant interatomic potentials.}
+SchNet~\cite{Schutt2018SchNet} and SOAP/GAP~\cite{Bartok2013} are invariant:
+they predict scalar energies without orientation-sensitive intermediate representations.
+NequIP~\cite{Batzner2022} is equivariant: it propagates $l>0$ features between
+atoms and can therefore predict forces and stress tensors directly.
+The community consensus is that equivariance is \emph{necessary} when the target
+is itself equivariant (forces, dipole moments), but for scalar targets (energy per
+atom) both approaches achieve comparable accuracy.
+For \emph{classification} tasks --- as in biological morphometry --- the distinction
+collapses to the one we observe: use invariants when the label is
+orientation-independent, equivariants when a canonical frame carries biological
+information.
+
+\subsection*{Equivariants vs.\ invariants: trade-offs by task}
+
+The choice between equivariants and invariants is not merely a matter of
+classification accuracy --- it depends on the downstream task, the nature of the
+biological question, and the interpretability requirements.
+Table~\ref{tab:tradeoffs} summarises the main considerations.
+
+\begin{table}[h]
+\centering
+\caption{Trade-offs between equivariant and invariant representations across task types.}
+\label{tab:tradeoffs}
+\begin{tabularx}{\linewidth}{p{0.20\linewidth}p{0.35\linewidth}p{0.35\linewidth}}
+\toprule
+Task type & Equivariants & Invariants \\
+\midrule
+\textbf{Supervised classification} &
+  Retain orientation information; may introduce nuisance variance if labels are
+  orientation-independent; potentially more features than needed. &
+  Remove orientation nuisance; lower-dimensional; interpretable at degree~1;
+  risk discarding orientation signal when a canonical frame is meaningful. \\
+\addlinespace
+\textbf{Unsupervised / clustering} &
+  Preserve full geometric variation; but clusters may fragment by orientation
+  rather than intrinsic shape; alignment pre-processing becomes critical. &
+  Cluster by intrinsic shape regardless of pose; useful when the goal is shape
+  similarity independent of orientation. \\
+\addlinespace
+\textbf{Generative modelling} &
+  Necessary: generating a realistic shape requires specifying orientation and
+  anisotropy direction, not just scalar summaries. &
+  Insufficient alone: inverting invariants to a shape is ill-posed
+  (many shapes share the same invariant values). \\
+\addlinespace
+\textbf{Interpretability} &
+  Named irrep components (e.g.\ $w_{020,\text{traceless}}$) have direct geometric
+  readings at degree~1; higher-degree couplings become opaque. &
+  Degree-1 scalars (traces) are maximally interpretable; degree-3 contractions
+  obscure the geometric origin. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent
+For practical guidance in current workflows:
+\begin{itemize}
+  \item \textbf{Label is orientation-independent} (cell type, pathology stage):
+        degree-2 SO(3) or O(3) invariants are a natural first-line feature set.
+  \item \textbf{A canonical axis exists} (PCA alignment, cell polarity, coverslip
+        normal): SO(2)/O(2) invariants (Section~\ref{sec:so2}) retain $z$-axis
+        information while quotienting azimuthal rotation.
+  \item \textbf{Prediction target is a vector or tensor} (growth direction,
+        deformation field): preserve equivariants; contracting them away loses the
+        information the task requires.
+  \item \textbf{Generative or reconstruction task}: equivariants (or the full raw
+        tensors) are needed; invariant scalars alone cannot reconstruct a shape.
+  \item \textbf{Interpretability goal}: degree-1 invariants (traces) and named
+        irrep components are the most transparent; avoid degree-3 contractions for
+        explanation purposes.
+\end{itemize}
+
+% ---------------------------------------------------------------------------
+\section{Key Takeaways}
+\label{sec:takeaways}
+
+\begin{enumerate}
+  \item \textbf{Equivariants are enough.}  Any polynomial invariant can be
+        written as a contraction of equivariants; the pipeline decompose $\to$
+        contract is systematic and (up to chosen degree) exhaustive
+        \cite{KondorTrivedi2018}.
+
+  \item \textbf{Degree controls complexity.}
+        Degree-1 features are free (linear in the input tensors);
+        degree-2 features are bilinear (products of two irreps);
+        degree-3 features are cubic.
+        Higher-degree contractions exist but grow combinatorially.
+
+  \item \textbf{Generating set, not a minimal basis.}
+        The output of \texttt{compute\_invariants()} contains all polynomial invariants
+        up to the chosen degree but may include algebraic dependencies; a minimal
+        integrity basis is not computed.
+        See Section~\ref{sec:existing} for how this output relates to the traces,
+        eigenvalues, and ratios that pykarambola currently reports.
+
+  \item \textbf{Pseudo-scalars require a parity decision.}
+        The determinant and commutator contractions are invariant under
+        $\mathrm{SO}(3)$ but not $\mathrm{O}(3)$.
+        Use \texttt{symmetry='O3'} to exclude them when reflective symmetry is
+        physically meaningful.
+
+  \item \textbf{Both packages share the abstract structure.}
+        Whether the input is Minkowski tensors or spherical harmonic coefficients,
+        the invariant construction is: irrep decomposition $\to$ degree-$k$
+        Clebsch--Gordan coupling $\to$ scalar.
+
+  \item \textbf{Representation choice is task-dependent.}
+        Invariants are compact and remove orientation nuisance for supervised
+        classification when labels are pose-independent.
+        Equivariants are necessary for generative modelling and for predicting
+        equivariant targets (forces, growth directions).
+        Interpretability favours degree-1 features regardless of representation.
+        See Section~\ref{sec:interp} for a fuller discussion and cross-field analogies.
+\end{enumerate}
+
+\bibliographystyle{plain}
+\bibliography{invariants_primer}
+
+\end{document}

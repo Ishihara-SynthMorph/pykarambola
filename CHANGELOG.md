@@ -9,6 +9,13 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- `pykarambola.invariants` module for computing rotational invariants from Minkowski tensors (#102)
+  - `compute_invariants(tensors_dict, max_degree, symmetry, deduplicate_scalars)` builds polynomial invariants up to degree 3 from any combination of rank-0/1/2 tensors (not limited to the 14 standard Minkowski tensors)
+  - `decompose_all(tensors_dict)` decomposes tensors into irreducible representations (trace/traceless split for rank-2)
+  - Symmetry groups: `O3` (true scalars), `SO3` (adds pseudo-scalars), `SO2` (z-rotation), and `O2` (z-rotation + z-reflection, a parity-even subset of `SO2`)
+  - Linearly dependent scalars are deduplicated automatically (e.g. `Tr(w102)/3 = w100`); eigensystem keys (`*_eigvals`/`*_eigvecs`) are dropped with a warning, since they are not spherical tensors
+
 ---
 
 ## [0.6.0] - 2026-08-01
