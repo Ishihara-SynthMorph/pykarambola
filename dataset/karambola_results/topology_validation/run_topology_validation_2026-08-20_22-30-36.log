@@ -1,0 +1,257 @@
+Run started: Thu Aug 20 22:30:36 EDT 2026 | binary: /Users/yk/Desktop/karambola_mac/bash_scripts/../karambola-master/karambola
+=========================================
+
+[holey_slab/holey_slab_W6.0_D4.0_H1.5_n002] flags: --no-labels
+Converting Polyfile to Minkowski triangulation format ...     done
+check surface ...
+shortest edge = 0.5
+longest edge  = 1.41421
+smallest area = 0.125
+largest area  = 0.5
+                       done
+calculate w000 ...done
+calculate w100 ...done
+calculate w200 ...done
+calculate w300 ...done
+calculate w010 ...done
+calculate w110 ...done
+calculate w210 ...done
+calculate w310 ...done
+calculate w020 ...done
+calculate w120 ...done
+calculate w220 ...done
+calculate w320 ...done
+calculate w102 ...done
+calculate w202 ...done
+calculate msm ...done
+
+write results to files ...     done
+calculate and write eigensystems to file ...     done
+exit: 0
+
+[holey_slab/holey_slab_W6.0_D4.0_H1.5_n004] flags: --no-labels
+Converting Polyfile to Minkowski triangulation format ...     done
+check surface ...
+shortest edge = 0.25
+longest edge  = 0.707107
+smallest area = 0.03125
+largest area  = 0.125
+                       done
+calculate w000 ...done
+calculate w100 ...done
+calculate w200 ...done
+calculate w300 ...done
+calculate w010 ...done
+calculate w110 ...done
+calculate w210 ...done
+calculate w310 ...done
+calculate w020 ...done
+calculate w120 ...done
+calculate w220 ...done
+calculate w320 ...done
+calculate w102 ...done
+calculate w202 ...done
+calculate msm ...done
+
+write results to files ...     done
+calculate and write eigensystems to file ...     done
+exit: 0
+
+[holey_slab/holey_slab_W6.0_D4.0_H1.5_n008] flags: --no-labels
+Converting Polyfile to Minkowski triangulation format ...     done
+check surface ...
+shortest edge = 0.125
+longest edge  = 0.353553
+smallest area = 0.0078125
+largest area  = 0.03125
+                       done
+calculate w000 ...done
+calculate w100 ...done
+calculate w200 ...done
+calculate w300 ...done
+calculate w010 ...done
+calculate w110 ...done
+calculate w210 ...done
+calculate w310 ...done
+calculate w020 ...done
+calculate w120 ...done
+calculate w220 ...done
+calculate w320 ...done
+calculate w102 ...done
+calculate w202 ...done
+calculate msm ...done
+
+write results to files ...     done
+calculate and write eigensystems to file ...     done
+exit: 0
+
+[hollow_shell/hollow_shell_Rout2.0_Rin1.0_sub3] flags: --no-labels
+Converting Polyfile to Minkowski triangulation format ...     done
+check surface ...
+shortest edge = 0.138283
+longest edge  = 0.329294
+smallest area = 0.00908284
+largest area  = 0.0469536
+                       done
+calculate w000 ...done
+calculate w100 ...done
+calculate w200 ...done
+calculate w300 ...done
+calculate w010 ...done
+calculate w110 ...done
+calculate w210 ...done
+calculate w310 ...done
+calculate w020 ...done
+calculate w120 ...done
+calculate w220 ...done
+calculate w320 ...done
+calculate w102 ...done
+calculate w202 ...done
+calculate msm ...done
+
+write results to files ...     done
+calculate and write eigensystems to file ...     done
+exit: 0
+
+[hollow_shell/hollow_shell_Rout2.0_Rin1.0_sub5] flags: --no-labels
+Converting Polyfile to Minkowski triangulation format ...     done
+check surface ...
+shortest edge = 0.0345967
+longest edge  = 0.0826745
+smallest area = 0.000569134
+largest area  = 0.00295967
+                       done
+calculate w000 ...done
+calculate w100 ...done
+calculate w200 ...done
+calculate w300 ...done
+calculate w010 ...done
+calculate w110 ...done
+calculate w210 ...done
+calculate w310 ...done
+calculate w020 ...done
+calculate w120 ...done
+calculate w220 ...done
+calculate w320 ...done
+calculate w102 ...done
+calculate w202 ...done
+calculate msm ...done
+
+write results to files ...     done
+calculate and write eigensystems to file ...     done
+exit: 0
+
+[hollow_shell/hollow_shell_Rout2.0_Rin1.0_sub7] flags: --no-labels
+Converting Polyfile to Minkowski triangulation format ...     done
+check surface ...
+shortest edge = 0.00864957
+longest edge  = 0.0206741
+smallest area = 3.55765e-05
+largest area  = 0.000185078
+                       done
+calculate w000 ...done
+calculate w100 ...done
+calculate w200 ...done
+calculate w300 ...done
+calculate w010 ...done
+calculate w110 ...done
+calculate w210 ...done
+calculate w310 ...done
+calculate w020 ...done
+calculate w120 ...done
+calculate w220 ...done
+calculate w320 ...done
+calculate w102 ...done
+calculate w202 ...done
+calculate msm ...done
+
+write results to files ...     done
+calculate and write eigensystems to file ...     done
+exit: 0
+
+[torus/torus_R3.0_r1.0_n016] flags: --no-labels
+Converting Polyfile to Minkowski triangulation format ...     done
+check surface ...
+shortest edge = 0.390181
+longest edge  = 1.59428
+smallest area = 0.152131
+largest area  = 0.304261
+                       done
+calculate w000 ...done
+calculate w100 ...done
+calculate w200 ...done
+calculate w300 ...done
+calculate w010 ...done
+calculate w110 ...done
+calculate w210 ...done
+calculate w310 ...done
+calculate w020 ...done
+calculate w120 ...done
+calculate w220 ...done
+calculate w320 ...done
+calculate w102 ...done
+calculate w202 ...done
+calculate msm ...done
+
+write results to files ...     done
+calculate and write eigensystems to file ...     done
+exit: 0
+
+[torus/torus_R3.0_r1.0_n048] flags: --no-labels
+Converting Polyfile to Minkowski triangulation format ...     done
+check surface ...
+shortest edge = 0.130806
+longest edge  = 0.538785
+smallest area = 0.0171101
+largest area  = 0.0342202
+                       done
+calculate w000 ...done
+calculate w100 ...done
+calculate w200 ...done
+calculate w300 ...done
+calculate w010 ...done
+calculate w110 ...done
+calculate w210 ...done
+calculate w310 ...done
+calculate w020 ...done
+calculate w120 ...done
+calculate w220 ...done
+calculate w320 ...done
+calculate w102 ...done
+calculate w202 ...done
+calculate msm ...done
+
+write results to files ...     done
+calculate and write eigensystems to file ...     done
+exit: 0
+
+[torus/torus_R3.0_r1.0_n096] flags: --no-labels
+Converting Polyfile to Minkowski triangulation format ...     done
+check surface ...
+shortest edge = 0.0654382
+longest edge  = 0.26974
+smallest area = 0.00428215
+largest area  = 0.0085643
+                       done
+calculate w000 ...done
+calculate w100 ...done
+calculate w200 ...done
+calculate w300 ...done
+calculate w010 ...done
+calculate w110 ...done
+calculate w210 ...done
+calculate w310 ...done
+calculate w020 ...done
+calculate w120 ...done
+calculate w220 ...done
+calculate w320 ...done
+calculate w102 ...done
+calculate w202 ...done
+calculate msm ...done
+
+write results to files ...     done
+calculate and write eigensystems to file ...     done
+exit: 0
+
+=========================================
+Total: 12s | Finished: Thu Aug 20 22:30:48 EDT 2026
