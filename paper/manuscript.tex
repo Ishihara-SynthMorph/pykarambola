@@ -303,11 +303,13 @@ Numerical agreement between \texttt{pykarambola} and C++ \texttt{karambola} was 
 
 The primary limitation of pykarambola, inherited from karambola, is that it operates exclusively on triangulated surface meshes.
 For label-image inputs, the surface is extracted by marching cubes, which introduces a discretization artifact: at typical fluorescence microscopy voxel sizes, the mesh is a piecewise-planar approximation of the true surface.
-For smooth objects, tensor values converge asymptotically as voxel resolution increases, but rank-2 surface tensors are subject to an orientation bias from the anisotropy of the digital grid that can be significant at typical fluorescence microscopy resolutions \cite{Svane2017}; an alternative Voronoi-based approach that is asymptotically unbiased for binary voxel inputs without requiring surface reconstruction has recently been proposed \cite{Hug2025}.
-\added{To quantify this bias, we rotated a synthetic triaxial ellipsoid (semi-axes 10, 6, 4~$\mu$m) through 12 orientations at four voxel sizes (0.25--2.0~$\mu$m) and measured the variation in $\beta$ and principal axis orientation across orientations (Supplementary Figure~\ref{fig:orientation_bias}).
-At $\geq$40 voxels per major semi-axis (0.25~$\mu$m), $\beta$ varies by less than 0.4\% across orientations and the principal axis error remains below 0.2\textdegree.
-At 10 voxels per major semi-axis (1.0~$\mu$m, typical of confocal imaging of $\sim$10~$\mu$m organelles), $\beta$ varies by $\pm$9\% and axis errors reach 1.4\textdegree; at 5 voxels per semi-axis these grow to $\pm$10\% and 2.7\textdegree.
+For smooth objects, tensor values converge asymptotically as resolution increases.
+However, $W_\nu^{r,s}$ with $\nu \neq 0$ (surface-integral-based tensors) are subject to an orientation bias from the anisotropy of the digitized data that can be significant at typical fluorescence microscopy resolutions \cite{Svane2017}.
+\added{To quantify this effect, we rotated a synthetic triaxial ellipsoid (semi-axes $A=10$, $B=6$, $C=4$~$\mu$m) through 12 orientations (0\textdegree--165\textdegree{} in 15\textdegree{} steps) at 12 voxel sizes ($A/3$ to $A/100$) and measured the systematic bias and orientation spread in $\beta$ for all six rank-2 tensors and all four scalar Minkowski functionals (Supplementary Figure~\ref{fig:orientation_bias}).
+Scalar functionals converge monotonically without orientation dependence.
+At 20 voxels per major semi-axis the spread in $\beta$ (standard deviation over 12 orientations, normalised by the fine-resolution reference) ranges from 0.3\% for $W_0^{2,0}$ to 1.5\% for $W_3^{2,0}$; at 3 voxels per semi-axis these grow to 56\% and 52\%, respectively.
 We therefore recommend that objects of interest span at least 20 voxels across their longest dimension before tensor anisotropy values are interpreted quantitatively.}
+An alternative Voronoi-based approach that is asymptotically unbiased for binary voxel inputs without requiring surface reconstruction has recently been proposed \cite{Hug2025}.
 A further limitation applies to the direct mesh API, where users may encounter open or non-manifold meshes in their biological datasets.
 In such cases pykarambola issues a warning, noting that for open surfaces, volume-dependent quantities (\texttt{w000}, \texttt{w020}) are set to NaN, while non-manifold geometries render all results unreliable; users should therefore verify mesh quality before interpreting tensor outputs.
 The label-image API is not affected, as marching cubes always produces closed, manifold surfaces by construction.
@@ -423,14 +425,13 @@ Each shape was tested at five mesh resolutions; each point represents one featur
 \added{%
 \begin{figure*}[!ht]
 \centering
-\includegraphics[width=0.95\textwidth]{notebooks/results/orientation_bias.pdf}
+\includegraphics[width=0.95\textwidth]{notebooks/results/orientation_bias_bias_sigma_rot_z.pdf}
 \caption{Orientation bias introduced by marching-cubes surface extraction on a regular voxel grid.
-A synthetic triaxial ellipsoid (semi-axes $A=10$, $B=6$, $C=4$~$\mu$m) was rotated through 12 orientations (0\textdegree--165\textdegree{} in 15\textdegree{} steps) and discretized at four voxel sizes.
-\textbf{(a)} Anisotropy index $\beta = \lambda_\mathrm{min}/\lambda_\mathrm{max}$ of the normal-distribution tensor $W_1^{0,2}$ as a function of rotation angle; the dashed black line shows the reference value computed at 0.1~$\mu$m voxel size ($\approx$100 voxels per semi-axis).
-\textbf{(b)} $\beta$ range (percentage of true $\beta$) and maximum principal-axis error across all orientations as a function of voxel size.
-At $\geq$40 voxels per major semi-axis (0.25~$\mu$m), the $\beta$ range is $<$0.4\% and axis errors are $<$0.2\textdegree.
-At 10 voxels per major semi-axis (1.0~$\mu$m), the $\beta$ range rises to 9\% and axis errors reach 1.4\textdegree.
-\textit{Alt text: two-panel figure. Left panel: line plot of anisotropy index beta versus rotation angle (0 to 165 degrees) for four voxel sizes (0.25, 0.5, 1.0, 2.0 micrometres, coloured blue to orange), with a dashed black horizontal reference line; the four lines become increasingly spread and variable at coarser voxel sizes. Right panel: dual-axis line plot showing beta range (percentage of true beta, blue circles) and maximum principal-axis error in degrees (orange squares) versus voxel size; both quantities increase steeply from 0.25 to 2.0 micrometres.}}
+A synthetic triaxial ellipsoid (semi-axes $A=10$, $B=6$, $C=4$~$\mu$m) was rotated through 12 orientations (0\textdegree--165\textdegree{} in 15\textdegree{} steps) at 12 voxel sizes ($A/3$ to $A/100$).
+Solid lines show the systematic bias ($\bar{\beta}-\beta_{\mathrm{ref}}$, mean over 12 orientations minus fine-resolution reference); shaded bands show $\pm\sigma$ (standard deviation over 12 orientations); dashed lines mark zero.
+\textbf{(a)} Bias and spread for each of the six rank-2 Minkowski tensors ($W_\nu^{r,s}$).
+\textbf{(b)} The same quantities for the four scalar Minkowski functionals; scalars converge monotonically with negligible orientation spread.
+\textit{Alt text: two-panel figure. Panel (a): a 2-by-3 grid of line plots showing systematic bias (solid line) and orientation spread (shaded band) for six rank-2 Minkowski tensors as a function of voxels per semi-axis (log scale); bias and spread decrease with increasing resolution. Panel (b): a row of four plots showing bias and spread for the four scalar Minkowski functionals; the scalars converge smoothly with negligible spread across orientations.}}
 \label{fig:orientation_bias}
 \end{figure*}
 }
