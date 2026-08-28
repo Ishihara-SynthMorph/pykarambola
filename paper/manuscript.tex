@@ -56,7 +56,7 @@ A C++ implementation, karambola~\cite{Schaller2020karambola}, computes Minkowski
 Here we present pykarambola, a pip installable Python package that accepts NumPy arrays and standard mesh formats and returns Minkowski tensors, including derived anisotropy and orientation quantities.
 A high-level label-image API converts 3D integer arrays into per-object Minkowski tensors in a single call, making pykarambola directly compatible with the output of widely used segmentation tools.
 An optional Cython extension accelerates graph-traversal steps of mesh initialization for large-scale analyses.
-\replaced{Validated on synthetic meshes spanning three topological classes (a genus-1 torus, a genus-2 holey slab, and a hollow shell) and benchmarked}{Benchmarked} on 1{,}584 adrenal gland meshes, pykarambola reproduces all 121 C++ karambola output features to near-floating-point agreement and, in the pure-Python build, is $2.8\times$ faster at $28^3$ and $1.5\times$ faster at $64^3$ voxel resolution, with speedups primarily attributable to karambola's sequential per-object file I/O.
+\replaced{Validated on synthetic meshes spanning three topologies and benchmarked}{Benchmarked} on 1{,}584 adrenal gland meshes, pykarambola reproduces all 121 C++ karambola output features to near-floating-point agreement and, in the pure-Python build, is $2.8\times$ faster at $28^3$ and $1.5\times$ faster at $64^3$ voxel resolution, with speedups primarily attributable to karambola's sequential per-object file I/O.
 pykarambola is freely available as an open-source software package.
 \end{abstract}
 %TC:break main
