@@ -384,8 +384,13 @@ K.I.: Conceptualization, Funding acquisition, Project administration, Supervisio
 \centering
 \caption{%
   \added{Mathematical definitions of Minkowski tensors computed by pykarambola.
-  Notation: $K$ denotes the body with boundary $\partial K$; $\mathbf{x}$ is a position vector, $n_i$ the $i$-th component of the unit outward surface normal, $H=(\kappa_1{+}\kappa_2)/2$ the mean curvature, $K_G$ the Gaussian curvature, and $\chi$ the Euler characteristic.
-  See \texttt{docs/minkowski\_tensors.md} for discrete formulae and for full definitions of the Minkowski Structure Metrics ($q_\ell$, $w_\ell$) returned by \texttt{msm\_ql} and \texttt{msm\_wl} with \texttt{compute=`all'}.}
+  $K$ denotes the body with boundary $\partial K$.
+  $\mathbf{x}$ is a position vector.
+  $n_i$ is the $i$-th component of the unit outward surface normal.
+  $H=(\kappa_1{+}\kappa_2)/2$ is the mean curvature.
+  $K_G$ is the Gaussian curvature.
+  $\chi$ is the Euler characteristic.
+  See \texttt{docs/minkowski\_tensors.md} in the GitHub repository for discrete formulae and for full definitions of the Minkowski Structure Metrics ($q_\ell$, $w_\ell$) returned by \texttt{msm\_ql} and \texttt{msm\_wl} with \texttt{compute=`all'}.}
 }
 \label{tab:tensors}
 \small
@@ -416,10 +421,9 @@ K.I.: Conceptualization, Funding acquisition, Project administration, Supervisio
 \texttt{w102} & $W_1^{0,2}$ & $\tfrac{1}{3}\int_{\partial K} n_i n_j\,dA$ & Normal distribution tensor \\
 \texttt{w202} & $W_2^{0,2}$ & $\tfrac{1}{3}\int_{\partial K} H\,n_i n_j\,dA$ & Curvature-weighted normal tensor \\
 \hline
-\multicolumn{4}{l}{\textit{Higher-rank tensors and Minkowski Structure Metrics} (\texttt{compute=`all'})} \\
+\multicolumn{4}{l}{\textit{Higher-rank tensors} (\texttt{compute=`all'})} \\
 \texttt{w103} & $W_1^{0,3}$ & $\tfrac{1}{3}\int_{\partial K} n_i n_j n_k\,dA$ & Rank-3 normal tensor \\
 \texttt{w104} & $W_1^{0,4}$ & $\tfrac{1}{3}\int_{\partial K} n_i n_j n_k n_l\,dA$ & Rank-4 normal tensor \\
-\texttt{msm\_ql}, \texttt{msm\_wl} & $q_\ell,\,w_\ell$ & \multicolumn{2}{l}{Minkowski Structure Metrics — see \texttt{docs/minkowski\_tensors.md}} \\
 \hline
 \end{tabular}
 \end{table*}
