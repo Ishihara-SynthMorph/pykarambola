@@ -304,9 +304,6 @@ The optional Cython extension targets only the graph-traversal steps of mesh ini
 For interactive or small-scale use, the pure-Python build is sufficient and requires no compiled extension.
 A parallel-processing workflow for large-scale batch analyses using a lightweight Python library for transparent parallelization across CPU cores is also available and demonstrated in the project repository, saving additional computation time for large imaging datasets.
 
-
-Numerical agreement between \texttt{pykarambola} and C++ \texttt{karambola} was confirmed on both topologically non-trivial synthetic surfaces with known analytical values ($\chi = 0$, $-2$, $+4$) and across the full 121-feature output on 1{,}584 biological meshes, with all outputs falling on the identity line and maximum mean absolute difference of $1.6\times10^{-4}$.
-
 The primary limitation of pykarambola, inherited from karambola, is that it operates exclusively on triangulated surface meshes.
 For label-image inputs, the surface is extracted by marching cubes, which introduces a discretization artifact: at typical fluorescence microscopy voxel sizes, the mesh is a piecewise-planar approximation of the true surface.
 \replaced{For smooth objects, tensor values converge asymptotically as resolution increases.
