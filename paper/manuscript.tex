@@ -124,7 +124,7 @@ pykarambola retains support for the two mesh formats accepted by C++ karambola: 
 Three additional parsers for Wavefront OBJ (\texttt{.obj}), binary glTF (\texttt{.glb}), and STereoLithography (\texttt{.stl}) were added to broaden compatibility with mesh files produced by common 3D reconstruction and visualization tools.
 
 The package ships with an extensive test suite (runnable via \texttt{pytest}) covering numerical agreement with C++ karambola across all output features, mesh quality validation for open, non-manifold, and degenerate surfaces, and correctness of the label-image and file-format APIs.
-Numerical correctness of the port was further validated by benchmarking against the C++ karambola binary on synthetic meshes spanning three topological classes (torus, holey slab, hollow shell) with known analytical Minkowski values, and on a large biological dataset, confirming near-floating-point agreement for all Minkowski scalars, vectors, and tensors.
+\replaced{Numerical correctness of the port was further validated by benchmarking against the C++ karambola binary on synthetic meshes spanning three topological classes (torus, holey slab, hollow shell) with known analytical Minkowski values, and on a large biological dataset, confirming near-floating-point agreement for all Minkowski scalars, vectors, and tensors.}{Numerical correctness of the port was further validated by extensive benchmarking against the C++ karambola binary across a diverse set of test meshes, confirming near-floating-point agreement for all Minkowski scalars, vectors, and tensors.}
 
 \subsection*{Acceleration strategy: NumPy vectorization and Cython}
 pykarambola achieves competitive runtime primarily through NumPy vectorization~\cite{harris2020numpy}: all mesh data are stored as contiguous arrays and bulk operations replace Python-level loops over individual triangles or edges.
@@ -223,7 +223,7 @@ Across all shapes, resolutions, and feature types (scalars, vectors, rank-2 tens
 At the finest resolution, the scalar functionals converge to within 0.08\% of their analytical values for all shapes and $W_3^{0,0}$ reproduces the exact topological value $(2\pi/3)\chi$ to within $10^{-11}$.
 Minkowski vector functionals ($W_\nu^{1,0}$) are analytically zero for all three centrosymmetric shapes; both implementations return values below $10^{-8}$, and the residual differences between them reflect independent floating-point rounding rather than a systematic discrepancy.}
 
-\replaced{We extended this accuracy assessment to the full 121-feature output on a large biological dataset, comparing \texttt{pykarambola} against C++ \texttt{karambola} on the AdrenalMNIST3D }{To assess numerical accuracy, wecompared all 121 output features of pykarambola against C++ karambola on the full AdrenalMNIST3D }
+\replaced{We extended this accuracy assessment to the full 121-feature output on a large biological dataset, comparing \texttt{pykarambola} against C++ \texttt{karambola} on the AdrenalMNIST3D }{To assess numerical accuracy, we compared all 121 output features of \texttt{pykarambola} against C++ \texttt{karambola} on the full AdrenalMNIST3D }
 dataset~\cite{Yang2023MedMNIST} (1{,}584 meshes at both $28^3$ and $64^3$
 resolutions).
 The 121 quantities comprise: 4 Minkowski scalars, 12 vector components, 36
@@ -275,7 +275,7 @@ The label-image API (\texttt{minkowski\_tensors\_from\_label\_image}) accepts in
 \added{Supplementary Figure~\ref{fig:workflow} embeds the label-image API in a complete, biologist-facing workflow. A raw 3D confocal stack (\texttt{skimage.data.cells3d}~\cite{vanderwalt2014scikit}) is first segmented into individually labelled nuclei using standard scikit-image tools; pykarambola then takes this integer label image as input and returns per-object Minkowski tensors in a single \texttt{minkowski\_tensors\_from\_label\_image} call. 
 Clustering the nuclei on their rotation-invariant shape features recovers biologically meaningful morphotypes, cleanly separating the mitotic cell (lower~$\beta$, larger volume) from the interphase population.}
 
-To illustrate how labelling choice determines what Minkowski tensors measure for a multi-object biological structure, we applied the label-image API to a publicly available 3D fluorescence segmentation of a human induced pluripotent stem cell (hiPSC) in early anaphase/telophase from the Allen Cell Collection~\cite{viana2023integrated}.
+\replaced{To illustrate how labelling choice determines what Minkowski tensors measure for a multi-object biological structure, we applied the label-image API}{To demonstrate the API, we applied it} to a publicly available 3D fluorescence segmentation of a human induced pluripotent stem cell (hiPSC) in early anaphase/telophase from the Allen Cell Collection~\cite{viana2023integrated}.
 The segmentation provides a two-channel binary mask at isotropic voxel spacing of 0.108~$\mu$m: one channel for the DNA and one for the cell membrane.
 
 Supplementary Figure~\ref{fig:labelimage} illustrates how the choice of labeling scheme directly determines what the tensors measure, using the DNA channel as an example.
