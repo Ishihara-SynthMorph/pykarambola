@@ -315,7 +315,7 @@ However, $W_\nu^{r,s}$ with $\nu \neq 0$ are subject to an orientation bias from
 A further limitation applies to the direct mesh API, where users may encounter open or non-manifold meshes in their biological datasets.
 In such cases pykarambola issues a warning, noting that for open surfaces, volume-dependent quantities (\texttt{w000}, \texttt{w020}) are set to NaN, while non-manifold geometries render all results unreliable; users should therefore verify mesh quality before interpreting tensor outputs.
 The label-image API is not affected, as marching cubes always produces closed, manifold surfaces by construction.
-\newtxt{Users encountering open or non-manifold meshes in their own datasets can repair them using established mesh-processing tools such as MeshLab~\cite{Cignoni2008meshlab} prior to passing the mesh to pykarambola.}
+\newtxt{Users working with open or non-manifold meshes can repair them using established mesh-processing tools such as MeshLab~\cite{Cignoni2008meshlab} prior to passing the mesh to pykarambola.}
 
 Future development directions include support for additional Minkowski tensor families beyond those available in karambola and a streaming batch-processing mode for datasets too large to hold in memory simultaneously.
 pykarambola's speed makes it well-suited for real-time feedback as users explore and annotate 3D segmentations.
