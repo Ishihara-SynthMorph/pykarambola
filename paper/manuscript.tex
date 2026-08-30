@@ -216,10 +216,11 @@ of the speedup observed on the adrenal dataset.
 
 \subsection*{Numerical accuracy}
 
-\added{We benchmark pykarambola against the original karambola implementation on both synthetic shapes, where analytical values provide independent ground truth, and biological datasets representative of real use. 
-To test of correctness on topologically non-trivial synthetic surfaces, we evaluated \texttt{pykarambola} and C++ \texttt{karambola} on three synthetic meshes with known analytical Minkowski scalar values: a parametric torus ($\chi = 0$, genus~1), a rectangular slab with two rectangular through-holes ($\chi = -2$, genus~2), and two nested icospheres forming a hollow shell ($\chi = +4$; genus = 0).
+\added{We benchmark the numerical accuracy of pykarambola against the C++ karambola in two steps: (i) synthetic shapes, where analytical values provide independent ground truth, and (ii) biological datasets, which representative practical applications in 3D morphometry. 
+We generated synthetic shapes of varying topologies: a parametric torus ($\chi = 0$, genus~1), a rectangular slab with two rectangular through-holes ($\chi = -2$, genus~2), and two nested icospheres forming a hollow shell ($\chi = +4$, genus = 0).
+We compute the Minkowski tensors via pykarambola or C++ karambola and compare these values to the known analytical values of these three synthetic meshes.
 Each shape was tested at five mesh resolutions.
-Across all shapes, resolutions, and feature types (scalars, vectors, rank-2 tensors), both implementations fall on the identity line (Supplementary Figure~\ref{fig:topology}), confirming that the reimplementation handles non-trivial topology identically to the reference..
+Across all shapes, resolutions, and feature types (scalars, vectors, rank-2 tensors), both implementations fall on the identity line (Supplementary Figure~\ref{fig:topology}), confirming that the reimplementation handles non-trivial topology identically to the reference.
 At the finest resolution, the scalar functionals converge to within 0.08\% of their analytical values for all shapes and $W_3^{0,0}$ reproduces the exact topological value $(2\pi/3)\chi$ to within $10^{-11}$.
 Minkowski vector functionals ($W_\nu^{1,0}$) are analytically zero for all three centrosymmetric shapes; both implementations return values below $10^{-8}$, and the residual differences between them reflect independent floating-point rounding rather than a systematic discrepancy.}
 
@@ -272,8 +273,8 @@ residuals of order $10^{-8}$--$10^{-7}$ on the AdrenalMNIST3D meshes.
 
 \subsection*{Label-image API walkthrough}
 The label-image API (\texttt{minkowski\_tensors\_from\_label\_image}) accepts integer segmentation arrays directly, converting each labeled region to a triangulated mesh and returning Minkowski tensors in a single call (Figure~\ref{fig:pipeline}).
-\added{Supplementary Figure~\ref{fig:workflow} embeds the label-image API in a complete, biologist-facing workflow. A raw 3D confocal stack (\texttt{skimage.data.cells3d}~\cite{vanderwalt2014scikit}) is first segmented into individually labelled nuclei using standard scikit-image tools; pykarambola then takes this integer label image as input and returns per-object Minkowski tensors in a single \texttt{minkowski\_tensors\_from\_label\_image} call. 
-Clustering the nuclei on their rotation-invariant shape features recovers biologically meaningful morphotypes, cleanly separating the mitotic cell (lower~$\beta$, larger volume) from the interphase population.}
+\added{Supplementary Figure~\ref{fig:workflow} embeds the label-image API in a complete, biologist-facing workflow. A raw 3D confocal stack is first segmented into individually labelled nuclei using scikit-image; pykarambola then takes this integer label image as input and returns per-object Minkowski tensors. 
+Clustering the nuclei on their rotation-invariant shape features recovers biologically meaningful morphotypes, separating the mitotic cell (lower~$\beta$, larger volume) from interphase cells.}
 
 \replaced{To illustrate how labelling choice determines what Minkowski tensors measure for a multi-object biological structure, we applied the label-image API}{To demonstrate the API, we applied it} to a publicly available 3D fluorescence segmentation of a human induced pluripotent stem cell (hiPSC) in early anaphase/telophase from the Allen Cell Collection~\cite{viana2023integrated}.
 The segmentation provides a two-channel binary mask at isotropic voxel spacing of 0.108~$\mu$m: one channel for the DNA and one for the cell membrane.
@@ -295,8 +296,8 @@ The full worked example including mesh visualisation and Minkowski tensor additi
 %% -------------------------------------------------------
 pykarambola makes Minkowski tensor morphometry directly accessible within the Python bioimage ecosystem by replacing a C++ binary with a pip-installable package that accepts NumPy arrays and returns plain Python dicts.
 Beyond making the tool pip-installable, the reimplementation extends input support to Wavefront OBJ, binary glTF, and STL files and adds a high-level label-image API that converts 3D segmentation outputs into per-object tensors in a single call.
-The hiPSC anaphase example in the Results section demonstrates that this analysis is accessible directly from the integer label arrays produced by standard segmentation tools, without any intermediate mesh preparation.
-\added{Supplementary Figure~\ref{fig:workflow} extends this to a full population-level morphometry use case: watershed segmentation of a 60-slice confocal stack, per-nucleus Minkowski tensor computation in a single API call, and unsupervised shape clustering are chained in under 50 lines of Python, with the resulting PCA projection recovering biologically interpretable morphotypes including a mitotic cell.}
+\replaced{Using pykarambola, we can create end-to-end morphometry pipelines starting from 3D intensity images or label images}{The hiPSC anaphase example in the Results section demonstrates that this analysis is accessible directly from the integer label arrays produced by standard segmentation tools}, without any intermediate mesh preparation \added{(Supplementary Figure~\ref{fig:workflow}, ~\ref{fig:labelimage})}.
+%\added{Supplementary Figure~\ref{fig:workflow} extends this to a full population-level morphometry use case: watershed segmentation of a 60-slice confocal stack, per-nucleus Minkowski tensor computation in a single API call, and unsupervised shape clustering are chained in under 50 lines of Python, with the resulting PCA projection recovering biologically interpretable morphotypes including a mitotic cell.}
 The benchmark results show that on icospheres, the Cython-accelerated build was generally faster than C++ karambola ($1.0$--$1.15\times$ speedup for mesh sizes up to 2.6M vertices, with both within 3\% at the largest mesh tested), while the pure-Python build ran at $0.79$--$0.97\times$ of karambola's speed across all mesh sizes.
 On the AdrenalMNIST3D dataset, pykarambola was faster than C++ karambola (2.8$\times$ at 28$^3$, 1.5$\times$ at 64$^3$), primarily because C++ karambola writes one result folder per object to disk.
 The NumPy vectorization of the Minkowski tensors over all triangles in a single array operation avoids per-triangle Python overhead, keeping the compute step comparable in speed to the C++ implementation.
@@ -305,14 +306,15 @@ For interactive or small-scale use, the pure-Python build is sufficient and requ
 A parallel-processing workflow for large-scale batch analyses using a lightweight Python library for transparent parallelization across CPU cores is also available and demonstrated in the project repository, saving additional computation time for large imaging datasets.
 
 The primary limitation of pykarambola, inherited from karambola, is that it operates exclusively on triangulated surface meshes.
-For label-image inputs, the surface is extracted by marching cubes, which introduces a discretization artifact: at typical fluorescence microscopy voxel sizes, the mesh is a piecewise-planar approximation of the true surface.
-\replaced{For smooth objects, tensor values converge asymptotically as resolution increases.
-However, $W_\nu^{r,s}$ with $\nu \neq 0$ are subject to an orientation bias from the anisotropy of the digitized data that can be significant at typical fluorescence microscopy resolutions (Supplementary Figure~\ref{fig:orientation_bias}) \cite{Svane2017}.}{For smooth objects, tensor values converge asymptotically as voxel resolution increases, but rank-2 surface tensors are subject to an orientation bias from the anisotropy of the digital grid that can be significant at typical fluorescence microscopy resolutions \cite{Svane2017};}
-\replaced{An}{an} alternative Voronoi-based approach that is asymptotically unbiased for binary voxel inputs without requiring surface reconstruction has recently been proposed \cite{Hug2025}.
+\replaced{For smooth objects represented as meshes, tensor values converge asymptotically as resolution increases.
+We note that $W_\nu^{r,s}$ with $\nu \neq 0$ are subject to an orientation bias from the anisotropy of the digitized data that can be significant at lower resolutions (Supplementary Figure~\ref{fig:orientation_bias}) \cite{Svane2017}.}
+{For label-image inputs, the surface is extracted by marching cubes, which introduces a discretization artifact: at typical fluorescence microscopy voxel sizes, the mesh is a piecewise-planar approximation of the true surface. For smooth objects, tensor values converge asymptotically as voxel resolution increases, but rank-2 surface tensors are subject to an orientation bias from the anisotropy of the digital grid that can be significant at typical fluorescence microscopy resolutions \cite{Svane2017};}
+\added{For label-image inputs, the surface is extracted by marching cubes, which introduces a discretization artifact: at typical fluorescence microscopy voxel sizes, the mesh is a piecewise-planar approximation of the true surface.}
+\replaced{This discrepancy may be reconciled by an}{An} alternative Voronoi-based approach that is asymptotically unbiased for binary voxel inputs without requiring surface reconstruction \deleted{has recently been proposed} \cite{Hug2025}.
 A further limitation applies to the direct mesh API, where users may encounter open or non-manifold meshes in their biological datasets.
 In such cases pykarambola issues a warning, noting that for open surfaces, volume-dependent quantities (\texttt{w000}, \texttt{w020}) are set to NaN, while non-manifold geometries render all results unreliable; users should therefore verify mesh quality before interpreting tensor outputs.
 The label-image API is not affected, as marching cubes always produces closed, manifold surfaces by construction.
-\newtxt{Users encountering open or non-manifold meshes in their own datasets can repair them using established mesh-processing tools such as MeshLab~\cite{Cignoni2008meshlab} prior to passing the mesh to pykarambola.}
+\newtxt{Users working with open or non-manifold meshes can repair them using established mesh-processing tools such as MeshLab~\cite{Cignoni2008meshlab} prior to passing the mesh to pykarambola.}
 
 Future development directions include support for additional Minkowski tensor families beyond those available in karambola and a streaming batch-processing mode for datasets too large to hold in memory simultaneously.
 pykarambola's speed makes it well-suited for real-time feedback as users explore and annotate 3D segmentations.
@@ -480,7 +482,7 @@ All panels and groupings are identical to Supplementary Figure~\ref{fig:accuracy
 \centering
 \includegraphics[width=\textwidth]{../assets/demo_pipeline.png}
 \caption{%
-  \added{End-to-end segmentation-to-morphometry pipeline applied to 3D confocal nuclei (\texttt{skimage.data.cells3d}; data provided by the Allen Institute for Cell Science~\cite{vanderwalt2014scikit}).
+  \added{End-to-end segmentation-to-morphometry pipeline applied to 3D confocal nuclei (\texttt{skimage.data.cells3d}~\cite{vanderwalt2014scikit}).
   From left to right: (i)~raw fluorescence stack (nuclei channel), mid-Z slice shown; (ii)~integer label image produced by scikit-image watershed segmentation, each colour representing one of 12 individually resolved non-border-touching nuclei; (iii)~PCA projection of the rotationally invariant subset of tensor outputs (Minkowski scalars, $\beta$, eigenvalues, trace, and MSM $q_l/w_l$; 56 features per nucleus) computed in a single \texttt{minkowski\_tensors\_from\_label\_image} call, points coloured by hierarchical agglomerative cluster assignment; (iv)~3D surface meshes of all nuclei coloured by the same cluster assignment; the spatially isolated nucleus (orange) is the mitotic cell (lower $\beta$, larger volume).
   The complete pipeline is provided in \texttt{examples/segmentation\_workflow.ipynb}.
   \textit{Alt text: four-panel horizontal figure connected by arrows showing a left-to-right pipeline. First panel: grey-scale confocal mid-Z slice. Second panel: colour-coded integer segmentation overlay. Third panel: 2D PCA scatter plot with three coloured clusters. Fourth panel: 3D mesh render with nuclei coloured by cluster; one orange nucleus is spatially isolated.}}
@@ -522,7 +524,7 @@ arbitrary distance units) was rotated about the $z$-axis through 12 orientations
 Each curve traces one measure against rotation angle at fixed resolution; the periodic variation with angle is the orientation-induced discretisation artefact, and its amplitude decreases with increasing resolution as the curves converge toward the dotted reference. 
 The dotted grey line is the fine-resolution reference, evaluated at the finest grid (100 voxels per~$A$) at $0^\circ$ orientation.
 (\textbf{a})~Anisotropy index $\beta = \lambda_\mathrm{min}/\lambda_\mathrm{max}$ (ratio of smallest to largest tensor eigenvalue) for the six rank-2 Minkowski tensors $W_0^{2,0}$, $W_1^{2,0}$, $W_2^{2,0}$, $W_3^{2,0}$, $W_1^{0,2}$, $W_2^{0,2}$. 
-(\textbf{b})~Value of the three scalar Minkowski functionals $W_0^{0,0}$ (volume), $W_1^{0,0}$ (surface area), and $W_2^{0,0}$ (integrated mean curvature); the topological functional $W_3^{0,0}$ is omitted as it is aninteger invariant unaffected by orientation and resolution.
+(\textbf{b})~Value of the three scalar Minkowski functionals $W_0^{0,0}$ (volume), $W_1^{0,0}$ (surface area), and $W_2^{0,0}$ (integrated mean curvature); the topological functional $W_3^{0,0}$ is omitted as it is an integer invariant unaffected by orientation and resolution.
 \textit{Alt text: a nine-panel figure, six panels in (a) and three in (b), each plotting a morphometric measure against rotation angle from 0 to 165 degrees, with one coloured line per grid resolution from 20 (dark) to 100 (light) voxels per semi-axis. 
 All curves oscillate periodically with angle; the oscillation amplitude shrinks and the curves approach a dotted grey reference line as resolution increases.}}
 }
