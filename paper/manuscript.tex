@@ -216,10 +216,11 @@ of the speedup observed on the adrenal dataset.
 
 \subsection*{Numerical accuracy}
 
-\added{We benchmark pykarambola against the original karambola implementation on both synthetic shapes, where analytical values provide independent ground truth, and biological datasets representative of real use. 
-To test of correctness on topologically non-trivial synthetic surfaces, we evaluated \texttt{pykarambola} and C++ \texttt{karambola} on three synthetic meshes with known analytical Minkowski scalar values: a parametric torus ($\chi = 0$, genus~1), a rectangular slab with two rectangular through-holes ($\chi = -2$, genus~2), and two nested icospheres forming a hollow shell ($\chi = +4$; genus = 0).
+\added{We benchmark the numerical accuracy of pykarambola against the C++ karambola in two steps: (i) synthetic shapes, where analytical values provide independent ground truth, and (ii) biological datasets, which representative practical applications in 3D morphometry. 
+We generated synthetic shapes of varying topologies: a parametric torus ($\chi = 0$, genus~1), a rectangular slab with two rectangular through-holes ($\chi = -2$, genus~2), and two nested icospheres forming a hollow shell ($\chi = +4$, genus = 0).
+We compute the Minkowski tensors via pykarambola or C++ karambola and compare these values to the known analytical values of these three synthetic meshes.
 Each shape was tested at five mesh resolutions.
-Across all shapes, resolutions, and feature types (scalars, vectors, rank-2 tensors), both implementations fall on the identity line (Supplementary Figure~\ref{fig:topology}), confirming that the reimplementation handles non-trivial topology identically to the reference..
+Across all shapes, resolutions, and feature types (scalars, vectors, rank-2 tensors), both implementations fall on the identity line (Supplementary Figure~\ref{fig:topology}), confirming that the reimplementation handles non-trivial topology identically to the reference.
 At the finest resolution, the scalar functionals converge to within 0.08\% of their analytical values for all shapes and $W_3^{0,0}$ reproduces the exact topological value $(2\pi/3)\chi$ to within $10^{-11}$.
 Minkowski vector functionals ($W_\nu^{1,0}$) are analytically zero for all three centrosymmetric shapes; both implementations return values below $10^{-8}$, and the residual differences between them reflect independent floating-point rounding rather than a systematic discrepancy.}
 
