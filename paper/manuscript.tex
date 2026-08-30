@@ -272,8 +272,8 @@ residuals of order $10^{-8}$--$10^{-7}$ on the AdrenalMNIST3D meshes.
 
 \subsection*{Label-image API walkthrough}
 The label-image API (\texttt{minkowski\_tensors\_from\_label\_image}) accepts integer segmentation arrays directly, converting each labeled region to a triangulated mesh and returning Minkowski tensors in a single call (Figure~\ref{fig:pipeline}).
-\added{Supplementary Figure~\ref{fig:workflow} embeds the label-image API in a complete, biologist-facing workflow. A raw 3D confocal stack (\texttt{skimage.data.cells3d}~\cite{vanderwalt2014scikit}) is first segmented into individually labelled nuclei using standard scikit-image tools; pykarambola then takes this integer label image as input and returns per-object Minkowski tensors in a single \texttt{minkowski\_tensors\_from\_label\_image} call. 
-Clustering the nuclei on their rotation-invariant shape features recovers biologically meaningful morphotypes, cleanly separating the mitotic cell (lower~$\beta$, larger volume) from the interphase population.}
+\added{Supplementary Figure~\ref{fig:workflow} embeds the label-image API in a complete, biologist-facing workflow. A raw 3D confocal stack is first segmented into individually labelled nuclei using scikit-image; pykarambola then takes this integer label image as input and returns per-object Minkowski tensors. 
+Clustering the nuclei on their rotation-invariant shape features recovers biologically meaningful morphotypes, separating the mitotic cell (lower~$\beta$, larger volume) from interphase cells.}
 
 To illustrate how labelling choice determines what Minkowski tensors measure for a multi-object biological structure, we applied the label-image API to a publicly available 3D fluorescence segmentation of a human induced pluripotent stem cell (hiPSC) in early anaphase/telophase from the Allen Cell Collection~\cite{viana2023integrated}.
 The segmentation provides a two-channel binary mask at isotropic voxel spacing of 0.108~$\mu$m: one channel for the DNA and one for the cell membrane.
@@ -483,7 +483,7 @@ All panels and groupings are identical to Supplementary Figure~\ref{fig:accuracy
 \centering
 \includegraphics[width=\textwidth]{../assets/demo_pipeline.png}
 \caption{%
-  \added{End-to-end segmentation-to-morphometry pipeline applied to 3D confocal nuclei (\texttt{skimage.data.cells3d}; data provided by the Allen Institute for Cell Science~\cite{vanderwalt2014scikit}).
+  \added{End-to-end segmentation-to-morphometry pipeline applied to 3D confocal nuclei (\texttt{skimage.data.cells3d}~\cite{vanderwalt2014scikit}).
   From left to right: (i)~raw fluorescence stack (nuclei channel), mid-Z slice shown; (ii)~integer label image produced by scikit-image watershed segmentation, each colour representing one of 12 individually resolved non-border-touching nuclei; (iii)~PCA projection of the rotationally invariant subset of tensor outputs (Minkowski scalars, $\beta$, eigenvalues, trace, and MSM $q_l/w_l$; 56 features per nucleus) computed in a single \texttt{minkowski\_tensors\_from\_label\_image} call, points coloured by hierarchical agglomerative cluster assignment; (iv)~3D surface meshes of all nuclei coloured by the same cluster assignment; the spatially isolated nucleus (orange) is the mitotic cell (lower $\beta$, larger volume).
   The complete pipeline is provided in \texttt{examples/segmentation\_workflow.ipynb}.
   \textit{Alt text: four-panel horizontal figure connected by arrows showing a left-to-right pipeline. First panel: grey-scale confocal mid-Z slice. Second panel: colour-coded integer segmentation overlay. Third panel: 2D PCA scatter plot with three coloured clusters. Fourth panel: 3D mesh render with nuclei coloured by cluster; one orange nucleus is spatially isolated.}}
