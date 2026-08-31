@@ -220,9 +220,7 @@ of the speedup observed on the adrenal dataset.
 We generated synthetic shapes of varying topologies: a parametric torus ($\chi = 0$, genus~1), a rectangular slab with two rectangular through-holes ($\chi = -2$, genus~2), and two nested icospheres forming a hollow shell ($\chi = +4$, genus = 0).
 We compute the Minkowski tensors via pykarambola or C++ karambola and compare these values to the known analytical values of these three synthetic meshes.
 Each shape was tested at five mesh resolutions.
-Across all shapes, resolutions, and feature types (scalars, vectors, rank-2 tensors), both implementations fall on the identity line (Supplementary Figure~\ref{fig:topology}), confirming that the reimplementation handles non-trivial topology identically to the reference.
-At the finest resolution, the scalar functionals converge to within 0.08\% of their analytical values for all shapes and $W_3^{0,0}$ reproduces the exact topological value $(2\pi/3)\chi$ to within $10^{-11}$.
-Minkowski vector functionals ($W_\nu^{1,0}$) are analytically zero for all three centrosymmetric shapes; both implementations return values below $10^{-8}$, and the residual differences between them reflect independent floating-point rounding rather than a systematic discrepancy.}
+Both implementations converge to the analytical scalar values with increasing resolution (Supplementary Figure~\ref{fig:topology}); closed forms are not generally available for the higher-rank tensors on these geometries, so for those we confirm that pykarambola reproduces karambola to near floating-point precision.}
 
 \replaced{We extended this accuracy assessment to the full 121-feature output on a large biological dataset, comparing pykarambola against C++ karambola on the AdrenalMNIST3D }{To assess numerical accuracy, we compared all 121 output features of pykarambola against C++ karambola on the full AdrenalMNIST3D }
 dataset~\cite{Yang2023MedMNIST} (1{,}584 meshes at both $28^3$ and $64^3$
@@ -433,16 +431,15 @@ K.I.: Conceptualization, Funding acquisition, Project administration, Supervisio
 \added{%
 \begin{figure*}[!ht]
 \centering
-\includegraphics[width=0.95\textwidth]{notebooks/results/scatter_topology_accuracy.pdf}
+\includegraphics[width=0.95\textwidth]{notebooks/results/topology_convergence.pdf}
 \caption{%
-  \added{Numerical accuracy of pykarambola relative to C++ karambola on three synthetic meshes of known topology.
-  Each panel shows a scatter plot of values from identical analyses run in C++ (karambola, $x$-axis) and Python (pykarambola, $y$-axis).
-  Rows correspond to shapes: torus ($\chi = 0$, genus~1), holey slab (rectangular slab with two rectangular through-holes, $\chi = -2$, genus~2), and hollow shell ($\chi = +4$, two components).
-  Columns correspond to feature groups: scalars ($W_\nu^{0,0}$), vectors ($W_\nu^{1,0}$), rank-2 tensors ($W_\nu^{2,0}$ and $W_\nu^{0,2}$), and Minkowski structure metrics (MSM) $q_l$ and $w_l$.
-  The red diagonal indicates perfect agreement; all scalar, tensor and MSM points fall on this line.
-  Vector functionals ($W_\nu^{1,0}$) are analytically zero for these centrosymmetric shapes; residual spread in the vector panels reflects independent floating-point rounding in the two implementations rather than systematic error.
-  Each shape was tested at five mesh resolutions; each point represents one feature from one mesh.
-  \textit{Alt text: a 3-by-4 grid of scatter plots. Rows correspond to torus, holey slab, and hollow shell; columns correspond to scalar, vector, rank-2 tensors, and Minkowski structure metrics. In each panel the $x$-axis shows karambola values and the $y$-axis shows pykarambola values; a red diagonal line marks perfect agreement. Scalar, tensor and structure metric panels show points tightly clustered on the diagonal. Vector panels show points scattered near the origin, reflecting values close to zero for centrosymmetric shapes.}}
+  \added{Resolution convergence of \texttt{pykarambola} and C++ \texttt{karambola} toward analytical Minkowski scalar values on three synthetic meshes of known topology.
+  Each panel plots one scalar Minkowski functional against mesh resolution~$n$ for karambola (green, solid, filled circles), pykarambola (blue, dashed, open squares), and, and the analytical value (red dash-dot line).
+  Rows correspond to shapes: torus ($\chi = 0$, genus~1), holey slab (rectangular slab with two rectangular through-holes, $\chi = -2$, genus~2), and hollow shell (two nested icospheres, $\chi = +4$, two components).
+  Columns correspond to the four scalar Minkowski functionals: volume $W_0^{0,0}$, surface area $W_1^{0,0}$, integrated mean curvature $W_2^{0,0}$, and the topological term $W_3^{0,0}$ ($\propto \chi$).
+  Both implementations converge toward the analytical values with increasing resolution and agree with each other to near floating-point precision at every resolution; $W_3^{0,0}$ is a topological invariant and is reproduced exactly at all resolutions.
+  Each shape was evaluated at five mesh resolutions.
+  \textit{Alt text: a 3-by-4 grid of line plots. Rows are torus, holey slab, and hollow shell; columns are the volume, surface area, integrated mean curvature, and topological scalar Minkowski functionals. In each panel the horizontal axis is mesh resolution and the vertical axis is the functional value; a green solid curve (karambola) and a blue dashed curve (pykarambola) overlie one another and approach a red dash-dot horizontal line marking the analytical value as resolution increases. The topological-term panels are flat, lying on the analytical value at all resolutions.}}
 }
 \label{fig:topology}
 \end{figure*}
