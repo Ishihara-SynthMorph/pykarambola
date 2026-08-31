@@ -305,7 +305,7 @@ A parallel-processing workflow for large-scale batch analyses using a lightweigh
 
 The primary limitation of pykarambola, inherited from karambola, is that it operates exclusively on triangulated surface meshes.
 \replaced{For smooth objects represented as meshes, tensor values converge asymptotically as resolution increases.
-We note that $W_\nu^{r,s}$ with $\nu \neq 0$ are subject to an orientation bias from the anisotropy of the digitized data that can be significant at lower resolutions (Supplementary Figure~\ref{fig:orientation_bias}) \cite{Svane2017}.}
+We note that Minkowski tensors are subject to an orientation bias from the anisotropy of the digitized data that can be significant at lower resolutions (Supplementary Figure~\ref{fig:orientation_bias}) \cite{Svane2017}.}
 {For label-image inputs, the surface is extracted by marching cubes, which introduces a discretization artifact: at typical fluorescence microscopy voxel sizes, the mesh is a piecewise-planar approximation of the true surface. For smooth objects, tensor values converge asymptotically as voxel resolution increases, but rank-2 surface tensors are subject to an orientation bias from the anisotropy of the digital grid that can be significant at typical fluorescence microscopy resolutions \cite{Svane2017};}
 \added{For label-image inputs, the surface is extracted by marching cubes, which introduces a discretization artifact: at typical fluorescence microscopy voxel sizes, the mesh is a piecewise-planar approximation of the true surface.}
 \replaced{This discrepancy may be reconciled by an}{An} alternative Voronoi-based approach that is asymptotically unbiased for binary voxel inputs without requiring surface reconstruction \deleted{has recently been proposed} \cite{Hug2025}.
