@@ -434,12 +434,13 @@ K.I.: Conceptualization, Funding acquisition, Project administration, Supervisio
 \includegraphics[width=0.95\textwidth]{notebooks/results/topology_convergence.pdf}
 \caption{%
   \added{Resolution convergence of \texttt{pykarambola} and C++ \texttt{karambola} toward analytical Minkowski scalar values on three synthetic meshes of known topology.
-  Each panel plots one scalar Minkowski functional against mesh resolution~$n$ for karambola (green, solid, filled circles), pykarambola (blue, dashed, open squares), and, and the analytical value (red dash-dot line).
+  Each plot panel shows one scalar Minkowski functional against mesh resolution~$n$ for karambola (green, solid, filled circles), pykarambola (blue, dashed, open squares), and the analytical value (red dash-dot line).
+  The leftmost column (\emph{Shape}) shows a representative 3D rendering of each mesh.
   Rows correspond to shapes: torus ($\chi = 0$, genus~1), holey slab (rectangular slab with two rectangular through-holes, $\chi = -2$, genus~2), and hollow shell (two nested icospheres, $\chi = +4$, two components).
-  Columns correspond to the four scalar Minkowski functionals: volume $W_0^{0,0}$, surface area $W_1^{0,0}$, integrated mean curvature $W_2^{0,0}$, and the topological term $W_3^{0,0}$ ($\propto \chi$).
+  The four plot columns correspond to the four scalar Minkowski functionals: volume $W_0^{0,0}$, surface area $W_1^{0,0}$, integrated mean curvature $W_2^{0,0}$, and the topological term $W_3^{0,0}$ ($\propto \chi$).
   Both implementations converge toward the analytical values with increasing resolution and agree with each other to near floating-point precision at every resolution; $W_3^{0,0}$ is a topological invariant and is reproduced exactly at all resolutions.
   Each shape was evaluated at five mesh resolutions.
-  \textit{Alt text: a 3-by-4 grid of line plots. Rows are torus, holey slab, and hollow shell; columns are the volume, surface area, integrated mean curvature, and topological scalar Minkowski functionals. In each panel the horizontal axis is mesh resolution and the vertical axis is the functional value; a green solid curve (karambola) and a blue dashed curve (pykarambola) overlie one another and approach a red dash-dot horizontal line marking the analytical value as resolution increases. The topological-term panels are flat, lying on the analytical value at all resolutions.}}
+  \textit{Alt text: a grid of panels with three rows (torus, holey slab, hollow shell). The leftmost column shows a 3D rendering of each shape; the remaining four columns are line plots of the volume, surface area, integrated mean curvature, and topological scalar Minkowski functionals against mesh resolution. In each line plot a green solid curve (karambola) and a blue dashed curve (pykarambola) nearly coincide and approach a red dash-dot horizontal line marking the analytical value as resolution increases, with residual differences at the level of floating-point precision. The topological-term panels are essentially flat on the analytical value at all resolutions.}}
 }
 \label{fig:topology}
 \end{figure*}
@@ -519,11 +520,11 @@ All panels and groupings are identical to Supplementary Figure~\ref{fig:accuracy
   A synthetic triaxial ellipsoid (semi-axes $A=10$, $B=6$, $C=4$, in
 arbitrary distance units) was rotated about the $z$-axis through 12 orientations ($0^\circ$--$165^\circ$ in $15^\circ$ steps) at seven grid resolutions (20--100 voxels per semi-axis~$A$; colour scale). 
 Each curve traces one measure against rotation angle at fixed resolution; the periodic variation with angle is the orientation-induced discretisation artefact, and its amplitude decreases with increasing resolution as the curves converge toward the dotted reference. 
-The dotted grey line is the fine-resolution reference, evaluated at the finest grid (100 voxels per~$A$) at $0^\circ$ orientation.
+The dotted black line is the fine-resolution reference, evaluated at the finest grid (100 voxels per~$A$) at $0^\circ$ orientation.
 (\textbf{a})~Anisotropy index $\beta = \lambda_\mathrm{min}/\lambda_\mathrm{max}$ (ratio of smallest to largest tensor eigenvalue) for the six rank-2 Minkowski tensors $W_0^{2,0}$, $W_1^{2,0}$, $W_2^{2,0}$, $W_3^{2,0}$, $W_1^{0,2}$, $W_2^{0,2}$. 
 (\textbf{b})~Value of the three scalar Minkowski functionals $W_0^{0,0}$ (volume), $W_1^{0,0}$ (surface area), and $W_2^{0,0}$ (integrated mean curvature); the topological functional $W_3^{0,0}$ is omitted as it is an integer invariant unaffected by orientation and resolution.
 \textit{Alt text: a nine-panel figure, six panels in (a) and three in (b), each plotting a morphometric measure against rotation angle from 0 to 165 degrees, with one coloured line per grid resolution from 20 (dark) to 100 (light) voxels per semi-axis. 
-All curves oscillate periodically with angle; the oscillation amplitude shrinks and the curves approach a dotted grey reference line as resolution increases.}}
+All curves oscillate periodically with angle; the oscillation amplitude shrinks and the curves approach a dotted black reference line as resolution increases.}}
 }
 \label{fig:orientation_bias}
 \end{figure*}
