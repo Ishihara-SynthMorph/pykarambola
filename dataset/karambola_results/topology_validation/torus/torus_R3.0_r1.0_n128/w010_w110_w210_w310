@@ -1,0 +1,19 @@
+# input_file = /Users/yk/Desktop/karambola_mac/bash_scripts/../data/input_files/topology_validation/torus/torus_R3.0_r1.0_n128.off
+#
+# keyword explanations: (not all keywords have to show up)
+# closed = the labeled surface is closed
+# shared = the labeled surface has edges whose neighbours are surfaces with other labels
+# open   = the labeled surface is open, there are no neighbours to some of the edges
+# calculation_forced = stubbornly applied the formulae even though the surface is shared or open
+# cant_be_calculated = can't be calculated because surface is shared or open
+# reference_origin   = the tensors are calculated with respect to the origin
+# reference_centroid = the tensors are calculated with respect to the minkowski-vectors
+#
+# calculated with karambola 2.0
+# contact: karambola@physik.uni-erlangen.de
+#
+#           #1 label             #2 v[x]             #3 v[y]             #4 v[z]             #5 name         #6 Keywords
+                 ALL   2.99627686486e-13  -7.50367196533e-13  -1.48860958282e-16                w010              closed     reference_origin 
+                 ALL   1.25482957358e-13  -2.97332525354e-13   2.74550483259e-16                w110              closed     reference_origin 
+                 ALL   2.07039246858e-14  -8.03168227997e-14  -2.69960719873e-09                w210              closed     reference_origin 
+                 ALL   4.72408570595e-15   4.50126860698e-16   1.07331034522e-14                w310              closed     reference_origin 

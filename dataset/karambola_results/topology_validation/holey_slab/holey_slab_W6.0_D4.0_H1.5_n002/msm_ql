@@ -1,0 +1,16 @@
+# input_file = /Users/yk/Desktop/karambola_mac/bash_scripts/../data/input_files/topology_validation/holey_slab/holey_slab_W6.0_D4.0_H1.5_n002.off
+#
+# keyword explanations: (not all keywords have to show up)
+# closed = the labeled surface is closed
+# shared = the labeled surface has edges whose neighbours are surfaces with other labels
+# open   = the labeled surface is open, there are no neighbours to some of the edges
+# calculation_forced = stubbornly applied the formulae even though the surface is shared or open
+# cant_be_calculated = can't be calculated because surface is shared or open
+# reference_origin   = the tensors are calculated with respect to the origin
+# reference_centroid = the tensors are calculated with respect to the minkowski-vectors
+#
+# calculated with karambola 2.0
+# contact: karambola@physik.uni-erlangen.de
+#
+#           #1 label             #2 q(0)             #3 w(0)             #4 q(1)             #5 w(1)             #6 q(2)             #7 w(2)             #8 q(3)             #9 w(3)            #10 q(4)            #11 w(4)            #12 q(5)            #13 w(5)            #14 q(6)            #15 w(6)            #16 q(7)            #17 w(7)            #18 q(8)            #19 w(8)        #20 Keywords
+                 ALL                   1                   1    1.8025554681e-17                   0      0.181818181818     -0.112840318261   5.32032205058e-17                   0      0.772727272727      0.415915525094   8.86047372149e-17                   0      0.392333556855    -0.0990674302162   1.27919814095e-16                   0      0.729134690365      0.285066028535                 msm              closed     reference_origin 
