@@ -282,8 +282,8 @@ If you use pykarambola in your work, please cite pykarambola and Schröder-Turk 
 
 > Khurana, Y., & Ishihara, K.
 > *pykarambola: Minkowski tensor morphometry of 3D structures.*
-> bioRxiv (2026).
-> https://doi.org/10.64898/2026.06.16.730752
+> *Bioinformatics Advances*, vbag273 (2026).
+> https://doi.org/10.1093/bioadv/vbag273
 
 > Schröder-Turk, G. E., Mickel, W., Kapfer, S. C., Schaller, F. M., Breidenbach, B., Hug, D., & Mecke, K.
 > *Minkowski tensors of anisotropic spatial structure.*

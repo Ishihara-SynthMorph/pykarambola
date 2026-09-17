@@ -165,8 +165,8 @@ Milestones group issues by release goal. Our milestones:
 |-----------|------|--------|
 | **M0** — API changes and edge cases | Fix all known bugs and finalize the public API | Closed |
 | **M1** — first PyPI release (v0.3.0) | PyPI publish | Closed |
-| **M2** — bioRxiv submission | Preprint | Open |
-| **M3** — journal submission | Peer-reviewed paper | Open |
+| **M2** — bioRxiv submission | Preprint | Closed |
+| **M3** — journal submission | Peer-reviewed paper | Closed |
 
 Close all issues in a milestone before moving to the next one.
 
