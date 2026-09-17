@@ -1,8 +1,8 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 title: "pykarambola: Minkowski tensor morphometry of 3D structures"
-version: 0.5.1
-date-released: 2026-06-14
+version: 0.6.1
+date-released: 2026-09-17
 repository-code: "https://github.com/Ishihara-SynthMorph/pykarambola"
 identifiers:
   - type: doi
@@ -16,10 +16,12 @@ authors:
     given-names: "Yajushi"
     orcid: "https://orcid.org/0009-0001-9064-8008"
 references:
-  - type: preprint
+  - type: article
     title: "pykarambola: Minkowski tensor morphometry of 3D structures"
-    doi: "10.64898/2026.06.16.730752"
-    date-published: "2026-06-18"
+    journal: "Bioinformatics Advances"
+    doi: "10.1093/bioadv/vbag273"
+    date-published: "2026-09-17"
+    notes: "Article vbag273"
     authors:
       - family-names: "Khurana"
         given-names: "Yajushi"

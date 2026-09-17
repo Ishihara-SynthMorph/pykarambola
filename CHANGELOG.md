@@ -11,6 +11,13 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.6.1] - 2026-09-17
+
+### Documentation
+- Citation updated to the published journal article — Khurana & Ishihara, *Bioinformatics Advances*, vbag273 (2026), doi:10.1093/bioadv/vbag273 — replacing the bioRxiv preprint reference in `CITATION.cff` and `README.md`. The M2 (bioRxiv submission) and M3 (journal submission) milestones are now closed.
+
+---
+
 ## [0.6.0] - 2026-08-01
 
 ### Added
@@ -118,7 +125,9 @@ Initial Python port of [karambola](https://github.com/morphometry/karambola).
 
 ---
 
-[Unreleased]: https://github.com/Ishihara-SynthMorph/pykarambola/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/Ishihara-SynthMorph/pykarambola/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/Ishihara-SynthMorph/pykarambola/compare/v0.6.0...v0.6.1
+[0.6.0]: https://github.com/Ishihara-SynthMorph/pykarambola/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/Ishihara-SynthMorph/pykarambola/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/Ishihara-SynthMorph/pykarambola/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Ishihara-SynthMorph/pykarambola/compare/v0.3.0...v0.4.0
