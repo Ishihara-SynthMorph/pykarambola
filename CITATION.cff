@@ -1,8 +1,8 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 title: "pykarambola: Minkowski tensor morphometry of 3D structures"
-version: 0.5.1
-date-released: 2026-06-14
+version: 0.6.1
+date-released: 2026-09-17
 repository-code: "https://github.com/Ishihara-SynthMorph/pykarambola"
 identifiers:
   - type: doi
