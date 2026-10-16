@@ -9,6 +9,12 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Performance
+- `minkowski_tensors_from_label_image(..., autolabel=True)` now crops the
+  binary mask to the global bounding box of all non-zero voxels (padded by
+  1 voxel) before calling `marching_cubes`, instead of operating on the
+  full padded image. (#173)
+
 ---
 
 ## [0.6.1] - 2026-09-17

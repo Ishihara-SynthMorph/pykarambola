@@ -875,6 +875,25 @@ class TestAutoLabelsFromLabelImage:
         assert n == 2
         assert len(result) == 2
 
+    def test_autolabel_small_blob_in_large_canvas_matches_tight_crop(self):
+        """A small blob padded into a much larger canvas gives the same result
+        as the same blob in a tightly-sized image (regression for #173)."""
+        big = np.zeros((200, 200, 200), dtype=np.int32)
+        big[100:110, 100:110, 100:110] = 1
+        small = _voxel_box((20, 20, 20), np.s_[5:15, 5:15, 5:15])
+        r_big = minkowski_tensors_from_label_image(big, autolabel=True)
+        r_small = minkowski_tensors_from_label_image(small, autolabel=True)
+        assert r_big[1]['w000'] == pytest.approx(r_small[1]['w000'], rel=1e-6)
+
+    def test_autolabel_centroid_voxel_small_blob_in_large_canvas(self):
+        """centroid_voxel center is correct for a blob cropped out of a large canvas."""
+        big = np.zeros((200, 200, 200), dtype=np.int32)
+        big[100:110, 100:110, 100:110] = 1
+        small = _voxel_box((20, 20, 20), np.s_[5:15, 5:15, 5:15])
+        r_big = minkowski_tensors_from_label_image(big, autolabel=True, center='centroid_voxel')
+        r_small = minkowski_tensors_from_label_image(small, autolabel=True, center='centroid_voxel')
+        assert r_big[1]['w000'] == pytest.approx(r_small[1]['w000'], rel=1e-6)
+
 
 class TestDerivedScalars:
     """Tests for beta (#1), traces (#2), and dependency chain (#53)."""
