@@ -870,18 +870,33 @@ def minkowski_tensors_from_label_image(
 
     # --- autolabel=True: treat image as binary, delegate to minkowski_tensors ---
     if autolabel:
-        binary = (label_image != 0).astype(np.float64)
+        # Crop to the global bounding box of all non-zero voxels (#173) so
+        # marching_cubes doesn't run over empty padding/border regions.
+        # Reuses the per-label bboxes already computed above (#156) instead
+        # of a second full-image np.argwhere scan.
+        if _label_bboxes:
+            starts = np.array([b[:3] for b in _label_bboxes.values()])
+            stops = np.array([b[3:] for b in _label_bboxes.values()])
+            z0, y0, x0 = np.maximum(starts.min(axis=0) - 1, 0)
+            z1, y1, x1 = np.minimum(stops.max(axis=0) + 1, _shape)
+            crop = label_image[z0:z1, y0:y1, x0:x1]
+            crop_origin = np.array([z0, y0, x0], dtype=np.float64) * _sp
+        else:
+            crop = label_image
+            crop_origin = np.zeros(3, dtype=np.float64)
+
+        binary = (crop != 0).astype(np.float64)
         try:
             verts, faces, _, _ = marching_cubes(binary, level=level, spacing=spacing,
                                                 gradient_direction='ascent')
         except Exception as exc:
             raise RuntimeError(f"marching_cubes failed on binary mask: {exc}") from exc
-        verts = verts - _pad_offset
+        verts = verts + crop_origin - _pad_offset
         faces = _ensure_outward_normals(verts, faces)
         # centroid_voxel is not supported by minkowski_tensors; pre-compute it here.
         if isinstance(center, str) and center == 'centroid_voxel':
             nz_coords = np.argwhere(binary > 0)
-            mt_center = (nz_coords.mean(axis=0) * np.array(spacing) - _pad_offset
+            mt_center = (nz_coords.mean(axis=0) * np.array(spacing) + crop_origin - _pad_offset
                          if len(nz_coords) else np.zeros(3))
         else:
             mt_center = center
