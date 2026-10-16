@@ -894,6 +894,35 @@ class TestAutoLabelsFromLabelImage:
         r_small = minkowski_tensors_from_label_image(small, autolabel=True, center='centroid_voxel')
         assert r_big[1]['w000'] == pytest.approx(r_small[1]['w000'], rel=1e-6)
 
+    def test_autolabel_position_dependent_tensor_matches_tight_crop(self):
+        """w110/w210 (position-dependent, not shift-invariant) must agree between
+        a blob cropped out of a large canvas and the same blob tightly sized,
+        when both use an explicit non-centroid reference point (regression for
+        #174 review: w000 alone can't detect a dropped crop_origin shift,
+        since the crop coordinates would still integrate to the same volume)."""
+        big = np.zeros((200, 200, 200), dtype=np.int32)
+        big[100:110, 100:110, 100:110] = 1
+        small = _voxel_box((20, 20, 20), np.s_[5:15, 5:15, 5:15])
+        r_big = minkowski_tensors_from_label_image(big, autolabel=True, center=(100.0, 100.0, 100.0))
+        r_small = minkowski_tensors_from_label_image(small, autolabel=True, center=(5.0, 5.0, 5.0))
+        np.testing.assert_allclose(r_big[1]['w110'], r_small[1]['w110'], rtol=1e-6)
+        np.testing.assert_allclose(r_big[1]['w210'], r_small[1]['w210'], rtol=1e-6)
+
+    def test_autolabel_small_blob_non_unit_spacing_matches_tight_crop(self):
+        """Crop-origin computation (crop_origin = [z0,y0,x0] * spacing) must
+        hold under non-unit, anisotropic spacing; the default tests only use
+        spacing=(1,1,1), which can't reveal a coefficient bug in that product."""
+        big = np.zeros((200, 200, 200), dtype=np.int32)
+        big[100:110, 100:110, 100:110] = 1
+        small = _voxel_box((20, 20, 20), np.s_[5:15, 5:15, 5:15])
+        spacing = (1.0, 1.0, 2.5)
+        r_big = minkowski_tensors_from_label_image(big, autolabel=True, spacing=spacing,
+                                                     center=(100.0, 100.0, 250.0))
+        r_small = minkowski_tensors_from_label_image(small, autolabel=True, spacing=spacing,
+                                                       center=(5.0, 5.0, 12.5))
+        assert r_big[1]['w000'] == pytest.approx(r_small[1]['w000'], rel=1e-6)
+        np.testing.assert_allclose(r_big[1]['w110'], r_small[1]['w110'], rtol=1e-6)
+
 
 class TestDerivedScalars:
     """Tests for beta (#1), traces (#2), and dependency chain (#53)."""
