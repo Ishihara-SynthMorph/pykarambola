@@ -9,7 +9,7 @@ import pytest
 
 from pykarambola.api import (
     minkowski_tensors, minkowski_tensors_from_label_image,
-    _label_mesh_components,
+    combine_label_meshes, _label_mesh_components,
 )
 
 
@@ -700,6 +700,48 @@ class TestLabelImage:
         assert n == 2
         assert len(result) == 2
 
+    def test_return_meshes_matches_direct_marching_cubes(self):
+        """return_meshes=True yields the same mesh as a direct marching_cubes call."""
+        from skimage.measure import marching_cubes
+        vol = _voxel_box((20, 20, 20), np.s_[5:15, 5:15, 5:15])
+        result, meshes = minkowski_tensors_from_label_image(vol, return_meshes=True)
+        assert set(meshes.keys()) == {1}
+        verts, faces = meshes[1]
+        mask = (vol == 1).astype(np.float64)
+        expected_verts, expected_faces, _, _ = marching_cubes(
+            mask, level=0.5, spacing=(1.0, 1.0, 1.0), gradient_direction='ascent',
+        )
+        assert verts.shape == expected_verts.shape
+        assert faces.shape == expected_faces.shape
+        assert 'w000' in result[1]
+
+    def test_return_meshes_center_per_label_false_centroid_mesh(self):
+        """return_meshes=True reuses the pre-cached global-centroid meshes."""
+        vol = np.zeros((30, 30, 30), dtype=np.int32)
+        vol[2:8, 2:8, 2:8] = 1
+        vol[15:25, 15:25, 15:25] = 2
+        result, meshes = minkowski_tensors_from_label_image(
+            vol, center='centroid_mesh', center_per_label=False, return_meshes=True,
+        )
+        assert set(meshes.keys()) == {1, 2}
+        for lab in (1, 2):
+            verts, faces = meshes[lab]
+            assert verts.shape[1] == 3
+            assert faces.shape[1] == 3
+            assert faces.max() < len(verts)
+
+    def test_return_count_and_return_meshes_three_tuple(self):
+        """return_count=True + return_meshes=True returns (results, n, meshes)."""
+        vol = np.zeros((30, 30, 30), dtype=np.int32)
+        vol[2:8, 2:8, 2:8] = 1
+        vol[15:25, 15:25, 15:25] = 2
+        result, n, meshes = minkowski_tensors_from_label_image(
+            vol, return_count=True, return_meshes=True,
+        )
+        assert n == 2
+        assert set(result.keys()) == {1, 2}
+        assert set(meshes.keys()) == {1, 2}
+
 
 class TestReturnCount:
     """#80: return_count for minkowski_tensors()."""
@@ -894,6 +936,32 @@ class TestAutoLabelsFromLabelImage:
         r_small = minkowski_tensors_from_label_image(small, autolabel=True, center='centroid_voxel')
         assert r_big[1]['w000'] == pytest.approx(r_small[1]['w000'], rel=1e-6)
 
+    def test_autolabel_with_return_meshes_splits_components(self):
+        """autolabel=True + return_meshes=True: meshes are split per component,
+        keyed the same as the results dict, with no shared vertex indices."""
+        vol = np.zeros((30, 30, 30), dtype=np.int32)
+        vol[2:6, 2:6, 2:6] = 1
+        vol[22:26, 22:26, 22:26] = 1
+        result, meshes = minkowski_tensors_from_label_image(
+            vol, autolabel=True, return_meshes=True,
+        )
+        assert set(meshes.keys()) == set(result.keys()) == {1, 2}
+        for lab in (1, 2):
+            verts, faces = meshes[lab]
+            assert faces.max() < len(verts)
+            assert faces.min() >= 0
+
+    def test_autolabel_with_return_count_and_return_meshes(self):
+        """autolabel=True + return_count=True + return_meshes=True returns a 3-tuple."""
+        vol = np.zeros((30, 30, 30), dtype=np.int32)
+        vol[2:6, 2:6, 2:6] = 1
+        vol[22:26, 22:26, 22:26] = 1
+        result, n, meshes = minkowski_tensors_from_label_image(
+            vol, autolabel=True, return_count=True, return_meshes=True,
+        )
+        assert n == 2
+        assert set(result.keys()) == set(meshes.keys()) == {1, 2}
+
     def test_autolabel_position_dependent_tensor_matches_tight_crop(self):
         """w110/w210 (position-dependent, not shift-invariant) must agree between
         a blob cropped out of a large canvas and the same blob tightly sized,
@@ -922,6 +990,62 @@ class TestAutoLabelsFromLabelImage:
                                                        center=(5.0, 5.0, 12.5))
         assert r_big[1]['w000'] == pytest.approx(r_small[1]['w000'], rel=1e-6)
         np.testing.assert_allclose(r_big[1]['w110'], r_small[1]['w110'], rtol=1e-6)
+
+
+@pytest.mark.skipif(not _has_skimage, reason='scikit-image not installed')
+class TestCombineLabelMeshes:
+    """Tests for combine_label_meshes()."""
+
+    def _two_label_meshes(self):
+        vol = np.zeros((30, 30, 30), dtype=np.int32)
+        vol[2:8, 2:8, 2:8] = 1
+        vol[15:25, 15:25, 15:25] = 2
+        _, meshes = minkowski_tensors_from_label_image(vol, return_meshes=True)
+        return meshes
+
+    def test_combined_counts_equal_sum_of_inputs(self):
+        meshes = self._two_label_meshes()
+        verts, faces, values, vertex_labels = combine_label_meshes(meshes)
+        expected_n_verts = sum(len(v) for v, f in meshes.values())
+        expected_n_faces = sum(len(f) for v, f in meshes.values())
+        assert len(verts) == expected_n_verts
+        assert len(faces) == expected_n_faces
+        assert len(values) == expected_n_verts
+        assert len(vertex_labels) == expected_n_verts
+
+    def test_faces_stay_in_range_after_offset(self):
+        meshes = self._two_label_meshes()
+        verts, faces, values, vertex_labels = combine_label_meshes(meshes)
+        assert faces.min() >= 0
+        assert faces.max() < len(verts)
+
+    def test_color_by_none_uses_label_id(self):
+        meshes = self._two_label_meshes()
+        verts, faces, values, vertex_labels = combine_label_meshes(meshes, color_by=None)
+        for lab in (1, 2):
+            mask = vertex_labels == lab
+            assert mask.any()
+            np.testing.assert_allclose(values[mask], float(lab))
+
+    def test_color_by_dict_broadcasts_scalar(self):
+        meshes = self._two_label_meshes()
+        color = {1: 0.5, 2: -3.0}
+        verts, faces, values, vertex_labels = combine_label_meshes(meshes, color_by=color)
+        for lab, val in color.items():
+            mask = vertex_labels == lab
+            np.testing.assert_allclose(values[mask], val)
+
+    def test_vertex_labels_attribute_correct_source(self):
+        meshes = self._two_label_meshes()
+        verts, faces, values, vertex_labels = combine_label_meshes(meshes)
+        assert set(np.unique(vertex_labels)) == {1, 2}
+
+    def test_empty_input(self):
+        verts, faces, values, vertex_labels = combine_label_meshes({})
+        assert verts.shape == (0, 3)
+        assert faces.shape == (0, 3)
+        assert values.shape == (0,)
+        assert vertex_labels.shape == (0,)
 
 
 class TestDerivedScalars:
