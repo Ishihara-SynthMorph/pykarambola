@@ -31,4 +31,4 @@ from .spherical import calculate_sphmink
 from .eigensystem import calculate_eigensystem
 from .results import CalcOptions, SurfaceStatistics
 from .surface import check_surface
-from .api import minkowski_tensors, minkowski_tensors_from_label_image
+from .api import minkowski_tensors, minkowski_tensors_from_label_image, combine_label_meshes

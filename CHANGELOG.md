@@ -9,6 +9,13 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- `minkowski_tensors_from_label_image(..., return_meshes=True)` returns the
+  per-label meshes already produced internally by `marching_cubes`,
+  avoiding a duplicate marching-cubes pass for downstream visualization.
+  New helper `combine_label_meshes()` concatenates per-label meshes into a
+  single mesh suitable for `napari.Viewer.add_surface`. (#175)
+
 ### Performance
 - `minkowski_tensors_from_label_image(..., autolabel=True)` now crops the
   binary mask to the global bounding box of all non-zero voxels (padded by
