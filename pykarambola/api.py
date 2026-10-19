@@ -708,7 +708,7 @@ def minkowski_tensors_from_label_image(
     label_image, level=None, spacing=(1.0, 1.0, 1.0),
     center='centroid_mesh', center_per_label=True,
     compute='standard', compute_eigensystems=True, return_count=False,
-    autolabel=False, pad=True, msm_max_l=8,
+    autolabel=False, pad=True, msm_max_l=8, return_meshes=False,
 ):
     """Compute Minkowski tensors for each label in a 3D label image.
 
@@ -784,18 +784,34 @@ def minkowski_tensors_from_label_image(
     msm_max_l : int, optional
         Maximum spherical harmonic order for spherical Minkowski tensors.
         Default is 8. See ``minkowski_tensors`` for details.
+    return_meshes : bool, optional
+        If True, also return a ``meshes`` dict mapping each result key
+        (same keys as the results dict) to the ``(verts, faces)`` mesh
+        already produced internally by ``marching_cubes`` for that label.
+        Reuses the mesh computed for the Minkowski tensors — no extra
+        ``marching_cubes`` call is made. Pass the result to
+        ``combine_label_meshes`` to build a single mesh for visualization
+        (e.g. ``napari.Viewer.add_surface``). Default is False.
 
     Returns
     -------
     dict[int, dict]
-        When ``autolabel=False``: mapping from label value (int) to a dict
-        of Minkowski functionals.
-        When ``autolabel=True``: mapping from component index (int, 1-based)
-        to a dict of Minkowski functionals.
+        When ``return_count=False`` and ``return_meshes=False``: mapping
+        from label value (int), or component index (int, 1-based) when
+        ``autolabel=True``, to a dict of Minkowski functionals.
 
-    tuple (dict, int)
-        When ``return_count=True``: ``(results, n_objects)`` where the dict
-        has the same structure as above.
+    tuple
+        When ``return_count`` and/or ``return_meshes`` is True, the results
+        dict above is augmented, in this order:
+
+        ``(results, n_objects)`` when only ``return_count=True``.
+
+        ``(results, meshes)`` when only ``return_meshes=True``.
+
+        ``(results, n_objects, meshes)`` when both are True.
+
+        ``meshes`` is a ``dict[int, (verts, faces)]`` with the same keys as
+        ``results``.
 
     Notes
     -----
@@ -900,12 +916,29 @@ def minkowski_tensors_from_label_image(
                          if len(nz_coords) else np.zeros(3))
         else:
             mt_center = center
-        return minkowski_tensors(
+        autolabel_result = minkowski_tensors(
             verts, faces, labels='auto',
             center=mt_center, center_per_label=center_per_label,
             compute=compute, compute_eigensystems=compute_eigensystems,
             return_count=return_count, msm_max_l=msm_max_l,
         )
+        if not return_meshes:
+            return autolabel_result
+        if return_count:
+            results, n_objects_total = autolabel_result
+        else:
+            results = autolabel_result
+        meshes = {}
+        face_labels_arr = _label_mesh_components(faces)
+        for comp in np.unique(face_labels_arr):
+            comp_faces_global = faces[face_labels_arr == comp]
+            used_idx = np.unique(comp_faces_global)
+            remap = np.full(len(verts), -1, dtype=np.int64)
+            remap[used_idx] = np.arange(len(used_idx), dtype=np.int64)
+            meshes[int(comp)] = (verts[used_idx], remap[comp_faces_global])
+        if return_count:
+            return results, n_objects_total, meshes
+        return results, meshes
 
     # --- Count connected components upfront if requested ---
     n_objects_total = 0
@@ -959,6 +992,10 @@ def minkowski_tensors_from_label_image(
                     global_center = gc
             else:
                 global_center = np.zeros(3)
+
+    meshes_out = None
+    if return_meshes:
+        meshes_out = dict(label_meshes) if label_meshes is not None else {}
 
     results = {}
     for lab in unique_labels:
@@ -1025,7 +1062,71 @@ def minkowski_tensors_from_label_image(
                 verts, faces, center=label_center, compute=compute,
                 compute_eigensystems=compute_eigensystems, msm_max_l=msm_max_l,
             )
+            if meshes_out is not None and result_key not in meshes_out:
+                meshes_out[result_key] = (verts, faces)
 
+    if return_count and return_meshes:
+        return results, n_objects_total, meshes_out
     if return_count:
         return results, n_objects_total
+    if return_meshes:
+        return results, meshes_out
     return results
+
+
+def combine_label_meshes(label_meshes, color_by=None):
+    """Concatenate per-label meshes into a single mesh for visualization.
+
+    Parameters
+    ----------
+    label_meshes : dict[int, (verts, faces)]
+        E.g. from ``minkowski_tensors_from_label_image(..., return_meshes=True)``.
+    color_by : None or dict[int, float], optional
+        ``None`` (default): vertex values are the label id (discrete
+        per-object coloring).
+        ``dict``: label -> scalar (e.g. ``{lbl: r['w220_beta'] for lbl, r in
+        results.items()}``), broadcast across that label's vertices.
+
+    Returns
+    -------
+    verts : (N, 3) float64 array
+    faces : (M, 3) int64 array
+    values : (N,) float64 array
+        Ready to unpack into ``viewer.add_surface((verts, faces, values))``.
+    vertex_labels : (N,) int64 array
+        Label id owning each vertex (for picking/debugging/QA; not part of
+        the ``add_surface`` tuple).
+    """
+    labels_sorted = sorted(label_meshes.keys())
+    all_verts, all_faces, all_values, all_vertex_labels = [], [], [], []
+    vert_offset = 0
+    for lab in labels_sorted:
+        v, f = label_meshes[lab]
+        v = np.asarray(v, dtype=np.float64)
+        f = np.asarray(f, dtype=np.int64)
+        all_verts.append(v)
+        all_faces.append(f + vert_offset)
+        if color_by is None:
+            val = float(lab)
+        else:
+            try:
+                val = float(color_by[lab])
+            except KeyError:
+                raise KeyError(
+                    f"color_by is missing a value for label {lab}; "
+                    f"it must have an entry for every key in label_meshes."
+                ) from None
+        all_values.append(np.full(len(v), val, dtype=np.float64))
+        all_vertex_labels.append(np.full(len(v), lab, dtype=np.int64))
+        vert_offset += len(v)
+    if all_verts:
+        verts = np.vstack(all_verts)
+        faces = np.vstack(all_faces)
+        values = np.concatenate(all_values)
+        vertex_labels = np.concatenate(all_vertex_labels)
+    else:
+        verts = np.empty((0, 3), dtype=np.float64)
+        faces = np.empty((0, 3), dtype=np.int64)
+        values = np.empty((0,), dtype=np.float64)
+        vertex_labels = np.empty((0,), dtype=np.int64)
+    return verts, faces, values, vertex_labels
