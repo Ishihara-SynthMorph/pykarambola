@@ -1106,7 +1106,16 @@ def combine_label_meshes(label_meshes, color_by=None):
         f = np.asarray(f, dtype=np.int64)
         all_verts.append(v)
         all_faces.append(f + vert_offset)
-        val = float(lab) if color_by is None else float(color_by[lab])
+        if color_by is None:
+            val = float(lab)
+        else:
+            try:
+                val = float(color_by[lab])
+            except KeyError:
+                raise KeyError(
+                    f"color_by is missing a value for label {lab}; "
+                    f"it must have an entry for every key in label_meshes."
+                ) from None
         all_values.append(np.full(len(v), val, dtype=np.float64))
         all_vertex_labels.append(np.full(len(v), lab, dtype=np.int64))
         vert_offset += len(v)

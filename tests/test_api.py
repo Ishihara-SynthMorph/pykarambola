@@ -713,6 +713,11 @@ class TestLabelImage:
         )
         assert verts.shape == expected_verts.shape
         assert faces.shape == expected_faces.shape
+        # Coordinates, not just shape: the internal mesh is produced from a
+        # padded+cropped image, so this also exercises crop_origin - _pad_offset
+        # correctly restoring world-space coordinates (verts would be shifted
+        # by `spacing` per axis if _pad_offset weren't subtracted).
+        np.testing.assert_allclose(verts, expected_verts)
         assert 'w000' in result[1]
 
     def test_return_meshes_center_per_label_false_centroid_mesh(self):
@@ -1046,6 +1051,11 @@ class TestCombineLabelMeshes:
         assert faces.shape == (0, 3)
         assert values.shape == (0,)
         assert vertex_labels.shape == (0,)
+
+    def test_color_by_missing_label_raises_descriptive_error(self):
+        meshes = self._two_label_meshes()
+        with pytest.raises(KeyError, match='label 2'):
+            combine_label_meshes(meshes, color_by={1: 0.5})
 
 
 class TestDerivedScalars:
