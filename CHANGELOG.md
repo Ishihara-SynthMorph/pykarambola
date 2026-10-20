@@ -9,6 +9,10 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+---
+
+## [0.7.0] - 2026-10-19
+
 ### Added
 - `minkowski_tensors_from_label_image(..., return_meshes=True)` returns the
   per-label meshes already produced internally by `marching_cubes`,
