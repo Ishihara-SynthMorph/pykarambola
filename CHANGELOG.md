@@ -21,6 +21,8 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
   binary mask to the global bounding box of all non-zero voxels (padded by
   1 voxel) before calling `marching_cubes`, instead of operating on the
   full padded image. (#173)
+  The `autolabel=False` path is unaffected by this change: it has cropped
+  each label to its own per-label bounding box since #156.
 
 ---
 
