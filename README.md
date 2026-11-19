@@ -42,6 +42,7 @@ Compared to the original C++ karambola, this Python port adds:
 - **Derived scalar quantities** — each rank-2 tensor (e.g. `w020`) additionally yields `{name}_beta` (anisotropy index: ratio of smallest to largest eigenvalue magnitude), `{name}_trace` (matrix trace), and `{name}_trace_ratio` (trace divided by the corresponding Minkowski scalar, e.g. `w020_trace_ratio = Tr(w020) / w000`).
   These are pykarambola-specific extensions not present in C++ karambola; they are included in the `compute='all'` preset.
 - **Label-image API** — `minkowski_tensors_from_label_image()` extracts surfaces from a 3D integer label image via marching cubes and computes tensors for every label in one call.
+- **2D Irreducible Minkowski Tensors (Papaya2 port)** — pure NumPy/SciPy port of [papaya2](https://github.com/morphometry/papaya2) providing `imt_polygon()`, `imt_image()`, `imt_label_image()`, `minkowski_map()`, and `imt_pointpattern()` for 2D polygons, grayscale/binary images, 2D label masks, spatial maps, and periodic/open Voronoi tessellations.
 
 ## Requirements
 
@@ -182,6 +183,32 @@ result = pk.minkowski_tensors(verts, faces, labels="auto")
 print(result[1]["w000"])
 ```
 
+### 2D Irreducible Minkowski Tensors (Papaya2 port)
+
+For 2D polygons, grayscale/binary images, 2D label masks, and point patterns, pykarambola includes a pure NumPy/SciPy port of [papaya2](https://github.com/morphometry/papaya2) (`pykarambola.imt2d`), validated to machine precision against C++ papaya2 (see [`tests/notebooks/papaya2_pykarambola_validation.ipynb`](tests/notebooks/papaya2_pykarambola_validation.ipynb)):
+
+```python
+import numpy as np
+import pykarambola as pk
+
+# 1. Closed 2D polygon (CCW vertices)
+poly = pk.imt_polygon([[0, 0], [3, 0], [3, 1], [0, 1]])
+print(poly["area"], poly["perimeter"], poly["beta102"], poly["q"][2])
+
+# 2. 2D grayscale or binary image — (row, col) with spacing=(sy, sx) by default;
+#    pass xy_order=True for papaya2's native (x, y) convention
+res = pk.imt_image(image, threshold=0.5, spacing=(1.0, 1.0), boundary=0.0)
+
+# 3. 2D integer or boolean label image (tight bbox crop per label; optional autolabel=True)
+per_obj = pk.imt_label_image(mask, autolabel=True, connectivity=1)
+
+# 4. Per-pixel Minkowski map (sums directly to res["psi"][s])
+psi2_map = pk.minkowski_map(image, threshold=0.5, s=2, boundary=0.0)
+
+# 5. Periodic or open 2D Voronoi tessellation of a point pattern
+vor = pk.imt_pointpattern(seeds, box=(10.0, 10.0))
+```
+
 ## Example notebooks
 
 | Notebook | What it covers |
@@ -292,6 +319,13 @@ If you use pykarambola in your work, please cite pykarambola and Schröder-Turk 
 > *New Journal of Physics*, 15, 083028 (2013).
 > https://doi.org/10.1088/1367-2630/15/8/083028
 
+If you use the 2D Irreducible Minkowski Tensor module (`pykarambola.imt2d`), please also cite papaya2:
+
+> Schaller, F. M., Wagner, J., & Kapfer, S. C.
+> *papaya2: 2D Irreducible Minkowski Tensor computation.*
+> *Journal of Open Source Software*, 5(54), 2538 (2020).
+> https://doi.org/10.21105/joss.02538
+
 ## Contributing
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for development setup, Git workflow, versioning, and release instructions.
@@ -302,3 +336,5 @@ See [`CHANGELOG.md`](CHANGELOG.md) for a history of changes between versions.
 pykarambola is released under the [BSD 3-Clause License](LICENSE).
 
 The authors of [karambola](https://github.com/morphometry/karambola) — Schaller, Kapfer, and Schröder-Turk — kindly agreed to pykarambola being distributed under the BSD 3-Clause License.
+
+The 2D Irreducible Minkowski Tensor module (`pykarambola/imt2d.py`) is ported from [papaya2](https://github.com/morphometry/papaya2) (Sebastian Kapfer, Fabian Schaller, Michael Klatt, and Gerd Schröder-Türk), which is distributed under the Boost Software License 1.0 (BSL-1.0); the full BSL-1.0 notice is preserved in [`pykarambola/imt2d.py`](pykarambola/imt2d.py).
