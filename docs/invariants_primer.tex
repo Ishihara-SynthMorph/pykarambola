@@ -324,7 +324,7 @@ They therefore appear in SO(3)-invariant feature sets but not O(3)-invariant one
 \toprule
 Feature subset & Symmetry \\
 \midrule
-\texttt{symmetry='O3'} & True scalars only (no \texttt{det\_}, no \texttt{comm\_}) \\
+\texttt{symmetry='O3'} & True scalars only (no \texttt{det\_}, no \texttt{cpsc\_}) \\
 \texttt{symmetry='SO3'} & True scalars $\cup$ pseudo-scalars \\
 \bottomrule
 \end{tabular}
@@ -549,7 +549,7 @@ Label & Content & Rank \\
 SO(2)-invariant contractions work by charge conservation:
 \begin{itemize}
   \item \textbf{Degree-2}: dot products and wedge products of same-charge doublets
-        (\texttt{d1\_}, \texttt{x1\_} for $|m|=1$; \texttt{d2\_}, \texttt{x2\_} for $|m|=2$).
+        (\texttt{dot1\_}, \texttt{wed1\_} for $|m|=1$; \texttt{dot2\_}, \texttt{wed2\_} for $|m|=2$).
         For doublets $\mathbf{a} = a_x + i\,a_y$ and $\mathbf{b} = b_x + i\,b_y$
         (read as complex numbers), $\operatorname{Re}(\bar{a}b) = \mathbf{a}\cdot\mathbf{b}$
         and $\operatorname{Im}(\bar{a}b) = a_x b_y - a_y b_x$ are both SO(2)-invariant.

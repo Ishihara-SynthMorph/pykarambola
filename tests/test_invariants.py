@@ -33,8 +33,10 @@ from pykarambola.invariants import (
     _so2_collect_doublets,
     _so2_doublet_inner_products,
     _so2_triple_products,
+    _is_o2_parity_odd,
     _drop_non_tensor_keys,
     compute_invariants,
+    filter_by_degree,
 )
 
 
@@ -1943,10 +1945,10 @@ class TestSO2SO3Consistency:
         SO3[name]       == SO2[name]          for rank-2 traces (= Tr(M)/3)
 
     Degree-2 (vector dot product):
-        SO3[dot_v_v] == SO2[v_z]**2 + SO2[d1_v_xy_v_xy]
+        SO3[dot_v_v] == SO2[v_z]**2 + SO2[dot1_v_xy_v_xy]
 
     Degree-2 (Frobenius of traceless rank-2 parts):
-        SO3[frob_A_B] == (3/2)*tzz_A*tzz_B + SO2[d2_Am2_Bm2]/2 + 2*SO2[d1_Axz_Bxz]
+        SO3[frob_A_B] == (3/2)*tzz_A*tzz_B + SO2[dot2_Am2_Bm2]/2 + 2*SO2[dot1_Axz_Bxz]
 
         where  tzz_X = SO2[X_zz] - SO2[X]  (= M_zz - Tr(M)/3)
     """
@@ -1996,7 +1998,7 @@ class TestSO2SO3Consistency:
         ('w102', 'w102'),
     ])
     def test_degree2_frobenius_reconstruction(self, tensors, na, nb):
-        """SO(3) frob_A_B == (3/2)*tzz_A*tzz_B + d2_Am2_Bm2/2 + 2*d1_Axz_Bxz."""
+        """SO(3) frob_A_B == (3/2)*tzz_A*tzz_B + dot2_Am2_Bm2/2 + 2*dot1_Axz_Bxz."""
         so3 = compute_invariants(tensors, max_degree=2, symmetry='SO3',
                                  deduplicate_scalars=False)
         so2 = compute_invariants(tensors, max_degree=2, symmetry='SO2',
@@ -2013,3 +2015,285 @@ class TestSO2SO3Consistency:
             f"Frobenius mismatch ({na},{nb}): SO3={frob:.6g}, "
             f"reconstructed={reconstructed:.6g}"
         )
+
+
+# =============================================================================
+# TestO2Invariants
+# =============================================================================
+
+class TestO2Invariants:
+    """Tests for symmetry='O2' (SO(2) z-rotations + z-reflection z -> -z)."""
+
+    @staticmethod
+    def _transform_tensors(tensors, R):
+        """Transform rank-0, rank-1, and rank-2 tensors by orthogonal matrix R."""
+        out = {}
+        for name, val in tensors.items():
+            arr = np.asarray(val)
+            if arr.ndim == 0:
+                out[name] = float(arr)
+            elif arr.shape == (3,):
+                out[name] = R @ arr
+            elif arr.shape == (3, 3):
+                out[name] = R @ arr @ R.T
+            else:
+                raise ValueError(arr.shape)
+        return out
+
+    @pytest.fixture
+    def standard_random_tensors(self):
+        """14 standard Minkowski-shaped tensors with generic non-zero entries."""
+        rng = np.random.default_rng(102)
+        tensors = {
+            'w000': float(rng.uniform(0.5, 2.0)),
+            'w100': float(rng.uniform(0.5, 2.0)),
+            'w200': float(rng.uniform(0.5, 2.0)),
+            'w300': float(rng.uniform(0.5, 2.0)),
+        }
+        for name in ('w010', 'w110', 'w210', 'w310'):
+            tensors[name] = rng.normal(size=3)
+        for name in ('w020', 'w120', 'w220', 'w320', 'w102', 'w202'):
+            A = rng.normal(size=(3, 3))
+            tensors[name] = 0.5 * (A + A.T)
+        return tensors
+
+    # ---- parity classifier unit tests ----
+
+    @pytest.mark.parametrize('key,expected_odd', [
+        # Degree 1
+        ('w000', False),
+        ('w020', False),
+        ('w020_zz', False),
+        ('w010_z', True),
+        # Degree 2 |m|=1
+        ('dot1_w010_xy_w110_xy', False),
+        ('dot1_w020_xz_w120_xz', False),
+        ('dot1_w010_xy_w020_xz', True),
+        ('wed1_w010_xy_w110_xy', False),
+        ('wed1_w020_xz_w120_xz', False),
+        ('wed1_w010_xy_w020_xz', True),
+        # Degree 2 |m|=2
+        ('dot2_w020_m2_w120_m2', False),
+        ('wed2_w020_m2_w120_m2', False),
+        # Degree 3
+        ('tp_re_w010_xy_w110_xy_w020_m2', False),
+        ('tp_im_w020_xz_w120_xz_w020_m2', False),
+        ('tp_re_w010_xy_w020_xz_w020_m2', True),
+        ('tp_im_w010_xy_w020_xz_w020_m2', True),
+    ])
+    def test_is_o2_parity_odd(self, key, expected_odd):
+        assert _is_o2_parity_odd(key) is expected_odd
+
+    # ---- subset & exact counts ----
+
+    def test_o2_is_subset_of_so2_with_matching_values(self, standard_random_tensors):
+        so2 = compute_invariants(standard_random_tensors, symmetry='SO2')
+        o2 = compute_invariants(standard_random_tensors, symmetry='O2')
+        assert set(o2.keys()) < set(so2.keys())
+        for k, v in o2.items():
+            assert v == pytest.approx(so2[k])
+
+    def test_o2_invariant_counts_14_tensors(self, standard_random_tensors):
+        """Standard 14 tensors produce 14 (deg 1) + 88 (deg 2) + 372 (deg 3) = 474 O(2) invariants."""
+        o2 = compute_invariants(standard_random_tensors, symmetry='O2', max_degree=3)
+        deg1 = filter_by_degree(o2, 1)
+        deg2 = filter_by_degree(o2, 2)
+        deg3 = filter_by_degree(o2, 3)
+
+        assert len(deg1) == 14   # 4 rank-0 + 4 rank-2 trace (after dedup) + 6 rank-2 _zz
+        assert len(deg2) == 88   # 31 dot1 + 21 wed1 + 21 dot2 + 15 wed2
+        assert len(deg3) == 372  # 2 * (10 + 21) * 6
+        assert len(o2) == 474
+
+        assert sum(1 for k in deg2 if k.startswith('dot1_')) == 31
+        assert sum(1 for k in deg2 if k.startswith('wed1_')) == 21
+        assert sum(1 for k in deg2 if k.startswith('dot2_')) == 21
+        assert sum(1 for k in deg2 if k.startswith('wed2_')) == 15
+
+    def test_o2_drops_all_vz_and_mixed_terms(self, standard_random_tensors):
+        o2 = compute_invariants(standard_random_tensors, symmetry='O2')
+        for k in o2:
+            assert not (k.endswith('_z') and not k.endswith('_zz')), f"Unexpected v_z key: {k}"
+            assert not (k.count('_xy') == 1 and k.count('_xz') == 1), f"Unexpected mixed key: {k}"
+
+    # ---- symmetry properties ----
+
+    def test_o2_invariant_under_z_reflection_and_dropped_terms_flip_sign(self, standard_random_tensors):
+        """O(2) terms are unchanged under z -> -z, while every dropped SO(2) term flips sign."""
+        R_zref = np.diag([1.0, 1.0, -1.0])
+        reflected = self._transform_tensors(standard_random_tensors, R_zref)
+
+        so2_orig = compute_invariants(standard_random_tensors, symmetry='SO2')
+        so2_ref = compute_invariants(reflected, symmetry='SO2')
+        o2_orig = compute_invariants(standard_random_tensors, symmetry='O2')
+        o2_ref = compute_invariants(reflected, symmetry='O2')
+
+        # Every kept O(2) invariant is strictly unchanged
+        for k in o2_orig:
+            assert o2_ref[k] == pytest.approx(o2_orig[k], rel=1e-10, abs=1e-12), (
+                f"O2 feature '{k}' not z-reflection invariant: {o2_orig[k]} vs {o2_ref[k]}"
+            )
+
+        # Every dropped SO(2) feature is genuinely parity-odd (flips sign under z -> -z)
+        dropped_keys = set(so2_orig.keys()) - set(o2_orig.keys())
+        assert len(dropped_keys) == 814 - 474
+        for k in dropped_keys:
+            assert so2_ref[k] == pytest.approx(-so2_orig[k], rel=1e-10, abs=1e-12), (
+                f"Dropped SO2 feature '{k}' did not flip sign: {so2_orig[k]} vs {so2_ref[k]}"
+            )
+
+    @pytest.mark.parametrize('theta', [0, 33, 90, 147, 270])
+    def test_o2_invariant_under_z_rotation_and_z_reflection(self, theta, standard_random_tensors):
+        R_rot = Rotation.from_euler('z', theta, degrees=True).as_matrix()
+        R_combo = np.diag([1.0, 1.0, -1.0]) @ R_rot
+
+        o2_orig = compute_invariants(standard_random_tensors, symmetry='O2')
+        for R in (R_rot, R_combo):
+            transformed = self._transform_tensors(standard_random_tensors, R)
+            o2_new = compute_invariants(transformed, symmetry='O2')
+            for k in o2_orig:
+                assert o2_new[k] == pytest.approx(o2_orig[k], rel=1e-10, abs=1e-12)
+
+    def test_o2_not_invariant_under_x_rotation(self, standard_random_tensors):
+        R_x = Rotation.from_euler('x', 45, degrees=True).as_matrix()
+        o2_orig = compute_invariants(standard_random_tensors, symmetry='O2')
+        o2_rot = compute_invariants(self._transform_tensors(standard_random_tensors, R_x), symmetry='O2')
+        max_diff = max(abs(o2_orig[k] - o2_rot[k]) for k in o2_orig)
+        assert max_diff > 1e-2
+
+    # ---- options and edge cases ----
+
+    def test_o2_empty_and_max_degree_and_dedup(self, standard_random_tensors):
+        assert compute_invariants({}, symmetry='O2') == {}
+
+        o2_d1 = compute_invariants(standard_random_tensors, symmetry='O2', max_degree=1)
+        o2_d2 = compute_invariants(standard_random_tensors, symmetry='O2', max_degree=2)
+        o2_nodedup = compute_invariants(
+            standard_random_tensors, symmetry='O2', max_degree=1, deduplicate_scalars=False
+        )
+        assert len(o2_d1) == 14
+        assert len(o2_d2) == 14 + 88
+        assert len(o2_nodedup) == 16  # restores w102 and w202 trace keys
+        assert 'w102' in o2_nodedup and 'w202' in o2_nodedup
+
+
+# =============================================================================
+# TestO2InvariantsMeshIntegration
+# =============================================================================
+
+class TestO2InvariantsMeshIntegration:
+    """End-to-end mesh -> minkowski_tensors -> compute_invariants(symmetry='O2') tests."""
+
+    @staticmethod
+    def _tilted_offset_box():
+        """Asymmetric 3x2x1 box tilted and translated so v_z and M_xz/M_yz are non-zero."""
+        verts, faces = _box_mesh_so2(3.0, 2.0, 1.0)
+        R_tilt = Rotation.from_euler('xy', [25, 17], degrees=True).as_matrix()
+        verts_tilted = verts @ R_tilt.T + np.array([0.4, -0.3, 0.7])
+        return verts_tilted, faces
+
+    def test_mesh_o2_count_and_z_reflection_invariance(self):
+        verts, faces = self._tilted_offset_box()
+        tensors_orig = minkowski_tensors(verts, faces, compute_eigensystems=False)
+        o2_orig = compute_invariants(tensors_orig, symmetry='O2')
+        assert len(o2_orig) == 474
+
+        # Reflect across z = 0 (flip face winding to preserve outward normals)
+        R_zref = np.diag([1.0, 1.0, -1.0])
+        R_zrot = Rotation.from_euler('z', 53, degrees=True).as_matrix()
+        for R, flip_faces in ((R_zref, True), (R_zrot, False), (R_zref @ R_zrot, True)):
+            verts_t = verts @ R.T
+            faces_t = faces[:, ::-1] if flip_faces else faces
+            tensors_t = minkowski_tensors(verts_t, faces_t, compute_eigensystems=False)
+            o2_t = compute_invariants(tensors_t, symmetry='O2')
+            for k in o2_orig:
+                assert o2_t[k] == pytest.approx(o2_orig[k], rel=1e-6, abs=1e-6), (
+                    f"Mesh O2 feature '{k}' differed: {o2_orig[k]} vs {o2_t[k]}"
+                )
+
+    def test_mesh_o2_eigensystem_keys_dropped_with_warning(self):
+        verts, faces = self._tilted_offset_box()
+        tensors_full = minkowski_tensors(verts, faces, compute_eigensystems=True)
+        tensors_clean = minkowski_tensors(verts, faces, compute_eigensystems=False)
+        with pytest.warns(UserWarning, match="ignoring non-tensor eigensystem keys"):
+            o2_full = compute_invariants(tensors_full, symmetry='O2')
+        o2_clean = compute_invariants(tensors_clean, symmetry='O2')
+        assert o2_full == o2_clean
+
+
+# =============================================================================
+# TestFilterByDegree
+# =============================================================================
+
+class TestFilterByDegree:
+    """Tests for filter_by_degree() across all symmetry groups."""
+
+    @pytest.fixture
+    def sample_tensors(self):
+        rng = np.random.default_rng(7)
+        tensors = {'w000': 1.2, 'w100': 2.3, 'w200': 0.9, 'w300': 1.0}
+        for name in ('w010', 'w110', 'w210', 'w310'):
+            tensors[name] = rng.normal(size=3)
+        for name in ('w020', 'w120', 'w220', 'w320', 'w102', 'w202'):
+            A = rng.normal(size=(3, 3))
+            tensors[name] = 0.5 * (A + A.T)
+        return tensors
+
+    def test_top_level_exports(self):
+        import pykarambola
+        assert pykarambola.compute_invariants is compute_invariants
+        assert pykarambola.decompose_all is decompose_all
+        assert pykarambola.filter_by_degree is filter_by_degree
+
+    @pytest.mark.parametrize('symmetry,expected_counts', [
+        ('O3',  (8, 31, 116)),
+        ('SO3', (8, 31, 180)),
+        ('SO2', (18, 136, 660)),
+        ('O2',  (14, 88, 372)),
+    ])
+    def test_partition_and_max_degree_consistency(self, sample_tensors, symmetry, expected_counts):
+        inv1 = compute_invariants(sample_tensors, max_degree=1, symmetry=symmetry)
+        inv2 = compute_invariants(sample_tensors, max_degree=2, symmetry=symmetry)
+        inv3 = compute_invariants(sample_tensors, max_degree=3, symmetry=symmetry)
+
+        d1 = filter_by_degree(inv3, 1)
+        d2 = filter_by_degree(inv3, 2)
+        d3 = filter_by_degree(inv3, 3)
+
+        # Counts match analytic expectations
+        assert (len(d1), len(d2), len(d3)) == expected_counts
+
+        # Degrees form a strict disjoint partition of inv3
+        k1, k2, k3 = set(d1), set(d2), set(d3)
+        assert k1.isdisjoint(k2) and k1.isdisjoint(k3) and k2.isdisjoint(k3)
+        assert (k1 | k2 | k3) == set(inv3)
+
+        # Filtering matches computing with lower max_degree directly
+        assert d1 == inv1
+        assert filter_by_degree(inv3, (1, 2)) == inv2
+        assert filter_by_degree(inv3, [1, 2, 3]) == inv3
+
+    def test_iterable_variants(self, sample_tensors):
+        inv3 = compute_invariants(sample_tensors, max_degree=3, symmetry='SO3')
+        d1 = filter_by_degree(inv3, 1)
+        d3 = filter_by_degree(inv3, 3)
+
+        # tuple, list, set, generator all accepted
+        for spec in ((1, 3), [1, 3], {1, 3}, (d for d in (1, 3))):
+            selected = filter_by_degree(inv3, spec)
+            assert set(selected) == set(d1) | set(d3)
+            for k, v in selected.items():
+                assert v == inv3[k]
+
+        # Empty iterable returns empty dict
+        assert filter_by_degree(inv3, []) == {}
+
+    def test_empty_input_dict(self):
+        assert filter_by_degree({}, 1) == {}
+        assert filter_by_degree({}, (1, 2, 3)) == {}
+
+    @pytest.mark.parametrize('bad_degree', [0, 4, -1, (1, 4), [0, 2]])
+    def test_invalid_degree_raises(self, sample_tensors, bad_degree):
+        inv3 = compute_invariants(sample_tensors, max_degree=3, symmetry='SO3')
+        with pytest.raises(ValueError, match="degree values must be 1, 2, or 3"):
+            filter_by_degree(inv3, bad_degree)

@@ -1,5 +1,9 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (C) 2026 Keisuke Ishihara, Yajushi Khurana
+# This file is part of pykarambola, a Python port of karambola.
+# See LICENSE for the full license text.
 """
-SO(3), O(3), and SO(2) invariant scalar construction from Minkowski tensors.
+SO(3), O(3), SO(2), and O(2) invariant scalar construction from Minkowski tensors.
 
 This module computes rotational invariants from arbitrary combinations of
 rank 0, 1, and 2 tensors. The tensor set is not fixed — users may pass any
@@ -14,7 +18,7 @@ Note: This module labels all l=1 irreps as '1e'. Unlike e3nn which distinguishes
 '1e' (axial) from '1o' (polar), here the label indicates only the angular
 momentum quantum number. Parity is handled via the symmetry='O3'/'SO3' parameter.
 
-For symmetry='SO2', components are decomposed by their charge m under rotation
+For symmetry='SO2'/'O2', components are decomposed by their charge m under rotation
 about the z-axis: m=0 scalars, |m|=1 doublets, and |m|=2 doublets.
 
 References
@@ -624,14 +628,14 @@ def compute_invariants(
           Provides more invariants than SO(3) by treating z-components
           independently. Useful for objects near a wall or with a preferred axis.
         - 'O2': SO(2) invariants further restricted to be even under z-reflection
-          (z → −z). Drops v_z degree-1 features, mixed-parity d1_ dot products,
-          and mixed-parity tp_ triple products.
+          (z → −z). Drops v_z degree-1 features, mixed-parity dot1_/wed1_
+          bilinears, and mixed-parity tp_re_/tp_im_ triple products.
 
     deduplicate_scalars : bool, default=True
         If True, remove degree-1 scalars that are linearly dependent on others.
         Specifically, Tr(w102)/3 is removed when w100 is present, and
         Tr(w202)/3 is removed when w200 is present.
-        For symmetry='SO2', this applies only to the trace key, never to the
+        For symmetry='SO2'/'O2', this applies only to the trace key, never to the
         `{name}_zz` key.
 
     Returns
@@ -648,9 +652,16 @@ def compute_invariants(
     full ``minkowski_tensors(...)`` output is safe. Use
     ``compute_eigensystems=False`` to silence the warning.
 
-    Translation invariance: Many Minkowski tensors depend on the choice of
-    origin/centroid. The invariants computed here will change if the mesh
-    is translated, unless the tensors themselves are translation-invariant.
+    Translation invariance and centroid choice: Many Minkowski tensors depend
+    on the choice of origin/centroid. The invariants computed here will change
+    if the mesh is translated, unless the tensors themselves are
+    translation-invariant (``w000``, ``w100``, ``w200``, ``w300``, ``w102``,
+    ``w202``). Do **not** pass tensors computed with
+    ``minkowski_tensors(..., center='reference_centroid')``: that mode shifts
+    each rank-2 tensor to a different per-tensor centroid while leaving rank-1
+    tensors at the origin, producing tensors in inconsistent coordinate frames.
+    Use ``center=None``, ``center='centroid_mesh'``, or an explicit ``(3,)``
+    coordinate array instead.
 
     For symmetry='SO3'/'O3', invariant labels follow these patterns:
     - Degree 1: tensor name (e.g., 'w000', 'w020')
