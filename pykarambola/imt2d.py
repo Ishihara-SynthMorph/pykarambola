@@ -88,6 +88,7 @@ Papaya2's Cartesian ``image[x, y]`` convention of shape ``(nx, ny)`` and
 import warnings
 
 import numpy as np
+from scipy.ndimage import find_objects as _ndimage_find_objects
 from scipy.ndimage import label as _ndimage_label
 from scipy.spatial import QhullError, Voronoi
 
@@ -240,8 +241,13 @@ def _parse_thresholds(threshold):
     except (TypeError, ValueError) as exc:
         raise ValueError(f"cannot convert threshold to float64: {threshold!r}") from exc
     if arr.ndim == 0:
-        return np.array([float(arr)], dtype=np.float64), True
+        val = float(arr)
+        if not np.isfinite(val):
+            raise ValueError(f"threshold must be finite, got {val!r}")
+        return np.array([val], dtype=np.float64), True
     if arr.ndim == 1:
+        if arr.size > 0 and not np.all(np.isfinite(arr)):
+            raise ValueError("threshold values must all be finite")
         return arr, False
     raise ValueError(
         f"threshold must be a scalar or 1D sequence, got {arr.ndim}D array"
@@ -296,6 +302,8 @@ def _prepare_image_xy(image, boundary, xy_order):
                 f"shape {pad_arr.shape}"
             )
         pad_val = float(pad_arr)
+    if not np.isfinite(pad_val):
+        raise ValueError(f"constant boundary must be finite, got {pad_val!r}")
     return np.pad(arr_xy, ((1, 1), (1, 1)), mode='constant', constant_values=pad_val)
 
 
@@ -449,45 +457,11 @@ def _marching_squares_boundary_data(arr_xy, threshold, is_regular, analyze_black
     return (n_full, (b_lut, t_low, t_up, t_left, t_right), disconnect_fg, bmask)
 
 
-def _marching_squares_imt(
-    arr_xy, threshold, dx, dy, is_regular, analyze_black, connect_black, max_s
-):
-    """Compute (area, perimeter, psi) on an already-prepared (x, y) float64 grid."""
-    pix_area = dx * dy
-    data = _marching_squares_boundary_data(
-        arr_xy, threshold, is_regular, analyze_black, connect_black
-    )
-    if data is None:
-        return 0.0, 0.0, np.zeros(max_s + 1, dtype=np.complex128)
-
-    n_full, bdata, disconnect_fg, _ = data
-    if bdata is None:
-        return float(n_full) * pix_area, 0.0, np.zeros(max_s + 1, dtype=np.complex128)
-
+def _extract_boundary_segments(bdata, dx, dy, disconnect_fg):
+    """Extract primary and saddle segment vectors from marching-squares boundary data."""
     b_lut, t_low, t_up, t_left, t_right = bdata
     m = b_lut.size
 
-    # --- Area ---
-    w = _AREA_W_DISC if disconnect_fg else _AREA_W_CONN
-    a_sw = 0.5 * t_low * t_left
-    a_nw = 0.5 * t_up * (1.0 - t_left)
-    a_se = 0.5 * (1.0 - t_low) * t_right
-    a_ne = 0.5 * (1.0 - t_up) * (1.0 - t_right)
-    a_left = 0.5 * (t_low + t_up)
-    a_bot = 0.5 * (t_left + t_right)
-
-    boundary_area_cells = (
-        np.sum(w[b_lut, 0])
-        + np.dot(w[b_lut, 1], a_sw)
-        + np.dot(w[b_lut, 2], a_nw)
-        + np.dot(w[b_lut, 3], a_se)
-        + np.dot(w[b_lut, 4], a_ne)
-        + np.dot(w[b_lut, 5], a_left)
-        + np.dot(w[b_lut, 6], a_bot)
-    )
-    area = (float(n_full) + float(boundary_area_cells)) * pix_area
-
-    # --- Contour segments ---
     px = np.empty((4, m), dtype=np.float64)
     px[0] = t_low * dx
     px[1] = t_up * dx
@@ -516,6 +490,54 @@ def _marching_squares_imt(
         s_lut = b_lut[saddles]
         seg2_dx = px[seg2_end[s_lut], saddles] - px[seg2_beg[s_lut], saddles]
         seg2_dy = py[seg2_end[s_lut], saddles] - py[seg2_beg[s_lut], saddles]
+    else:
+        seg2_dx = seg2_dy = None
+
+    return seg1_dx, seg1_dy, saddles, seg2_dx, seg2_dy
+
+
+def _marching_squares_imt(
+    arr_xy, threshold, dx, dy, is_regular, analyze_black, connect_black, max_s
+):
+    """Compute (area, perimeter, psi) on an already-prepared (x, y) float64 grid."""
+    pix_area = dx * dy
+    data = _marching_squares_boundary_data(
+        arr_xy, threshold, is_regular, analyze_black, connect_black
+    )
+    if data is None:
+        return 0.0, 0.0, np.zeros(max_s + 1, dtype=np.complex128)
+
+    n_full, bdata, disconnect_fg, _ = data
+    if bdata is None:
+        return float(n_full) * pix_area, 0.0, np.zeros(max_s + 1, dtype=np.complex128)
+
+    b_lut, t_low, t_up, t_left, t_right = bdata
+
+    # --- Area ---
+    w = _AREA_W_DISC if disconnect_fg else _AREA_W_CONN
+    a_sw = 0.5 * t_low * t_left
+    a_nw = 0.5 * t_up * (1.0 - t_left)
+    a_se = 0.5 * (1.0 - t_low) * t_right
+    a_ne = 0.5 * (1.0 - t_up) * (1.0 - t_right)
+    a_left = 0.5 * (t_low + t_up)
+    a_bot = 0.5 * (t_left + t_right)
+
+    boundary_area_cells = (
+        np.sum(w[b_lut, 0])
+        + np.dot(w[b_lut, 1], a_sw)
+        + np.dot(w[b_lut, 2], a_nw)
+        + np.dot(w[b_lut, 3], a_se)
+        + np.dot(w[b_lut, 4], a_ne)
+        + np.dot(w[b_lut, 5], a_left)
+        + np.dot(w[b_lut, 6], a_bot)
+    )
+    area = (float(n_full) + float(boundary_area_cells)) * pix_area
+
+    # --- Contour segments ---
+    seg1_dx, seg1_dy, _, seg2_dx, seg2_dy = _extract_boundary_segments(
+        bdata, dx, dy, disconnect_fg
+    )
+    if seg2_dx is not None:
         all_dx = np.concatenate((seg1_dx, seg2_dx))
         all_dy = np.concatenate((seg1_dy, seg2_dy))
     else:
@@ -544,38 +566,11 @@ def _marching_squares_map_single(
         return mmap
 
     _, bdata, disconnect_fg, bmask = data
-    b_lut, t_low, t_up, t_left, t_right = bdata
-    m = b_lut.size
-
-    px = np.empty((4, m), dtype=np.float64)
-    px[0] = t_low * dx
-    px[1] = t_up * dx
-    px[2] = 0.0
-    px[3] = dx
-
-    py = np.empty((4, m), dtype=np.float64)
-    py[0] = 0.0
-    py[1] = dy
-    py[2] = t_left * dy
-    py[3] = t_right * dy
-
-    if disconnect_fg:
-        seg1_beg, seg1_end = _SEG1_BEG_DISC, _SEG1_END_DISC
-        seg2_beg, seg2_end = _SEG2_BEG_DISC, _SEG2_END_DISC
-    else:
-        seg1_beg, seg1_end = _SEG1_BEG_CONN, _SEG1_END_CONN
-        seg2_beg, seg2_end = _SEG2_BEG_CONN, _SEG2_END_CONN
-
-    idx = np.arange(m, dtype=np.intp)
-    seg1_dx = px[seg1_end[b_lut], idx] - px[seg1_beg[b_lut], idx]
-    seg1_dy = py[seg1_end[b_lut], idx] - py[seg1_beg[b_lut], idx]
+    seg1_dx, seg1_dy, saddles, seg2_dx, seg2_dy = _extract_boundary_segments(
+        bdata, dx, dy, disconnect_fg
+    )
     cell_vals = _segment_psi_s(seg1_dx, seg1_dy, s)
-
-    saddles = np.nonzero((b_lut == 6) | (b_lut == 9))[0]
-    if saddles.size > 0:
-        s_lut = b_lut[saddles]
-        seg2_dx = px[seg2_end[s_lut], saddles] - px[seg2_beg[s_lut], saddles]
-        seg2_dy = py[seg2_end[s_lut], saddles] - py[seg2_beg[s_lut], saddles]
+    if seg2_dx is not None:
         cell_vals[saddles] += _segment_psi_s(seg2_dx, seg2_dy, s)
 
     mmap[bmask] = cell_vals
@@ -654,6 +649,8 @@ def imt_polygon(vertices, *, max_s=12, ensure_ccw=False):
         raise ValueError(
             f"polygon must contain at least 2 vertices, got {verts.shape[0]}"
         )
+    if not np.all(np.isfinite(verts)):
+        raise ValueError("vertices must contain only finite coordinates")
 
     area, perimeter, psi = _polygon_imt_core(verts, max_s, ensure_ccw=ensure_ccw)
     return _finalize_single_result(area, perimeter, psi)
@@ -865,10 +862,10 @@ def imt_label_image(
 
     Parameters
     ----------
-    label_image : (H, W) or (W, H) array_like of int
-        2D integer label image where ``0`` is background and non-zero values
-        identify distinct objects. Non-integer inputs trigger a warning and
-        are cast to ``int``.
+    label_image : (H, W) or (W, H) array_like of int or bool
+        2D integer or boolean label image where ``0`` / ``False`` is background
+        and non-zero / ``True`` values identify foreground objects. Non-integer,
+        non-boolean inputs trigger a warning and are cast to ``int``.
     spacing : float or 2-tuple of float, optional
         Physical pixel spacing matching ``label_image.shape`` order:
         ``(sy, sx)`` when ``xy_order=False`` and ``(sx, sy)`` when
@@ -911,20 +908,25 @@ def imt_label_image(
     dx, dy = _parse_spacing(spacing, xy_order)
     is_regular, _, connect_black = _parse_flags(method, 'white', connect)
     level = float(level)
+    if not np.isfinite(level):
+        raise ValueError(f"level must be finite, got {level!r}")
 
     lbl = np.asarray(label_image)
     if lbl.ndim != 2:
         raise ValueError(
             f"label_image must be 2D, got {lbl.ndim}D array with shape {lbl.shape}"
         )
-    if not np.issubdtype(lbl.dtype, np.integer):
+    if lbl.dtype == np.bool_:
+        lbl = lbl.astype(np.uint8)
+    elif not np.issubdtype(lbl.dtype, np.integer):
         warnings.warn(
             f"label_image has dtype {lbl.dtype}; converting to int. "
-            "Pass an integer-dtype array to suppress this warning.",
+            "Pass an integer or bool array to suppress this warning.",
             stacklevel=2,
         )
         lbl = lbl.astype(np.int64)
 
+    n_autolabeled = None
     if autolabel:
         if connectivity == 1:
             structure = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]], dtype=np.int8)
@@ -932,29 +934,40 @@ def imt_label_image(
             structure = np.ones((3, 3), dtype=np.int8)
         else:
             raise ValueError(f"connectivity must be 1 or 2, got {connectivity!r}")
-        lbl, _ = _ndimage_label(lbl != 0, structure=structure)
+        lbl, n_autolabeled = _ndimage_label(lbl != 0, structure=structure)
 
     # Work internally in (x, y) order so _marching_squares_imt runs directly
     lbl_xy = lbl if xy_order else lbl.T
     nx, ny = lbl_xy.shape
 
-    nz_x, nz_y = np.nonzero(lbl_xy)
-    if nz_x.size == 0:
-        return {}
+    if n_autolabeled is not None:
+        if n_autolabeled == 0:
+            return {}
+        slices = _ndimage_find_objects(lbl_xy)
+        unique_labels = np.arange(1, n_autolabeled + 1, dtype=np.intp)
+        x_min = np.array([sl[0].start for sl in slices], dtype=np.intp)
+        x_max = np.array([sl[0].stop - 1 for sl in slices], dtype=np.intp)
+        y_min = np.array([sl[1].start for sl in slices], dtype=np.intp)
+        y_max = np.array([sl[1].stop - 1 for sl in slices], dtype=np.intp)
+        n_lab = n_autolabeled
+    else:
+        nz_x, nz_y = np.nonzero(lbl_xy)
+        if nz_x.size == 0:
+            return {}
 
-    nz_vals = lbl_xy[nz_x, nz_y]
-    unique_labels, inv = np.unique(nz_vals, return_inverse=True)
-    n_lab = unique_labels.size
+        nz_vals = lbl_xy[nz_x, nz_y]
+        unique_labels, inv = np.unique(nz_vals, return_inverse=True)
+        n_lab = unique_labels.size
 
-    # Single-pass O(H*W) tight bounding boxes for all labels (works for sparse/negative IDs)
-    x_min = np.full(n_lab, nx, dtype=np.intp)
-    x_max = np.full(n_lab, -1, dtype=np.intp)
-    y_min = np.full(n_lab, ny, dtype=np.intp)
-    y_max = np.full(n_lab, -1, dtype=np.intp)
-    np.minimum.at(x_min, inv, nz_x)
-    np.maximum.at(x_max, inv, nz_x)
-    np.minimum.at(y_min, inv, nz_y)
-    np.maximum.at(y_max, inv, nz_y)
+        # Single-pass O(nnz) tight bounding boxes (safe for arbitrary/sparse/negative IDs)
+        x_min = np.full(n_lab, nx, dtype=np.intp)
+        x_max = np.full(n_lab, -1, dtype=np.intp)
+        y_min = np.full(n_lab, ny, dtype=np.intp)
+        y_max = np.full(n_lab, -1, dtype=np.intp)
+        np.minimum.at(x_min, inv, nz_x)
+        np.maximum.at(x_max, inv, nz_x)
+        np.minimum.at(y_min, inv, nz_y)
+        np.maximum.at(y_max, inv, nz_y)
 
     can_crop = level > 0.0
     results = {}
@@ -1061,6 +1074,8 @@ def imt_pointpattern(seeds, *, box=None, max_s=12):
                 return result
             raise
     else:
+        if isinstance(box, bool):
+            raise ValueError(f"box must be a positive finite number or 2-tuple, got {box!r}")
         box_arr = np.asarray(box, dtype=np.float64)
         if box_arr.ndim == 0:
             lx = ly = float(box_arr)

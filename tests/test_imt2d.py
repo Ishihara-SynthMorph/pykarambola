@@ -9,6 +9,7 @@ cases, potato.png, Minkowski maps, Voronoi point patterns) and 2D label images.
 """
 
 import os
+import warnings
 
 import numpy as np
 import pytest
@@ -255,6 +256,10 @@ class TestImtPolygon:
             imt_polygon(self.CONCAVE_VERTS, max_s=-1)
         with pytest.raises(ValueError):
             imt_polygon(self.CONCAVE_VERTS, max_s=True)
+        with pytest.raises(ValueError, match="finite"):
+            imt_polygon([[0.0, 0.0], [np.nan, 0.0], [0.0, 1.0]])
+        with pytest.raises(ValueError, match="finite"):
+            imt_polygon([[0.0, 0.0], [np.inf, 0.0], [0.0, 1.0]])
 
 
 # ---------------------------------------------------------------------------
@@ -498,6 +503,24 @@ class TestImtImage:
             imt_image(img, spacing=(1.0, -1.0))
         with pytest.raises(ValueError):
             imt_image(img, spacing=(1.0, 2.0, 3.0))
+        with pytest.raises(ValueError, match="finite"):
+            imt_image(img, threshold=np.nan)
+        with pytest.raises(ValueError, match="finite"):
+            imt_image(img, threshold=[0.2, np.inf])
+        with pytest.raises(ValueError, match="finite"):
+            imt_image(img, boundary=np.nan)
+        with pytest.raises(ValueError, match="finite"):
+            imt_image(img, boundary=np.inf)
+
+    def test_empty_multi_threshold(self):
+        img = np.zeros((4, 5))
+        res = imt_image(img, threshold=[], max_s=6)
+        assert res["area"].shape == (0,)
+        assert res["perimeter"].shape == (0,)
+        assert res["beta102"].shape == (0,)
+        assert res["isoper"].shape == (0,)
+        assert res["psi"].shape == (0, 7)
+        assert res["q"].shape == (0, 7)
 
 
 # ---------------------------------------------------------------------------
@@ -603,6 +626,18 @@ class TestMinkowskiMap:
             minkowski_map(img, s=True)
         with pytest.raises(ValueError):
             minkowski_map(img, boundary="nonsense")
+        with pytest.raises(ValueError, match="finite"):
+            minkowski_map(img, threshold=np.nan)
+        with pytest.raises(ValueError, match="finite"):
+            minkowski_map(img, threshold=[0.1, np.inf])
+        with pytest.raises(ValueError, match="finite"):
+            minkowski_map(img, boundary=np.nan)
+
+    def test_empty_multi_threshold(self):
+        img = np.zeros((4, 5))
+        assert minkowski_map(img, threshold=[], boundary=None).shape == (0, 3, 4)
+        assert minkowski_map(img, threshold=[], boundary=0.0).shape == (0, 5, 6)
+        assert minkowski_map(img, threshold=[], boundary="periodic").shape == (0, 4, 5)
 
 
 # ---------------------------------------------------------------------------
@@ -669,8 +704,53 @@ class TestImtLabelImage:
         res_c2 = imt_label_image(img, autolabel=True, connectivity=2)
         assert list(res_c2.keys()) == [1]
 
+    def test_bool_mask_no_warning_and_autolabel_equivalence(self):
+        # Standard boolean segmentation mask (e.g. elastin mask) must not warn
+        lbl = self._make_multi_label_image()
+        mask = lbl > 0
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            res_single = imt_label_image(mask, autolabel=False)
+            res_c1 = imt_label_image(mask, autolabel=True, connectivity=1)
+            res_c2 = imt_label_image(mask, autolabel=True, connectivity=2)
+        assert caught == []
+        assert list(res_single.keys()) == [1]
+        assert sorted(res_c1.keys()) == [1, 2, 3]
+        assert sorted(res_c2.keys()) == [1, 2, 3]
+
+        # Verify fast find_objects path (autolabel=True) matches full-image imt_image
+        for pad in (True, False):
+            for xy_order in (False, True):
+                spacing = (1.4, 0.8)
+                res = imt_label_image(
+                    mask,
+                    spacing=spacing,
+                    pad=pad,
+                    xy_order=xy_order,
+                    autolabel=True,
+                    connectivity=1,
+                )
+                assert sorted(res.keys()) == [1, 2, 3]
+                # Sum of per-component areas and psi equals whole-mask imt_image
+                # (components are pairwise disjoint and >1 pixel apart)
+                whole = imt_image(
+                    mask.astype(np.float64),
+                    threshold=0.5,
+                    spacing=spacing,
+                    boundary=0.0 if pad else None,
+                    xy_order=xy_order,
+                )
+                total_area = sum(r["area"] for r in res.values())
+                total_peri = sum(r["perimeter"] for r in res.values())
+                total_psi = sum(r["psi"] for r in res.values())
+                assert total_area == pytest.approx(whole["area"], rel=1e-13, abs=1e-13)
+                assert total_peri == pytest.approx(whole["perimeter"], rel=1e-13, abs=1e-13)
+                assert np.allclose(total_psi, whole["psi"], atol=1e-12, rtol=1e-12)
+
     def test_empty_and_non_integer_warning(self):
         assert imt_label_image(np.zeros((10, 10), dtype=np.int32)) == {}
+        assert imt_label_image(np.zeros((10, 10), dtype=bool), autolabel=True) == {}
 
         flt = np.zeros((10, 10), dtype=np.float64)
         flt[3:7, 3:7] = 1.0
@@ -683,6 +763,10 @@ class TestImtLabelImage:
             imt_label_image(np.zeros((4, 4, 4), dtype=np.int32))
         with pytest.raises(ValueError):
             imt_label_image(np.ones((4, 4), dtype=np.int32), autolabel=True, connectivity=3)
+        with pytest.raises(ValueError, match="finite"):
+            imt_label_image(np.ones((4, 4), dtype=np.int32), level=np.nan)
+        with pytest.raises(ValueError, match="finite"):
+            imt_label_image(np.ones((4, 4), dtype=np.int32), level=np.inf)
 
 
 # ---------------------------------------------------------------------------
@@ -797,8 +881,78 @@ class TestImtPointPattern:
         with pytest.raises(ValueError):
             imt_pointpattern([[0.5, 0.5]], box=(1.0, -1.0))
         with pytest.raises(ValueError):
+            imt_pointpattern([[0.5, 0.5]], box=True)
+        with pytest.raises(ValueError):
             imt_pointpattern([[0.5, 0.5]], box=[1.0, 2.0, 3.0])
         with pytest.raises(ValueError):
             imt_pointpattern([[0.5, 0.5, 0.5]])
         with pytest.raises(ValueError):
             imt_pointpattern([[np.nan, 0.5]])
+
+
+# ---------------------------------------------------------------------------
+# 6. 2D vs. 3D extruded-prism consistency check
+# ---------------------------------------------------------------------------
+
+def _extrude_convex_polygon_ccw(verts_2d, height):
+    """Build a closed, outward-oriented 3D triangular prism mesh from a CCW convex 2D polygon."""
+    pts = np.asarray(verts_2d, dtype=np.float64)
+    n = len(pts)
+    bottom = np.column_stack([pts, np.zeros(n)])
+    top = np.column_stack([pts, np.full(n, float(height))])
+    verts_3d = np.vstack([bottom, top])
+
+    faces = []
+    # Side quads (2 triangles per edge, outward normal = edge x +z)
+    for i in range(n):
+        j = (i + 1) % n
+        faces.append([i, j, n + j])
+        faces.append([i, n + j, n + i])
+    # Top (+z) and bottom (-z) fan triangulations
+    for i in range(1, n - 1):
+        faces.append([n, n + i, n + i + 1])
+        faces.append([0, i + 1, i])
+    return verts_3d, np.asarray(faces, dtype=np.int64)
+
+
+class Test2D3DCrossCheck:
+    @pytest.mark.parametrize(
+        "verts_2d,height",
+        [
+            # Axis-aligned rectangle
+            ([[0.0, 0.0], [3.5, 0.0], [3.5, 1.2], [0.0, 1.2]], 2.0),
+            # Rotated asymmetric convex pentagon (tests nonzero off-diagonal T_xy / Im(psi_2))
+            ([[0.0, 0.0], [2.4, 0.7], [3.1, 2.3], [1.2, 3.0], [-0.4, 1.5]], 1.7),
+        ],
+    )
+    def test_extruded_prism_matches_3d_minkowski_tensors(self, verts_2d, height):
+        res_2d = imt_polygon(verts_2d)
+        verts_3d, faces_3d = _extrude_convex_polygon_ccw(verts_2d, height)
+        res_3d = pk.minkowski_tensors(verts_3d, faces_3d, compute=["w000", "w100", "w102"])
+
+        # Volume: w000 == h * A
+        assert res_3d["w000"] == pytest.approx(height * res_2d["area"], rel=1e-13)
+
+        # Surface area: 3 * w100 == 2 * A + h * P
+        assert 3.0 * res_3d["w100"] - 2.0 * res_2d["area"] == pytest.approx(
+            height * res_2d["perimeter"], rel=1e-13
+        )
+
+        # 2x2 xy-subblock of 3D w102 equals (h / 3) * int(n (x) n dl), because top/bottom
+        # caps only contribute to zz. In terms of 2D IMT psi_0 and psi_2:
+        #   T_xx = (psi_0 + Re(psi_2)) / 2
+        #   T_yy = (psi_0 - Re(psi_2)) / 2
+        #   T_xy = Im(psi_2) / 2
+        psi0 = res_2d["psi"][0].real
+        psi2 = res_2d["psi"][2]
+        expected_2d_w102 = 0.5 * np.array([
+            [psi0 + psi2.real, psi2.imag],
+            [psi2.imag, psi0 - psi2.real],
+        ])
+        xy_block = (3.0 / height) * res_3d["w102"][:2, :2]
+        assert np.allclose(xy_block, expected_2d_w102, rtol=1e-13, atol=1e-13)
+
+        # Eigenvalue ratio of xy_block equals 2D beta102
+        eigvals = np.linalg.eigvalsh(xy_block)
+        assert eigvals[0] / eigvals[1] == pytest.approx(res_2d["beta102"], rel=1e-13)
+
