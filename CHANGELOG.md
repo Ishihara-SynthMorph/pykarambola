@@ -9,6 +9,15 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- `minkowski_tensors_from_scalar_field(field, level, ...)` computes Minkowski
+  tensors directly on an isosurface extracted from a continuous 3D scalar field
+  (e.g. segmentation probability maps with `level=0.5`, signed distance
+  functions with `level=0.0, interior='below'`, or intensity volumes),
+  preserving sub-voxel boundary interpolation instead of thresholding to a
+  binary mask first. Supports `interior='above' | 'below'`, `autolabel`,
+  exterior `pad` / `pad_value`, `return_count`, and `return_meshes`. (#143)
+
 ---
 
 ## [0.7.0] - 2026-10-19

@@ -42,6 +42,7 @@ Compared to the original C++ karambola, this Python port adds:
 - **Derived scalar quantities** — each rank-2 tensor (e.g. `w020`) additionally yields `{name}_beta` (anisotropy index: ratio of smallest to largest eigenvalue magnitude), `{name}_trace` (matrix trace), and `{name}_trace_ratio` (trace divided by the corresponding Minkowski scalar, e.g. `w020_trace_ratio = Tr(w020) / w000`).
   These are pykarambola-specific extensions not present in C++ karambola; they are included in the `compute='all'` preset.
 - **Label-image API** — `minkowski_tensors_from_label_image()` extracts surfaces from a 3D integer label image via marching cubes and computes tensors for every label in one call.
+- **Scalar-field API** — `minkowski_tensors_from_scalar_field()` extracts sub-voxel isosurfaces directly from continuous 3D scalar fields (segmentation probability maps, signed distance functions, or intensity volumes) without binarizing first.
 
 ## Requirements
 
@@ -158,10 +159,44 @@ The `center` argument controls the reference point for position-dependent tensor
 | Value | Behaviour |
 |-------|-----------|
 | `None` (default for mesh API) | Use the array origin `(0, 0, 0)` |
-| `'centroid_mesh'` (default for label-image API) | Shift each object to its volume-weighted centre of mass |
+| `'centroid_mesh'` (default for image/field APIs) | Shift each object to its volume-weighted centre of mass |
 | `'centroid_voxel'` | Use the mean voxel coordinate (label-image API only) |
 | `'reference_centroid'` | Reproduce the C++ karambola `--reference_centroid` flag |
 | `(3,)` array | Apply an explicit fixed shift |
+
+### From a 3D scalar field (probability maps, SDFs)
+
+`minkowski_tensors_from_scalar_field()` runs marching cubes directly on a continuous 3D scalar field at a specified `level`, preserving sub-voxel boundary interpolation instead of thresholding to a binary mask first. Requires [scikit-image](https://scikit-image.org/).
+
+```python
+import pykarambola as pk
+
+# Continuous segmentation probability map (interior > 0.5)
+result = pk.minkowski_tensors_from_scalar_field(
+    prob_image,
+    level=0.5,
+    spacing=(0.5, 0.5, 0.5),
+)
+
+# Signed distance function (interior < 0.0)
+result = pk.minkowski_tensors_from_scalar_field(
+    sdf,
+    level=0.0,
+    interior="below",
+)
+
+# Multiple disconnected objects in one field
+results, meshes = pk.minkowski_tensors_from_scalar_field(
+    prob_image,
+    level=0.5,
+    autolabel=True,
+    return_meshes=True,
+)
+```
+
+By default `interior="above"` treats `field > level` as solid; pass `interior="below"` for standard signed distance functions (`field < 0` inside). A 1-voxel exterior border is added by default (`pad=True`, with an automatic exterior value or explicit `pad_value`) so boundary-touching objects produce closed surfaces.
+
+> **Calibration caveat for probability images:** Sub-voxel accuracy gains over thresholding + `minkowski_tensors_from_label_image()` require a well-calibrated probability gradient near the boundary (transitioning smoothly over 2–3 voxels). Networks that saturate sharply to 0 and 1 behave like binary masks and yield little geometric improvement.
 
 ### Multi-label meshes
 

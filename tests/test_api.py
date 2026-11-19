@@ -9,6 +9,7 @@ import pytest
 
 from pykarambola.api import (
     minkowski_tensors, minkowski_tensors_from_label_image,
+    minkowski_tensors_from_scalar_field,
     combine_label_meshes, _label_mesh_components,
 )
 
@@ -1141,3 +1142,336 @@ class TestPrerequisiteOptimization:
         verts, faces = _box_mesh(2.0, 3.0, 4.0)
         result = minkowski_tensors(verts, faces, compute=['w020'], center='reference_centroid')
         assert 'w020' in result
+
+
+@pytest.mark.skipif(not _has_skimage, reason='scikit-image not installed')
+class TestScalarField:
+    """#143: Tests for minkowski_tensors_from_scalar_field()."""
+
+    @staticmethod
+    def _sphere_sdf(shape=(24, 24, 24), center=(12.0, 12.0, 12.0), radius=6.0):
+        zz, yy, xx = np.mgrid[:shape[0], :shape[1], :shape[2]]
+        r = np.sqrt(
+            (zz - center[0]) ** 2 + (yy - center[1]) ** 2 + (xx - center[2]) ** 2
+        )
+        return r - radius
+
+    @staticmethod
+    def _sphere_prob(shape=(24, 24, 24), center=(12.0, 12.0, 12.0), radius=6.0, scale=1.0):
+        sdf = TestScalarField._sphere_sdf(shape=shape, center=center, radius=radius)
+        return 1.0 / (1.0 + np.exp(sdf / scale))
+
+    def test_top_level_export(self):
+        import pykarambola as pk
+        assert pk.minkowski_tensors_from_scalar_field is minkowski_tensors_from_scalar_field
+
+    def test_smooth_probability_sphere_improves_over_binary_mask(self):
+        """Smooth probability field yields more accurate surface area and curvature than binary mask."""
+        r = 6.0
+        prob = self._sphere_prob(shape=(24, 24, 24), center=(12.0, 12.0, 12.0), radius=r)
+        binary_labels = (prob > 0.5).astype(np.int32)
+
+        res_prob = minkowski_tensors_from_scalar_field(prob, level=0.5)
+        res_bin = minkowski_tensors_from_label_image(binary_labels)[1]
+
+        true_vol = (4.0 / 3.0) * math.pi * r ** 3
+        true_area = 4.0 * math.pi * r ** 2
+        true_imc = 4.0 * math.pi * r
+
+        # Flat dict by default (autolabel=False)
+        assert isinstance(res_prob, dict)
+        assert 'w000' in res_prob
+        assert res_prob['w000'] == pytest.approx(true_vol, rel=0.03)
+        assert 3.0 * res_prob['w100'] == pytest.approx(true_area, rel=0.02)
+        assert 3.0 * res_prob['w200'] == pytest.approx(true_imc, rel=0.02)
+        assert 3.0 * res_prob['w300'] / (2.0 * math.pi) == pytest.approx(2.0, abs=1e-6)
+
+        # Smooth probability field must beat stair-stepped binary mask on area and curvature
+        err_area_prob = abs(3.0 * res_prob['w100'] - true_area)
+        err_area_bin = abs(3.0 * res_bin['w100'] - true_area)
+        assert err_area_prob < err_area_bin
+
+        err_imc_prob = abs(3.0 * res_prob['w200'] - true_imc)
+        err_imc_bin = abs(3.0 * res_bin['w200'] - true_imc)
+        assert err_imc_prob < err_imc_bin
+
+    def test_sdf_interior_below_exact_duality_with_negated_above(self):
+        """interior='below' on sdf is an exact dual of interior='above' on -sdf."""
+        sdf = self._sphere_sdf(shape=(24, 24, 24), center=(12.0, 12.0, 12.0), radius=6.0)
+        res_below, mesh_below = minkowski_tensors_from_scalar_field(
+            sdf, level=0.0, interior='below', return_meshes=True,
+        )
+        res_above, mesh_above = minkowski_tensors_from_scalar_field(
+            -sdf, level=0.0, interior='above', return_meshes=True,
+        )
+        np.testing.assert_allclose(mesh_below[0], mesh_above[0])
+        np.testing.assert_array_equal(mesh_below[1], mesh_above[1])
+        for key in ('w000', 'w100', 'w200', 'w300'):
+            assert res_below[key] == pytest.approx(res_above[key], rel=1e-12)
+        assert res_below['w000'] > 0
+        assert 3.0 * res_below['w300'] / (2.0 * math.pi) == pytest.approx(2.0, abs=1e-6)
+
+    def test_clamped_sdf_below_works_symmetrically(self):
+        """Clamped exterior (max == level) works for interior='below' as well as 'above'."""
+        sdf = self._sphere_sdf(shape=(20, 20, 20), center=(10.0, 10.0, 10.0), radius=5.0)
+        clamped_below = np.minimum(0.0, sdf)
+        clamped_above = np.maximum(0.0, -sdf)
+        r_below = minkowski_tensors_from_scalar_field(clamped_below, level=0.0, interior='below')
+        r_above = minkowski_tensors_from_scalar_field(clamped_above, level=0.0, interior='above')
+        assert r_below['w000'] == pytest.approx(r_above['w000'], rel=1e-12)
+        assert r_below['w100'] == pytest.approx(r_above['w100'], rel=1e-12)
+
+    def test_hollow_shell_winding_and_topology(self):
+        """Hollow spherical shell yields positive net volume and chi=4 without warnings."""
+        import warnings
+        zz, yy, xx = np.mgrid[:24, :24, :24]
+        r = np.sqrt((zz - 12.0) ** 2 + (yy - 12.0) ** 2 + (xx - 12.0) ** 2)
+        shell_sdf = np.abs(r - 5.5) - 2.0  # < 0 for 3.5 < r < 7.5
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            res = minkowski_tensors_from_scalar_field(shell_sdf, level=0.0, interior='below')
+        assert len(w) == 0
+
+        expected_vol = (4.0 / 3.0) * math.pi * (7.5 ** 3 - 3.5 ** 3)
+        assert res['w000'] == pytest.approx(expected_vol, rel=0.03)
+        assert 3.0 * res['w300'] / (2.0 * math.pi) == pytest.approx(4.0, abs=1e-6)
+
+    def test_spacing_scales_volume_and_world_coords(self):
+        prob = self._sphere_prob(shape=(20, 20, 20), center=(10.0, 10.0, 10.0), radius=5.0)
+        r1, (v1, _) = minkowski_tensors_from_scalar_field(
+            prob, level=0.5, spacing=(1.0, 1.0, 1.0), return_meshes=True,
+        )
+        spacing = (2.0, 1.5, 0.5)
+        r2, (v2, _) = minkowski_tensors_from_scalar_field(
+            prob, level=0.5, spacing=spacing, return_meshes=True,
+        )
+        vol_factor = spacing[0] * spacing[1] * spacing[2]
+        assert r2['w000'] == pytest.approx(r1['w000'] * vol_factor, rel=1e-6)
+        np.testing.assert_allclose(v2, v1 * np.array(spacing))
+
+    def test_boundary_touching_pad_true_vs_pad_false_probability(self):
+        """pad=True closes boundary-touching probability object; pad=False warns and gives NaN w000."""
+        import warnings
+        # Hemisphere touching z=0 boundary
+        prob = self._sphere_prob(shape=(16, 20, 20), center=(0.0, 10.0, 10.0), radius=6.0)
+
+        with warnings.catch_warnings(record=True) as w_pad:
+            warnings.simplefilter('always')
+            res_closed = minkowski_tensors_from_scalar_field(prob, level=0.5, pad=True)
+        assert len(w_pad) == 0
+        assert np.isfinite(res_closed['w000']) and res_closed['w000'] > 0
+
+        with pytest.warns(UserWarning, match='Open surface detected'):
+            res_open = minkowski_tensors_from_scalar_field(prob, level=0.5, pad=False)
+        assert math.isnan(res_open['w000'])
+        assert np.isfinite(res_open['w100']) and res_open['w100'] > 0
+
+    def test_boundary_touching_pad_true_sdf(self):
+        """pad=True automatically pads on the positive exterior side for SDFs (interior='below')."""
+        import warnings
+        sdf = self._sphere_sdf(shape=(16, 20, 20), center=(0.0, 10.0, 10.0), radius=6.0)
+
+        with warnings.catch_warnings(record=True) as w_pad:
+            warnings.simplefilter('always')
+            res_closed = minkowski_tensors_from_scalar_field(
+                sdf, level=0.0, interior='below', pad=True,
+            )
+        assert len(w_pad) == 0
+        assert np.isfinite(res_closed['w000']) and res_closed['w000'] > 0
+
+        with pytest.warns(UserWarning, match='Open surface detected'):
+            res_open = minkowski_tensors_from_scalar_field(
+                sdf, level=0.0, interior='below', pad=False,
+            )
+        assert math.isnan(res_open['w000'])
+
+    def test_explicit_pad_value_and_interior_side_warning(self):
+        import warnings
+        prob = self._sphere_prob(shape=(16, 20, 20), center=(0.0, 10.0, 10.0), radius=6.0)
+        res = minkowski_tensors_from_scalar_field(prob, level=0.5, pad=True, pad_value=0.0)
+        assert np.isfinite(res['w000']) and res['w000'] > 0
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter('always')
+            minkowski_tensors_from_scalar_field(prob, level=0.5, pad=True, pad_value=0.9)
+        assert any('not strictly on the exterior side' in str(w.message) for w in caught)
+
+    def test_autolabel_two_disconnected_spheres(self):
+        """autolabel=True separates two disconnected objects and matches combine_label_meshes."""
+        zz, yy, xx = np.mgrid[:24, :24, :44]
+        r1 = np.sqrt((zz - 12.0) ** 2 + (yy - 12.0) ** 2 + (xx - 10.0) ** 2)
+        r2 = np.sqrt((zz - 12.0) ** 2 + (yy - 12.0) ** 2 + (xx - 32.0) ** 2)
+        sdf = np.minimum(r1 - 5.0, r2 - 4.0)
+
+        results, n_obj, meshes = minkowski_tensors_from_scalar_field(
+            sdf, level=0.0, interior='below',
+            autolabel=True, return_count=True, return_meshes=True,
+        )
+        assert n_obj == 2
+        assert set(results.keys()) == {1, 2}
+        assert set(meshes.keys()) == {1, 2}
+
+        vols = sorted(r['w000'] for r in results.values())
+        assert vols[0] == pytest.approx((4.0 / 3.0) * math.pi * 4.0 ** 3, rel=0.05)
+        assert vols[1] == pytest.approx((4.0 / 3.0) * math.pi * 5.0 ** 3, rel=0.05)
+
+        # Compatible with combine_label_meshes
+        verts, faces, values, vertex_labels = combine_label_meshes(meshes)
+        assert verts.shape[1] == 3
+        assert faces.shape[1] == 3
+        assert set(np.unique(vertex_labels)) == {1, 2}
+
+    def test_autolabel_center_per_label_true_vs_false(self):
+        zz, yy, xx = np.mgrid[:20, :20, :40]
+        r1 = np.sqrt((zz - 10.0) ** 2 + (yy - 10.0) ** 2 + (xx - 8.0) ** 2)
+        r2 = np.sqrt((zz - 10.0) ** 2 + (yy - 10.0) ** 2 + (xx - 30.0) ** 2)
+        sdf = np.minimum(r1 - 4.0, r2 - 4.0)
+
+        r_per = minkowski_tensors_from_scalar_field(
+            sdf, level=0.0, interior='below', autolabel=True, center_per_label=True,
+        )
+        r_glob = minkowski_tensors_from_scalar_field(
+            sdf, level=0.0, interior='below', autolabel=True, center_per_label=False,
+        )
+        # Per-label centered spheres have w010 ≈ 0; global-centered spheres are shifted off-center
+        for comp in (1, 2):
+            np.testing.assert_allclose(r_per[comp]['w010'], np.zeros(3), atol=1e-6)
+            assert np.linalg.norm(r_glob[comp]['w010']) > 100.0
+
+    def test_return_meshes_single_object_matches_direct_marching_cubes(self):
+        from skimage.measure import marching_cubes
+        prob = self._sphere_prob(shape=(20, 20, 20), center=(10.0, 10.0, 10.0), radius=5.0)
+        res, n_obj, (verts, faces) = minkowski_tensors_from_scalar_field(
+            prob, level=0.5, return_count=True, return_meshes=True,
+        )
+        assert n_obj == 1
+        assert 'w000' in res
+        exp_verts, exp_faces, _, _ = marching_cubes(
+            prob, level=0.5, spacing=(1.0, 1.0, 1.0),
+            gradient_direction='ascent', allow_degenerate=False,
+        )
+        np.testing.assert_allclose(verts, exp_verts)
+        np.testing.assert_array_equal(faces, exp_faces)
+
+    def test_sparse_large_volume_cropping_invariance(self):
+        """Object embedded in a larger sparse volume produces identical results to tight volume."""
+        tight = self._sphere_prob(shape=(20, 20, 20), center=(10.0, 10.0, 10.0), radius=5.0)
+        large = np.zeros((60, 60, 60), dtype=np.float64)
+        large[25:45, 25:45, 25:45] = tight
+
+        r_tight = minkowski_tensors_from_scalar_field(tight, level=0.5)
+        r_large = minkowski_tensors_from_scalar_field(large, level=0.5)
+        for key in ('w000', 'w100', 'w200', 'w300'):
+            assert r_large[key] == pytest.approx(r_tight[key], rel=1e-12)
+
+    def test_center_modes_and_centroid_voxel_rejected(self):
+        prob = self._sphere_prob(shape=(20, 20, 20), center=(10.0, 10.0, 10.0), radius=5.0)
+
+        r_mesh = minkowski_tensors_from_scalar_field(prob, level=0.5, center='centroid_mesh')
+        np.testing.assert_allclose(r_mesh['w010'], np.zeros(3), atol=1e-6)
+
+        r_ref = minkowski_tensors_from_scalar_field(prob, level=0.5, center='reference_centroid')
+        assert r_ref['w000'] == pytest.approx(r_mesh['w000'], rel=1e-12)
+
+        r_none = minkowski_tensors_from_scalar_field(prob, level=0.5, center=None)
+        np.testing.assert_allclose(r_none['w010'] / r_none['w000'], [10.0, 10.0, 10.0], atol=1e-2)
+
+        r_explicit = minkowski_tensors_from_scalar_field(prob, level=0.5, center=(10.0, 10.0, 10.0))
+        np.testing.assert_allclose(r_explicit['w010'], np.zeros(3), atol=1e-2)
+
+        with pytest.raises(ValueError, match='centroid_voxel'):
+            minkowski_tensors_from_scalar_field(prob, level=0.5, center='centroid_voxel')
+
+    def test_compute_options_eigensystems_and_msm_max_l(self):
+        prob = self._sphere_prob(shape=(20, 20, 20), center=(10.0, 10.0, 10.0), radius=5.0)
+
+        r_no_eig = minkowski_tensors_from_scalar_field(
+            prob, level=0.5, compute_eigensystems=False,
+        )
+        assert 'w020' in r_no_eig
+        assert 'w020_eigvals' not in r_no_eig
+
+        r_all = minkowski_tensors_from_scalar_field(
+            prob, level=0.5, compute='all', msm_max_l=6,
+        )
+        assert r_all['msm_ql'].shape == (7,)
+        assert 'w220_beta' in r_all
+
+    def test_edge_cases_empty_and_constant_fields(self):
+        zeros = np.zeros((10, 10, 10), dtype=np.float64)
+        ones = np.ones((10, 10, 10), dtype=np.float64)
+        at_level = np.full((10, 10, 10), 0.5, dtype=np.float64)
+
+        # All-zero probability image: raises for autolabel=False, empty for autolabel=True
+        with pytest.raises(ValueError, match='No isosurface found'):
+            minkowski_tensors_from_scalar_field(zeros, level=0.5)
+        assert minkowski_tensors_from_scalar_field(zeros, level=0.5, autolabel=True) == {}
+        assert minkowski_tensors_from_scalar_field(
+            zeros, level=0.5, autolabel=True, return_count=True,
+        ) == ({}, 0)
+        assert minkowski_tensors_from_scalar_field(
+            zeros, level=0.5, autolabel=True, return_meshes=True,
+        ) == ({}, {})
+        assert minkowski_tensors_from_scalar_field(
+            zeros, level=0.5, autolabel=True, return_count=True, return_meshes=True,
+        ) == ({}, 0, {})
+
+        # All-one probability image: pad=True closes the whole box; pad=False has no crossing
+        res_box = minkowski_tensors_from_scalar_field(ones, level=0.5, pad=True)
+        assert res_box['w000'] > 0
+        with pytest.raises(ValueError, match='No isosurface found'):
+            minkowski_tensors_from_scalar_field(ones, level=0.5, pad=False)
+        assert minkowski_tensors_from_scalar_field(ones, level=0.5, pad=False, autolabel=True) == {}
+
+        # Constant field equal to level: no isosurface
+        with pytest.raises(ValueError, match='No isosurface found'):
+            minkowski_tensors_from_scalar_field(at_level, level=0.5)
+        assert minkowski_tensors_from_scalar_field(at_level, level=0.5, autolabel=True) == {}
+
+    def test_unbounded_and_integer_fields_accepted_cleanly(self):
+        """Arbitrary scalar ranges (outside [0, 1]) and integer dtypes work without warning."""
+        import warnings
+        prob = self._sphere_prob(shape=(20, 20, 20), center=(10.0, 10.0, 10.0), radius=5.0)
+        scaled_int = np.round(prob * 1000).astype(np.int32)
+        shifted_float = prob * 20.0 - 10.0  # range [-10, 10], level 0.0
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            r_int = minkowski_tensors_from_scalar_field(scaled_int, level=500.0)
+            r_shift = minkowski_tensors_from_scalar_field(shifted_float, level=0.0)
+        assert len(w) == 0
+        assert r_int['w000'] == pytest.approx(r_shift['w000'], rel=1e-2)
+
+    def test_input_validation_errors(self):
+        prob = self._sphere_prob(shape=(12, 12, 12), center=(6.0, 6.0, 6.0), radius=3.0)
+
+        with pytest.raises(ValueError, match='3D array'):
+            minkowski_tensors_from_scalar_field(np.zeros((10, 10)), level=0.5)
+        with pytest.raises(ValueError, match='empty'):
+            minkowski_tensors_from_scalar_field(np.zeros((0, 4, 4)), level=0.5)
+
+        nan_field = prob.copy()
+        nan_field[0, 0, 0] = np.nan
+        with pytest.raises(ValueError, match='finite'):
+            minkowski_tensors_from_scalar_field(nan_field, level=0.5)
+
+        inf_field = prob.copy()
+        inf_field[0, 0, 0] = np.inf
+        with pytest.raises(ValueError, match='finite'):
+            minkowski_tensors_from_scalar_field(inf_field, level=0.5)
+
+        with pytest.raises(ValueError, match='level must be finite'):
+            minkowski_tensors_from_scalar_field(prob, level=float('nan'))
+
+        with pytest.raises(ValueError, match='interior'):
+            minkowski_tensors_from_scalar_field(prob, level=0.5, interior='inside')
+
+        with pytest.raises(ValueError, match='spacing must be a 3-tuple'):
+            minkowski_tensors_from_scalar_field(prob, level=0.5, spacing=(1.0, 1.0))
+        with pytest.raises(ValueError, match='spacing must be a 3-tuple'):
+            minkowski_tensors_from_scalar_field(prob, level=0.5, spacing=(1.0, 0.0, 1.0))
+
+        with pytest.raises(ValueError, match='pad_value must be finite'):
+            minkowski_tensors_from_scalar_field(prob, level=0.5, pad_value=float('inf'))
+

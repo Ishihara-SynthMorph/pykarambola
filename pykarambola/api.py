@@ -1074,6 +1074,332 @@ def minkowski_tensors_from_label_image(
     return results
 
 
+def minkowski_tensors_from_scalar_field(
+    field,
+    level,
+    spacing=(1.0, 1.0, 1.0),
+    interior='above',
+    center='centroid_mesh',
+    center_per_label=True,
+    compute='standard',
+    compute_eigensystems=True,
+    return_count=False,
+    autolabel=False,
+    pad=True,
+    pad_value=None,
+    msm_max_l=8,
+    return_meshes=False,
+):
+    """Compute Minkowski tensors on an isosurface extracted from a 3D scalar field.
+
+    Runs ``skimage.measure.marching_cubes`` directly on a continuous 3D field
+    (such as a segmentation probability map, a signed distance function, or a
+    calibrated intensity volume), preserving sub-voxel boundary interpolation
+    instead of discretizing to a binary mask first.
+
+    Parameters
+    ----------
+    field : (Z, Y, X) array_like
+        3D numeric scalar field. Non-float arrays are converted to ``float64``.
+        All values must be finite.
+    level : float
+        Isosurface level at which the surface is extracted (required). For
+        example, ``0.5`` for a ``[0, 1]`` probability map or ``0.0`` for a
+        signed distance function (SDF).
+    spacing : tuple of float, optional
+        ``(sz, sy, sx)`` voxel spacing passed to ``marching_cubes``.
+        Default is ``(1.0, 1.0, 1.0)``.
+    interior : {'above', 'below'}, optional
+        Which side of ``level`` represents the solid interior of the object(s):
+
+        ``'above'`` (default): voxels with ``field > level`` are inside
+            (appropriate for probability maps, binary masks, and foreground
+            intensity volumes).
+
+        ``'below'``: voxels with ``field < level`` are inside (appropriate
+            for standard signed distance functions where negative values lie
+            inside the object).
+
+        This controls both outward face winding and the automatic exterior
+        padding side when ``pad=True``.
+    center : None, 'centroid_mesh', 'reference_centroid', or (3,) array_like, optional
+        Reference point for position-dependent tensors.
+
+        ``'centroid_mesh'`` (default): volume-weighted center of mass computed
+            via the divergence theorem (equivalent to ``w010 / w000``). See
+            ``center_per_label`` for per-component vs global behavior when
+            ``autolabel=True``.
+
+        ``'reference_centroid'``: per-tensor Minkowski centroid, equivalent to
+            the C++ ``--reference_centroid`` flag.
+
+        ``None``: use the origin ``(0, 0, 0)``.
+
+        ``(3,)`` array: explicit reference point in physical coordinates.
+
+        Note: ``'centroid_voxel'`` is not supported for scalar fields.
+    center_per_label : bool, optional
+        Controls centroid scope for ``center='centroid_mesh'`` when
+        ``autolabel=True``. Ignored when ``autolabel=False``, or for
+        ``'reference_centroid'`` and explicit array centers. Default is True.
+    compute : str or list of str, optional
+        Which functionals to compute. ``'standard'`` returns the 14 base
+        functionals; ``'all'`` additionally computes ``w103``, ``w104``,
+        spherical Minkowski summaries (``msm_ql``, ``msm_wl``), and derived
+        scalars (``*_beta``, ``*_trace``, ``*_trace_ratio``); a list of names
+        selects specific quantities.
+    compute_eigensystems : bool, optional
+        If False, eigenvalues and eigenvectors for rank-2 tensors are skipped
+        (``*_eigvals`` / ``*_eigvecs`` keys are omitted). Default is True.
+    return_count : bool, optional
+        If True, include the total number of connected mesh components
+        ``n_objects`` in the return tuple. Default is False.
+    autolabel : bool, optional
+        If False (default), treat the entire extracted isosurface as a single
+        body and return a flat dict matching ``minkowski_tensors(..., labels=None)``.
+        If True, detect connected mesh components automatically (equivalent to
+        ``minkowski_tensors(..., labels='auto')``) and return a nested dict
+        keyed by 1-based component index (``1``, ``2``, ...).
+    pad : bool, optional
+        If True (default), apply a 1-voxel exterior border on all six faces of
+        ``field`` before calling ``marching_cubes`` so objects touching the
+        array boundary produce closed (non-open) surfaces. Vertex coordinates
+        are shifted back to the original image coordinate system. Set
+        ``pad=False`` if the volume is already padded or open surfaces at the
+        boundary are intentional.
+    pad_value : float or None, optional
+        Constant value used for the 1-voxel border when ``pad=True``. Ignored
+        when ``pad=False``. When ``None`` (default), automatically selects
+        ``field.min()`` if it is strictly below ``level`` (else ``level - 1.0``)
+        for ``interior='above'``, or ``field.max()`` if it is strictly above
+        ``level`` (else ``level + 1.0``) for ``interior='below'``.
+    msm_max_l : int, optional
+        Maximum spherical harmonic order for spherical Minkowski tensors.
+        Default is 8. See ``minkowski_tensors`` for details.
+    return_meshes : bool, optional
+        If True, also return the mesh(es) produced internally by
+        ``marching_cubes`` in original image physical coordinates (no extra
+        ``marching_cubes`` call is made).
+
+        When ``autolabel=False``: ``meshes`` is a ``(verts, faces)`` tuple.
+
+        When ``autolabel=True``: ``meshes`` is a ``dict[int, (verts, faces)]``
+        keyed identically to ``results`` (compatible with
+        ``combine_label_meshes``). Default is False.
+
+    Returns
+    -------
+    dict or dict[int, dict]
+        When ``return_count=False`` and ``return_meshes=False``: a flat dict of
+        Minkowski functionals when ``autolabel=False``, or a nested dict keyed
+        by 1-based component index when ``autolabel=True``. When
+        ``autolabel=True`` and no isosurface exists at ``level``, returns ``{}``.
+    tuple
+        When ``return_count`` and/or ``return_meshes`` is True, the results
+        above are augmented in this order:
+
+        ``(results, n_objects)`` when only ``return_count=True``.
+
+        ``(results, meshes)`` when only ``return_meshes=True``.
+
+        ``(results, n_objects, meshes)`` when both are True.
+
+    Raises
+    ------
+    ValueError
+        If ``field`` is not a non-empty 3D finite array, ``level`` or
+        ``pad_value`` is non-finite, ``interior`` is invalid, ``spacing`` does
+        not have length 3, ``center='centroid_voxel'``, or (when
+        ``autolabel=False``) no isosurface exists at ``level``.
+
+    Notes
+    -----
+    Requires *scikit-image*.
+
+    **Calibration caveat for probability images:** Sub-voxel accuracy gains
+    over thresholding + ``minkowski_tensors_from_label_image`` rely on the
+    probability field transitioning smoothly across 2--3 voxels near the
+    boundary. Over-confident segmentation networks whose probabilities saturate
+    sharply at 0 and 1 behave like binary masks and will yield little or no
+    geometric improvement.
+
+    Examples
+    --------
+    Probability map (interior > 0.5):
+
+    >>> res = minkowski_tensors_from_scalar_field(prob_map, level=0.5)
+
+    Signed distance function (interior < 0.0):
+
+    >>> res = minkowski_tensors_from_scalar_field(sdf, level=0.0, interior='below')
+    """
+    try:
+        from skimage.measure import marching_cubes
+    except ImportError:
+        raise ImportError(
+            "scikit-image is required for minkowski_tensors_from_scalar_field. "
+            "Install it with: pip install scikit-image"
+        )
+
+    if interior not in ('above', 'below'):
+        raise ValueError(
+            f"interior must be 'above' or 'below', got {interior!r}"
+        )
+    if isinstance(center, str) and center == 'centroid_voxel':
+        raise ValueError(
+            "'centroid_voxel' is not supported for scalar fields; "
+            "use 'centroid_mesh', 'reference_centroid', a (3,) coordinate array, or None."
+        )
+
+    field = np.asarray(field, dtype=np.float64)
+    if field.ndim != 3:
+        raise ValueError(f"field must be a 3D array, got shape {field.shape}")
+    if field.size == 0:
+        raise ValueError("field must not be empty")
+    if not np.all(np.isfinite(field)):
+        raise ValueError("field must contain only finite values (no NaN or Inf)")
+
+    level = float(level)
+    if not np.isfinite(level):
+        raise ValueError(f"level must be finite, got {level}")
+
+    spacing = tuple(float(s) for s in spacing)
+    if len(spacing) != 3 or not all(np.isfinite(s) and s > 0 for s in spacing):
+        raise ValueError(
+            f"spacing must be a 3-tuple of positive finite floats, got {spacing}"
+        )
+
+    raw_min = float(field.min())
+    raw_max = float(field.max())
+
+    def _empty_return():
+        if not autolabel:
+            raise ValueError(
+                f"No isosurface found at level={level} for field with range "
+                f"[{raw_min}, {raw_max}] (interior={interior!r})."
+            )
+        if return_count and return_meshes:
+            return {}, 0, {}
+        if return_count:
+            return {}, 0
+        if return_meshes:
+            return {}, {}
+        return {}
+
+    # Optional 1-voxel exterior padding to close boundary-touching surfaces
+    if pad:
+        if pad_value is not None:
+            pad_val = float(pad_value)
+            if not np.isfinite(pad_val):
+                raise ValueError(f"pad_value must be finite, got {pad_value}")
+            if (interior == 'above' and pad_val >= level) or (
+                interior == 'below' and pad_val <= level
+            ):
+                warnings.warn(
+                    f"pad_value={pad_val} is not strictly on the exterior side "
+                    f"of level={level} for interior={interior!r}; boundary-touching "
+                    "objects may not close as expected.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+        elif interior == 'above':
+            pad_val = raw_min if raw_min < level else level - 1.0
+        else:
+            pad_val = raw_max if raw_max > level else level + 1.0
+        work = np.pad(field, pad_width=1, mode='constant', constant_values=pad_val)
+        _pad_offset = np.array(spacing, dtype=np.float64)
+    else:
+        work = field
+        _pad_offset = np.zeros(3, dtype=np.float64)
+
+    # Canonicalize so the solid interior is always strictly > work_level.
+    # This makes interior='above' and interior='below' exact mathematical duals
+    # and ensures marching_cubes(..., gradient_direction='ascent') always emits
+    # outward-facing right-hand-rule normals (even for open surfaces and shells).
+    if interior == 'below':
+        work = -work
+        work_level = -level
+    else:
+        work_level = level
+
+    work_min = float(work.min())
+    work_max = float(work.max())
+    if not (work_min <= work_level < work_max):
+        return _empty_return()
+
+    # Crop to the 1-voxel-dilated bounding box of interior voxels (work > work_level)
+    # to avoid running marching_cubes over empty exterior regions.
+    interior_mask = work > work_level
+    z_idx = np.flatnonzero(interior_mask.any(axis=(1, 2)))
+    y_idx = np.flatnonzero(interior_mask.any(axis=(0, 2)))
+    x_idx = np.flatnonzero(interior_mask.any(axis=(0, 1)))
+    if len(z_idx) == 0 or len(y_idx) == 0 or len(x_idx) == 0:
+        return _empty_return()
+
+    z0 = max(0, int(z_idx[0]) - 1)
+    y0 = max(0, int(y_idx[0]) - 1)
+    x0 = max(0, int(x_idx[0]) - 1)
+    z1 = min(work.shape[0], int(z_idx[-1]) + 2)
+    y1 = min(work.shape[1], int(y_idx[-1]) + 2)
+    x1 = min(work.shape[2], int(x_idx[-1]) + 2)
+    crop = work[z0:z1, y0:y1, x0:x1]
+    crop_origin = np.array([z0, y0, x0], dtype=np.float64) * np.array(spacing, dtype=np.float64)
+
+    try:
+        verts, faces, _, _ = marching_cubes(
+            crop,
+            level=work_level,
+            spacing=spacing,
+            gradient_direction='ascent',
+            allow_degenerate=False,
+        )
+    except (ValueError, RuntimeError):
+        return _empty_return()
+
+    if len(faces) == 0:
+        return _empty_return()
+
+    verts = np.asarray(verts, dtype=np.float64) + crop_origin - _pad_offset
+    faces = np.asarray(faces, dtype=np.int64)
+
+    mt_labels = 'auto' if autolabel else None
+    mt_result = minkowski_tensors(
+        verts,
+        faces,
+        labels=mt_labels,
+        center=center,
+        center_per_label=center_per_label,
+        compute=compute,
+        compute_eigensystems=compute_eigensystems,
+        return_count=return_count,
+        msm_max_l=msm_max_l,
+    )
+
+    if not return_meshes:
+        return mt_result
+
+    if return_count:
+        results, n_objects = mt_result
+    else:
+        results = mt_result
+
+    if autolabel:
+        meshes = {}
+        face_labels_arr = _label_mesh_components(faces)
+        for comp in np.unique(face_labels_arr):
+            comp_faces_global = faces[face_labels_arr == comp]
+            used_idx = np.unique(comp_faces_global)
+            remap = np.full(len(verts), -1, dtype=np.int64)
+            remap[used_idx] = np.arange(len(used_idx), dtype=np.int64)
+            meshes[int(comp)] = (verts[used_idx], remap[comp_faces_global])
+    else:
+        meshes = (verts, faces)
+
+    if return_count:
+        return results, n_objects, meshes
+    return results, meshes
+
+
 def combine_label_meshes(label_meshes, color_by=None):
     """Concatenate per-label meshes into a single mesh for visualization.
 
