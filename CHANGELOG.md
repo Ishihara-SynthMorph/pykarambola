@@ -14,7 +14,7 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
   - `compute_invariants(tensors_dict, max_degree, symmetry, deduplicate_scalars)` builds polynomial invariants up to degree 3 from any combination of rank-0/1/2 tensors (not limited to the 14 standard Minkowski tensors)
   - `decompose_all(tensors_dict)` decomposes tensors into irreducible representations (trace/traceless split for rank-2)
   - `filter_by_degree(invs, degree)` selects invariants of one or more polynomial degrees (1, 2, or 3) across all symmetry groups
-  - Symmetry groups: `O3` (true scalars), `SO3` (adds pseudo-scalars), `SO2` (z-rotation), and `O2` (z-rotation + z-reflection, a parity-even subset of `SO2`)
+  - Symmetry groups: `O3` (true scalars), `SO3` (adds pseudo-scalars), `SO2` (z-rotation), and `O2` (z-rotation + xy-plane reflections, omitting 2D pseudo-scalars `wed1_`/`wed2_`/`tp_im_`)
   - Linearly dependent scalars are deduplicated automatically (e.g. `Tr(w102)/3 = w100`); eigensystem keys (`*_eigvals`/`*_eigvecs`) are dropped with a warning, since they are not spherical tensors
 
 ---

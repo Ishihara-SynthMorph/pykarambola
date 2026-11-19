@@ -33,7 +33,6 @@ from pykarambola.invariants import (
     _so2_collect_doublets,
     _so2_doublet_inner_products,
     _so2_triple_products,
-    _is_o2_parity_odd,
     _drop_non_tensor_keys,
     compute_invariants,
     filter_by_degree,
@@ -67,7 +66,7 @@ def unit_cube_tensors():
 
 @pytest.fixture
 def random_tensors():
-    """Random tensors for general testing."""
+    """Random tensors for general testing (includes >=3 vectors so det_ is non-empty)."""
     rng = np.random.default_rng(42)
     # Create symmetric positive definite matrices
     def random_spd():
@@ -80,6 +79,8 @@ def random_tensors():
         'w200': rng.random(),
         'w010': rng.standard_normal(3),
         'w110': rng.standard_normal(3),
+        'w210': rng.standard_normal(3),
+        'w310': rng.standard_normal(3),
         'w020': random_spd(),
         'w120': random_spd(),
         'w102': random_spd(),
@@ -164,6 +165,25 @@ class TestInferRank:
         with pytest.raises(ValueError, match="Unsupported tensor shape"):
             _infer_rank(np.eye(2))
 
+    @pytest.mark.parametrize("bad_val", [
+        True,
+        False,
+        "3.14",
+        "hello",
+        None,
+        {"w000": 1.0},
+        1 + 2j,
+        np.array([True, False, True]),
+        np.array([1 + 0j, 2 + 0j, 3 + 0j]),
+    ])
+    def test_invalid_dtype_or_type(self, bad_val):
+        with pytest.raises(ValueError, match="Unsupported tensor"):
+            _infer_rank(bad_val)
+
+    def test_numpy_scalar_types(self):
+        assert _infer_rank(np.int64(3)) == 0
+        assert _infer_rank(np.float32(1.5)) == 0
+
 
 class TestTraceDecomposition:
     """Tests for trace/traceless decomposition of rank-2 tensors."""
@@ -247,6 +267,7 @@ class TestDecomposeAll:
         assert ('w020', '0e') in decomposed
         assert ('w020', '2e') in decomposed
         assert np.isclose(decomposed[('w020', '0e')], 2.0)  # trace/3
+        assert isinstance(decomposed[('w020', '0e')], float)
 
     def test_mixed_decomposition(self, partial_tensors):
         decomposed = decompose_all(partial_tensors)
@@ -258,6 +279,16 @@ class TestDecomposeAll:
     def test_empty_input(self):
         decomposed = decompose_all({})
         assert decomposed == {}
+
+    def test_decompose_all_drops_eigensystem_keys(self):
+        d = {
+            'w020': np.eye(3),
+            'w020_eigvals': np.array([1.0, 2.0, 3.0]),
+            'w020_eigvecs': np.eye(3),
+        }
+        with pytest.warns(UserWarning, match="decompose_all: ignoring non-tensor eigensystem keys"):
+            decomposed = decompose_all(d)
+        assert set(decomposed.keys()) == {('w020', '0e'), ('w020', '2e')}
 
 
 class TestDropNonTensorKeys:
@@ -288,6 +319,13 @@ class TestDropNonTensorKeys:
         with pytest.warns(UserWarning, match="eigensystem keys"):
             got = compute_invariants(polluted, max_degree=2)
         assert got == base
+
+    def test_multilabel_int_keyed_dict_raises_clear_type_error(self):
+        multilabel = {1: {'w000': 1.0}, 2: {'w000': 2.0}}
+        with pytest.raises(TypeError, match="tensors_dict keys must be strings"):
+            compute_invariants(multilabel)
+        with pytest.raises(TypeError, match="tensors_dict keys must be strings"):
+            decompose_all(multilabel)
 
 
 # =============================================================================
@@ -698,11 +736,14 @@ class TestPseudoscalarParity:
         dets_orig = _triple_vector_dets(decomposed_orig)
         dets_ref = _triple_vector_dets(decomposed_ref)
 
+        assert len(dets_orig) > 0
+        tested = 0
         for key in dets_orig:
-            # Should flip sign (unless zero)
             if abs(dets_orig[key]) > 1e-10:
+                tested += 1
                 assert np.isclose(dets_orig[key], -dets_ref[key], atol=1e-10), \
                     f"{key} did not flip sign under reflection"
+        assert tested > 0
 
     def test_commutator_flips_under_reflection(self, random_tensors):
         """Commutator pseudo-scalars should flip sign under reflection."""
@@ -714,10 +755,14 @@ class TestPseudoscalarParity:
         comms_orig = _commutator_pseudoscalars(decomposed_orig)
         comms_ref = _commutator_pseudoscalars(decomposed_ref)
 
+        assert len(comms_orig) > 0
+        tested = 0
         for key in comms_orig:
             if abs(comms_orig[key]) > 1e-10:
+                tested += 1
                 assert np.isclose(comms_orig[key], -comms_ref[key], atol=1e-10), \
                     f"{key} did not flip sign under reflection"
+        assert tested > 0
 
     @pytest.mark.parametrize("seed", [0, 1, 2])
     def test_pseudoscalars_rotation_invariant(self, random_tensors, seed):
@@ -731,12 +776,14 @@ class TestPseudoscalarParity:
 
         dets_orig = _triple_vector_dets(decomposed_orig)
         dets_rot = _triple_vector_dets(decomposed_rot)
+        assert len(dets_orig) > 0
         for key in dets_orig:
             assert np.isclose(dets_orig[key], dets_rot[key], atol=1e-8), \
                 f"{key} not invariant under rotation"
 
         comms_orig = _commutator_pseudoscalars(decomposed_orig)
         comms_rot = _commutator_pseudoscalars(decomposed_rot)
+        assert len(comms_orig) > 0
         for key in comms_orig:
             assert np.isclose(comms_orig[key], comms_rot[key], atol=1e-8), \
                 f"{key} not invariant under rotation"
@@ -752,6 +799,23 @@ class TestComputeInvariants:
     def test_empty_input(self):
         result = compute_invariants({})
         assert result == {}
+
+    @pytest.mark.parametrize("bad_degree", [0, -1, 4, True, False, 1.5, "2"])
+    def test_invalid_max_degree_raises(self, partial_tensors, bad_degree):
+        with pytest.raises(ValueError, match="max_degree must be 1, 2, or 3"):
+            compute_invariants(partial_tensors, max_degree=bad_degree)
+        # Also validated even when tensors_dict is empty
+        with pytest.raises(ValueError, match="max_degree must be 1, 2, or 3"):
+            compute_invariants({}, max_degree=bad_degree)
+
+    def test_invalid_symmetry_on_empty_input_raises(self):
+        with pytest.raises(ValueError, match="Invalid symmetry"):
+            compute_invariants({}, symmetry='invalid')
+
+    def test_numpy_integer_max_degree_accepted(self, partial_tensors):
+        assert compute_invariants(partial_tensors, max_degree=np.int64(2)) == (
+            compute_invariants(partial_tensors, max_degree=2)
+        )
 
     def test_degree1_only(self, partial_tensors):
         result = compute_invariants(partial_tensors, max_degree=1)
@@ -786,8 +850,9 @@ class TestComputeInvariants:
         # O3 should have no pseudo-scalars
         assert not any(k.startswith('det_') for k in result_o3)
         assert not any(k.startswith('cpsc_') for k in result_o3)
-        # SO3 should have pseudo-scalars
-        assert any(k.startswith('det_') for k in result_so3) or any(k.startswith('cpsc_') for k in result_so3)
+        # SO3 should have both det_ and cpsc_ pseudo-scalars
+        assert any(k.startswith('det_') for k in result_so3)
+        assert any(k.startswith('cpsc_') for k in result_so3)
 
     def test_deduplication_flag(self):
         tensors = {
@@ -831,7 +896,7 @@ class TestComputeInvariantsPartialInputs:
             'v3': np.array([0, 0, 1]),
         }
         result = compute_invariants(tensors, max_degree=3)
-        # Degree-2: 3 dot products (v1-v1, v1-v2, v1-v3, v2-v2, v2-v3, v3-v3) = 6
+        # Degree-2: 6 dot products (v1-v1, v1-v2, v1-v3, v2-v2, v2-v3, v3-v3)
         dot_count = sum(1 for k in result if k.startswith('dot_'))
         assert dot_count == 6
         # Degree-3 SO3: 1 determinant
@@ -873,6 +938,8 @@ class TestFullRotationalInvariance:
         inv_rot = compute_invariants(rotated, max_degree=3, symmetry='SO3')
 
         assert inv_orig.keys() == inv_rot.keys()
+        assert any(k.startswith('det_') and abs(inv_orig[k]) > 1e-6 for k in inv_orig)
+        assert any(k.startswith('cpsc_') and abs(inv_orig[k]) > 1e-6 for k in inv_orig)
         for key in inv_orig:
             assert np.isclose(inv_orig[key], inv_rot[key], atol=1e-8), \
                 f"{key}: {inv_orig[key]} != {inv_rot[key]}"
@@ -906,6 +973,8 @@ class TestFullRotationalInvariance:
 
         # Pseudo-scalars are those in SO3 but not in O3
         pseudoscalar_keys = set(inv_orig.keys()) - set(inv_o3.keys())
+        assert any(k.startswith('det_') and abs(inv_orig[k]) > 1e-6 for k in pseudoscalar_keys)
+        assert any(k.startswith('cpsc_') and abs(inv_orig[k]) > 1e-6 for k in pseudoscalar_keys)
         for key in pseudoscalar_keys:
             if abs(inv_orig[key]) > 1e-10:
                 assert np.isclose(inv_orig[key], -inv_ref[key], atol=1e-8), \
@@ -1166,115 +1235,95 @@ class TestClebschGordanConsistency:
     """
 
     def test_dot_product_coupling_rule(self):
-        """Dot product couples two l=1 irreps to l=0.
-
-        Selection rule: 1 ⊗ 1 = 0 ⊕ 1 ⊕ 2
-        The dot product extracts the l=0 component.
-        """
-        # Two orthogonal vectors
+        """Dot product couples two l=1 irreps to l=0 (1 ⊗ 1 -> 0)."""
         v1 = np.array([1.0, 0.0, 0.0])
-        v2 = np.array([0.0, 1.0, 0.0])
-
-        # Dot product is scalar (l=0)
-        dot = np.dot(v1, v2)
-        assert np.isclose(dot, 0.0)  # Orthogonal
-
-        # Cross product would be l=1 (vector)
-        cross = np.cross(v1, v2)
-        assert cross.shape == (3,)  # Still a vector
-
-        # Outer product gives l=0 ⊕ l=2 (trace + traceless)
-        outer = np.outer(v1, v2)
-        trace = np.trace(outer)  # l=0 part
-        traceless = outer - trace / 3 * np.eye(3)  # l=2 part
-        assert np.isclose(np.trace(traceless), 0.0)
+        v2 = np.array([0.0, 2.0, 0.0])
+        inv = compute_invariants({'a': v1, 'b': v2}, max_degree=2, symmetry='O3')
+        assert set(inv.keys()) == {'dot_a_a', 'dot_a_b', 'dot_b_b'}
+        assert inv['dot_a_a'] == pytest.approx(1.0)
+        assert inv['dot_b_b'] == pytest.approx(4.0)
+        assert inv['dot_a_b'] == pytest.approx(0.0)
 
     def test_frobenius_coupling_rule(self):
-        """Frobenius inner product couples two l=2 irreps to l=0.
-
-        Selection rule: 2 ⊗ 2 = 0 ⊕ 1 ⊕ 2 ⊕ 3 ⊕ 4
-        The Frobenius product Tr(A^T B) extracts the l=0 component.
-        """
-        # Two traceless matrices (pure l=2)
+        """Frobenius inner product couples two pure l=2 irreps to l=0 (2 ⊗ 2 -> 0)
+        and ignores the l=0 trace part."""
         A = np.array([[1, 0, 0], [0, -1, 0], [0, 0, 0]], dtype=float)
         B = np.array([[0, 1, 0], [1, 0, 0], [0, 0, 0]], dtype=float)
-
-        assert np.isclose(np.trace(A), 0.0)  # Traceless
-        assert np.isclose(np.trace(B), 0.0)  # Traceless
-
-        # Frobenius inner product is scalar
-        frob = np.sum(A * B)
-        assert isinstance(frob, (int, float, np.floating))
+        # Adding isotropic multiples of I must not change frob_ (pure l=2 coupling)
+        inv_pure = compute_invariants({'A': A, 'B': B}, max_degree=2, symmetry='O3')
+        inv_shifted = compute_invariants(
+            {'A': A + 5.0 * np.eye(3), 'B': B - 3.0 * np.eye(3)},
+            max_degree=2, symmetry='O3',
+        )
+        assert inv_pure['frob_A_A'] == pytest.approx(2.0)
+        assert inv_pure['frob_B_B'] == pytest.approx(2.0)
+        assert inv_pure['frob_A_B'] == pytest.approx(0.0)
+        for key in ('frob_A_A', 'frob_A_B', 'frob_B_B'):
+            assert inv_shifted[key] == pytest.approx(inv_pure[key])
 
     def test_quadratic_form_coupling_rule(self):
-        """Quadratic form v^T M v couples 1 ⊗ 2 ⊗ 1 -> 0.
-
-        This is a valid three-body coupling: first couple 1 ⊗ 2 -> 1, 2, 3
-        then couple result with 1 -> 0 (only from 1 ⊗ 1 -> 0).
-        """
+        """Quadratic form v^T T v couples 1 ⊗ 2 ⊗ 1 -> 0 using only the traceless l=2 part."""
         v = np.array([1.0, 0.0, 0.0])
-        M = np.diag([1.0, 2.0, -3.0])  # Traceless (l=2)
-
-        qf = v @ M @ v
-        assert isinstance(qf, (int, float, np.floating))
-        assert np.isclose(qf, 1.0)  # v selects M[0,0]
+        M_tl = np.diag([1.0, 2.0, -3.0])  # traceless (pure l=2)
+        inv_pure = compute_invariants({'M': M_tl, 'v': v}, max_degree=3, symmetry='O3')
+        inv_shifted = compute_invariants(
+            {'M': M_tl + 4.0 * np.eye(3), 'v': v}, max_degree=3, symmetry='O3',
+        )
+        assert inv_pure['qf_v_M_v'] == pytest.approx(1.0)
+        assert inv_shifted['qf_v_M_v'] == pytest.approx(1.0)
 
     def test_triple_trace_coupling_rule(self):
-        """Triple trace Tr(ABC) couples 2 ⊗ 2 ⊗ 2 -> 0.
-
-        By successive coupling: 2 ⊗ 2 -> 0,1,2,3,4
-        Then (0,1,2,3,4) ⊗ 2 -> includes 0 from 2⊗2->0.
-        """
-        A = np.diag([1.0, -1.0, 0.0])  # Traceless
-        B = np.diag([0.0, 1.0, -1.0])  # Traceless
-        C = np.diag([-1.0, 0.0, 1.0])  # Traceless
-
-        ttr = np.trace(A @ B @ C)
-        assert isinstance(ttr, (int, float, np.floating))
+        """Triple trace Tr(ABC) couples 2 ⊗ 2 ⊗ 2 -> 0 using only traceless l=2 parts."""
+        A = np.diag([1.0, -1.0, 0.0])
+        B = np.diag([0.0, 1.0, -1.0])
+        C = np.diag([-1.0, 0.0, 1.0])
+        inv = compute_invariants(
+            {'A': A + 2.0 * np.eye(3), 'B': B - np.eye(3), 'C': C + 7.0 * np.eye(3)},
+            max_degree=3, symmetry='O3',
+        )
+        assert inv['tr3_A_B_C'] == pytest.approx(float(np.trace(A @ B @ C)))
+        assert inv['tr3_A_A_A'] == pytest.approx(float(np.trace(A @ A @ A)))
 
     def test_determinant_pseudo_coupling(self):
-        """det([v1, v2, v3]) couples 1 ⊗ 1 ⊗ 1 -> 0 (pseudo-scalar).
+        """det([v1, v2, v3]) couples 1 ⊗ 1 ⊗ 1 -> 0o (included in SO3, excluded in O3)."""
+        tensors = {
+            'a': np.array([1.0, 0.0, 0.0]),
+            'b': np.array([0.0, 1.0, 0.0]),
+            'c': np.array([0.0, 0.0, 1.0]),
+        }
+        inv_so3 = compute_invariants(tensors, max_degree=3, symmetry='SO3')
+        inv_o3 = compute_invariants(tensors, max_degree=3, symmetry='O3')
+        assert inv_so3['det_a_b_c'] == pytest.approx(1.0)
+        assert 'det_a_b_c' not in inv_o3
 
-        This uses the Levi-Civita tensor ε_ijk which is a pseudo-tensor.
-        The coupling 1 ⊗ 1 -> 0,1,2 doesn't directly give a scalar, but
-        with the ε tensor (which transforms as a pseudo-scalar under
-        improper rotations), we get a pseudo-scalar.
-        """
-        v1 = np.array([1.0, 0.0, 0.0])
-        v2 = np.array([0.0, 1.0, 0.0])
-        v3 = np.array([0.0, 0.0, 1.0])
-
-        det = np.linalg.det(np.column_stack([v1, v2, v3]))
-        assert np.isclose(det, 1.0)  # Right-handed frame
-
-        # Under reflection, this flips sign
-        v1_reflected = np.array([-1.0, 0.0, 0.0])
-        det_reflected = np.linalg.det(np.column_stack([v1_reflected, v2, v3]))
-        assert np.isclose(det_reflected, -1.0)
+        reflected = apply_reflection_to_tensors(tensors)
+        inv_so3_ref = compute_invariants(reflected, max_degree=3, symmetry='SO3')
+        assert inv_so3_ref['det_a_b_c'] == pytest.approx(-1.0)
 
     def test_commutator_pseudo_coupling(self):
-        """Commutator [A,B] extracts the l=1 part of 2⊗2, then dots with vector.
+        """Commutator [A,B] extracts the antisymmetric l=1 part of 2 ⊗ 2 and dots with v.
 
-        2 ⊗ 2 = 0 ⊕ 1 ⊕ 2 ⊕ 3 ⊕ 4
-        The antisymmetric part (commutator) is the l=1 component.
-        Then 1 ⊗ 1 -> 0 gives a scalar.
-
-        But this is a pseudo-scalar because the commutator involves the
-        structure constants of so(3), which transform as a pseudo-tensor.
+        Verifies both the SO3/O3 parity split and the axial-vector sign convention
+        a = (C_{12}, C_{20}, C_{01}) where C = A B - B A.
         """
-        # Two non-commuting matrices
         A = np.array([[0, 1, 0], [1, 0, 0], [0, 0, 0]], dtype=float)
         B = np.array([[0, 0, 1], [0, 0, 0], [1, 0, 0]], dtype=float)
+        v = np.array([1.0, 2.0, 3.0])
 
-        comm = A @ B - B @ A  # Antisymmetric (l=1 as axial vector)
-        assert np.allclose(comm, -comm.T)  # Verify antisymmetric
+        comm = A @ B - B @ A
+        expected_axial = np.array([comm[1, 2], comm[2, 0], comm[0, 1]])
+        expected_val = float(np.dot(expected_axial, v))
+        assert abs(expected_val) > 0.5  # non-trivial
 
-        # Extract axial vector
-        axial = np.array([comm[2, 1], comm[0, 2], comm[1, 0]])
+        tensors = {'A': A, 'B': B, 'v': v}
+        inv_so3 = compute_invariants(tensors, max_degree=3, symmetry='SO3')
+        inv_o3 = compute_invariants(tensors, max_degree=3, symmetry='O3')
+        assert inv_so3['cpsc_A_B_v'] == pytest.approx(expected_val)
+        assert 'cpsc_A_B_v' not in inv_o3
 
-        v = np.array([1.0, 1.0, 1.0])
-        pseudo_scalar = np.dot(axial, v)
-        assert isinstance(pseudo_scalar, (int, float, np.floating))
+        reflected = apply_reflection_to_tensors(tensors)
+        inv_so3_ref = compute_invariants(reflected, max_degree=3, symmetry='SO3')
+        assert inv_so3_ref['cpsc_A_B_v'] == pytest.approx(-expected_val)
 
     def test_forbidden_coupling_not_present(self):
         """Verify we don't compute any forbidden couplings.
@@ -1417,8 +1466,8 @@ class TestSO2Invariants:
 
     def test_so2_degree2_count(self):
         """With 1 rank-1 vector and 1 rank-2 matrix:
-        |m|=1 doublets: v_xy + M_xz = 2 → 3 d1 dot pairs + 1 x1 wedge (i<j)
-        |m|=2 doublets: M_m2 = 1 → 1 d2 pair + 0 x2 wedge (no distinct pair)
+        |m|=1 doublets: v_xy + M_xz = 2 → 3 dot1_ dot pairs + 1 wed1_ wedge (i<j)
+        |m|=2 doublets: M_m2 = 1 → 1 dot2_ pair + 0 wed2_ wedge (no distinct pair)
         Total: 5
         """
         dec = _decompose_so2({'v': np.array([1., 2., 3.]), 'M': np.eye(3)})
@@ -1578,7 +1627,7 @@ class TestSO2Invariants:
         deg1 = {k: v for k, v in inv.items() if not k.startswith(deg2_prefixes)}
         assert len(deg1) == 18, f"Expected 18 degree-1, got {len(deg1)}: {sorted(deg1)}"
 
-        # Degree-2: 55 d1 + 45 x1 + 21 d2 + 15 x2 = 136
+        # Degree-2: 55 dot1_ + 45 wed1_ + 21 dot2_ + 15 wed2_ = 136
         deg2 = {k: v for k, v in inv.items() if k.startswith(('dot1_', 'wed1_', 'dot2_', 'wed2_'))}
         assert len(deg2) == 136, f"Expected 136 degree-2, got {len(deg2)}"
 
@@ -1644,6 +1693,27 @@ def _box_mesh_so2(a, b, c):
         [2, 3, 7], [2, 7, 6],   # +y
         [0, 4, 7], [0, 7, 3],   # -x
         [1, 2, 6], [1, 6, 5],   # +x
+    ], dtype=np.int64)
+    return verts, faces
+
+
+def _asymmetric_mesh():
+    """Closed convex 12-triangle polyhedron with no symmetry planes, off-origin.
+
+    All 14 Minkowski tensors and every SO(3)/O(3)/SO(2)/O(2) invariant family
+    (including det_, cpsc_, wed1_, wed2_, tp_re_, tp_im_) are strictly non-zero.
+    """
+    verts = np.array([
+        [-1.2, -0.8, -0.5], [ 1.7, -0.6, -0.4], [ 1.3,  1.1, -0.7], [-0.9,  0.9, -0.3],
+        [-0.8, -1.1,  0.6], [ 1.4, -0.7,  1.3], [ 1.1,  1.4,  0.9], [-1.0,  0.7,  0.5],
+    ], dtype=np.float64) + np.array([0.4, -0.3, 0.7])
+    faces = np.array([
+        [0, 3, 2], [0, 2, 1],
+        [4, 5, 6], [4, 6, 7],
+        [0, 1, 5], [0, 5, 4],
+        [2, 3, 7], [2, 7, 6],
+        [0, 4, 7], [0, 7, 3],
+        [1, 2, 6], [1, 6, 5],
     ], dtype=np.int64)
     return verts, faces
 
@@ -1719,8 +1789,9 @@ class TestSO2InvariantsMeshIntegration:
 
     @pytest.mark.parametrize("theta", [30, 90, 180])
     def test_z_rotation_invariance(self, theta):
-        """Rotating the mesh about z produces identical SO(2) invariants."""
-        verts, faces = _box_mesh_so2(3.0, 2.0, 1.0)
+        """Rotating an asymmetric mesh about z produces identical SO(2) invariants
+        across all non-zero families (dot1_, wed1_, dot2_, wed2_, tp_re_, tp_im_)."""
+        verts, faces = _asymmetric_mesh()
         R = Rotation.from_euler('z', theta, degrees=True).as_matrix()
 
         tensors     = minkowski_tensors(verts,        faces, compute_eigensystems=False)
@@ -1730,8 +1801,11 @@ class TestSO2InvariantsMeshIntegration:
         inv_rot = compute_invariants(tensors_rot, symmetry='SO2')
 
         assert set(inv.keys()) == set(inv_rot.keys())
+        for prefix in ('dot1_', 'wed1_', 'dot2_', 'wed2_', 'tp_re_', 'tp_im_'):
+            vals = [abs(v) for k, v in inv.items() if k.startswith(prefix)]
+            assert vals and max(vals) > 1e-6, f"Expected non-zero {prefix} invariants"
         for k in inv:
-            assert abs(inv[k] - inv_rot[k]) < 1e-10, \
+            assert inv[k] == pytest.approx(inv_rot[k], rel=1e-9, abs=1e-10), \
                 f"z-rotation by {theta}° broke '{k}': {inv[k]:.6g} vs {inv_rot[k]:.6g}"
 
     # ---- non-invariance under off-axis rotation ----
@@ -1838,7 +1912,7 @@ class TestSO3InvariantsMeshIntegration:
         assert len(inv) == 155
 
     def test_so3_has_more_invariants_than_o3(self, box_tensors):
-        """SO(3) includes pseudo-scalars (det_, comm_) absent from O(3)."""
+        """SO(3) includes pseudo-scalars (det_, cpsc_) absent from O(3)."""
         inv_so3 = compute_invariants(box_tensors, symmetry='SO3')
         inv_o3  = compute_invariants(box_tensors, symmetry='O3')
         assert len(inv_so3) > len(inv_o3)
@@ -1871,12 +1945,9 @@ class TestSO3InvariantsMeshIntegration:
 
     @pytest.mark.parametrize("seed", [0, 1, 7, 42])
     def test_rotation_invariance_so3(self, seed):
-        """Arbitrary rotation of the mesh leaves SO(3) invariants unchanged.
-
-        Tolerance is 1e-5 (absolute): triple-trace invariants accumulate up to
-        ~2.7e-7 floating-point error for this mesh under arbitrary rotations.
-        """
-        verts, faces = _box_mesh_so2(3.0, 2.0, 1.0)
+        """Arbitrary rotation of an asymmetric mesh leaves SO(3) invariants unchanged,
+        exercising non-zero values in every invariant family including det_ and cpsc_."""
+        verts, faces = _asymmetric_mesh()
         R = Rotation.random(random_state=np.random.default_rng(seed)).as_matrix()
 
         tensors     = minkowski_tensors(verts,       faces, compute_eigensystems=False)
@@ -1886,25 +1957,35 @@ class TestSO3InvariantsMeshIntegration:
         inv_rot = compute_invariants(tensors_rot, symmetry='SO3')
 
         assert set(inv.keys()) == set(inv_rot.keys())
+        for prefix in ('dot_', 'frob_', 'qf_', 'tr3_', 'det_', 'cpsc_'):
+            vals = [abs(v) for k, v in inv.items() if k.startswith(prefix)]
+            assert vals and max(vals) > 1e-6, f"Expected non-zero {prefix} invariants"
         for k in inv:
-            assert abs(inv[k] - inv_rot[k]) < 1e-5, \
+            assert inv[k] == pytest.approx(inv_rot[k], rel=1e-6, abs=1e-5), \
                 f"rotation broke '{k}': {inv[k]:.6g} vs {inv_rot[k]:.6g}"
 
     @pytest.mark.parametrize("seed", [0, 7])
     def test_rotation_invariance_o3(self, seed):
-        """Arbitrary rotation of the mesh leaves O(3) invariants unchanged."""
-        verts, faces = _box_mesh_so2(3.0, 2.0, 1.0)
+        """Arbitrary rotation or reflection of an asymmetric mesh leaves O(3) invariants unchanged."""
+        verts, faces = _asymmetric_mesh()
         R = Rotation.random(random_state=np.random.default_rng(seed)).as_matrix()
 
         tensors     = minkowski_tensors(verts,       faces, compute_eigensystems=False)
         tensors_rot = minkowski_tensors(verts @ R.T, faces, compute_eigensystems=False)
+        tensors_ref = minkowski_tensors(verts @ (-R).T, faces[:, ::-1], compute_eigensystems=False)
 
         inv     = compute_invariants(tensors,     symmetry='O3')
         inv_rot = compute_invariants(tensors_rot, symmetry='O3')
+        inv_ref = compute_invariants(tensors_ref, symmetry='O3')
 
+        for prefix in ('dot_', 'frob_', 'qf_', 'tr3_'):
+            vals = [abs(v) for k, v in inv.items() if k.startswith(prefix)]
+            assert vals and max(vals) > 1e-6, f"Expected non-zero {prefix} invariants"
         for k in inv:
-            assert abs(inv[k] - inv_rot[k]) < 1e-5, \
+            assert inv[k] == pytest.approx(inv_rot[k], rel=1e-6, abs=1e-5), \
                 f"rotation broke '{k}': {inv[k]:.6g} vs {inv_rot[k]:.6g}"
+            assert inv[k] == pytest.approx(inv_ref[k], rel=1e-6, abs=1e-5), \
+                f"reflection broke '{k}': {inv[k]:.6g} vs {inv_ref[k]:.6g}"
 
     # ---- eigensystem-key pitfall ----
 
@@ -2022,7 +2103,7 @@ class TestSO2SO3Consistency:
 # =============================================================================
 
 class TestO2Invariants:
-    """Tests for symmetry='O2' (SO(2) z-rotations + z-reflection z -> -z)."""
+    """Tests for symmetry='O2' (C_inf_v: z-rotations + xy-plane reflections, preserving +z)."""
 
     @staticmethod
     def _transform_tensors(tensors, R):
@@ -2057,33 +2138,6 @@ class TestO2Invariants:
             tensors[name] = 0.5 * (A + A.T)
         return tensors
 
-    # ---- parity classifier unit tests ----
-
-    @pytest.mark.parametrize('key,expected_odd', [
-        # Degree 1
-        ('w000', False),
-        ('w020', False),
-        ('w020_zz', False),
-        ('w010_z', True),
-        # Degree 2 |m|=1
-        ('dot1_w010_xy_w110_xy', False),
-        ('dot1_w020_xz_w120_xz', False),
-        ('dot1_w010_xy_w020_xz', True),
-        ('wed1_w010_xy_w110_xy', False),
-        ('wed1_w020_xz_w120_xz', False),
-        ('wed1_w010_xy_w020_xz', True),
-        # Degree 2 |m|=2
-        ('dot2_w020_m2_w120_m2', False),
-        ('wed2_w020_m2_w120_m2', False),
-        # Degree 3
-        ('tp_re_w010_xy_w110_xy_w020_m2', False),
-        ('tp_im_w020_xz_w120_xz_w020_m2', False),
-        ('tp_re_w010_xy_w020_xz_w020_m2', True),
-        ('tp_im_w010_xy_w020_xz_w020_m2', True),
-    ])
-    def test_is_o2_parity_odd(self, key, expected_odd):
-        assert _is_o2_parity_odd(key) is expected_odd
-
     # ---- subset & exact counts ----
 
     def test_o2_is_subset_of_so2_with_matching_values(self, standard_random_tensors):
@@ -2094,34 +2148,43 @@ class TestO2Invariants:
             assert v == pytest.approx(so2[k])
 
     def test_o2_invariant_counts_14_tensors(self, standard_random_tensors):
-        """Standard 14 tensors produce 14 (deg 1) + 88 (deg 2) + 372 (deg 3) = 474 O(2) invariants."""
+        """Standard 14 tensors produce 18 (deg 1) + 76 (deg 2) + 330 (deg 3) = 424 O(2) invariants."""
         o2 = compute_invariants(standard_random_tensors, symmetry='O2', max_degree=3)
         deg1 = filter_by_degree(o2, 1)
         deg2 = filter_by_degree(o2, 2)
         deg3 = filter_by_degree(o2, 3)
 
-        assert len(deg1) == 14   # 4 rank-0 + 4 rank-2 trace (after dedup) + 6 rank-2 _zz
-        assert len(deg2) == 88   # 31 dot1 + 21 wed1 + 21 dot2 + 15 wed2
-        assert len(deg3) == 372  # 2 * (10 + 21) * 6
-        assert len(o2) == 474
+        assert len(deg1) == 18   # 4 rank-0 + 4 rank-1 v_z + 4 rank-2 trace (after dedup) + 6 rank-2 _zz
+        assert len(deg2) == 76   # 55 dot1_ + 21 dot2_ (wed1_, wed2_ omitted)
+        assert len(deg3) == 330  # 330 tp_re_ (tp_im_ omitted)
+        assert len(o2) == 424
 
-        assert sum(1 for k in deg2 if k.startswith('dot1_')) == 31
-        assert sum(1 for k in deg2 if k.startswith('wed1_')) == 21
+        assert sum(1 for k in deg2 if k.startswith('dot1_')) == 55
+        assert sum(1 for k in deg2 if k.startswith('wed1_')) == 0
         assert sum(1 for k in deg2 if k.startswith('dot2_')) == 21
-        assert sum(1 for k in deg2 if k.startswith('wed2_')) == 15
+        assert sum(1 for k in deg2 if k.startswith('wed2_')) == 0
+        assert sum(1 for k in deg3 if k.startswith('tp_re_')) == 330
+        assert sum(1 for k in deg3 if k.startswith('tp_im_')) == 0
 
-    def test_o2_drops_all_vz_and_mixed_terms(self, standard_random_tensors):
+    def test_o2_omits_2d_pseudoscalars_and_preserves_vz(self, standard_random_tensors):
         o2 = compute_invariants(standard_random_tensors, symmetry='O2')
         for k in o2:
-            assert not (k.endswith('_z') and not k.endswith('_zz')), f"Unexpected v_z key: {k}"
-            assert not (k.count('_xy') == 1 and k.count('_xz') == 1), f"Unexpected mixed key: {k}"
+            assert not k.startswith(('wed1_', 'wed2_', 'tp_im_')), f"Unexpected pseudo-scalar key: {k}"
+        for name in ('w010_z', 'w110_z', 'w210_z', 'w310_z'):
+            assert name in o2
 
     # ---- symmetry properties ----
 
-    def test_o2_invariant_under_z_reflection_and_dropped_terms_flip_sign(self, standard_random_tensors):
-        """O(2) terms are unchanged under z -> -z, while every dropped SO(2) term flips sign."""
-        R_zref = np.diag([1.0, 1.0, -1.0])
-        reflected = self._transform_tensors(standard_random_tensors, R_zref)
+    @pytest.mark.parametrize('R_ref', [
+        np.diag([1.0, -1.0, 1.0]),   # reflection across xz-plane (y -> -y)
+        np.diag([-1.0, 1.0, 1.0]),   # reflection across yz-plane (x -> -x)
+    ])
+    def test_o2_invariant_under_xy_reflection_and_dropped_terms_flip_sign(
+        self, standard_random_tensors, R_ref
+    ):
+        """O(2) terms are unchanged under xy-plane reflection, while every dropped
+        SO(2) pseudo-scalar (wed1_, wed2_, tp_im_) strictly flips sign."""
+        reflected = self._transform_tensors(standard_random_tensors, R_ref)
 
         so2_orig = compute_invariants(standard_random_tensors, symmetry='SO2')
         so2_ref = compute_invariants(reflected, symmetry='SO2')
@@ -2131,21 +2194,22 @@ class TestO2Invariants:
         # Every kept O(2) invariant is strictly unchanged
         for k in o2_orig:
             assert o2_ref[k] == pytest.approx(o2_orig[k], rel=1e-10, abs=1e-12), (
-                f"O2 feature '{k}' not z-reflection invariant: {o2_orig[k]} vs {o2_ref[k]}"
+                f"O2 feature '{k}' not xy-reflection invariant: {o2_orig[k]} vs {o2_ref[k]}"
             )
 
-        # Every dropped SO(2) feature is genuinely parity-odd (flips sign under z -> -z)
+        # Every dropped SO(2) feature is a genuine 2D pseudo-scalar (flips sign)
         dropped_keys = set(so2_orig.keys()) - set(o2_orig.keys())
-        assert len(dropped_keys) == 814 - 474
+        assert len(dropped_keys) == 814 - 424
+        assert max(abs(so2_orig[k]) for k in dropped_keys) > 1e-3
         for k in dropped_keys:
             assert so2_ref[k] == pytest.approx(-so2_orig[k], rel=1e-10, abs=1e-12), (
                 f"Dropped SO2 feature '{k}' did not flip sign: {so2_orig[k]} vs {so2_ref[k]}"
             )
 
     @pytest.mark.parametrize('theta', [0, 33, 90, 147, 270])
-    def test_o2_invariant_under_z_rotation_and_z_reflection(self, theta, standard_random_tensors):
+    def test_o2_invariant_under_z_rotation_and_vertical_reflection(self, theta, standard_random_tensors):
         R_rot = Rotation.from_euler('z', theta, degrees=True).as_matrix()
-        R_combo = np.diag([1.0, 1.0, -1.0]) @ R_rot
+        R_combo = np.diag([1.0, -1.0, 1.0]) @ R_rot
 
         o2_orig = compute_invariants(standard_random_tensors, symmetry='O2')
         for R in (R_rot, R_combo):
@@ -2154,12 +2218,63 @@ class TestO2Invariants:
             for k in o2_orig:
                 assert o2_new[k] == pytest.approx(o2_orig[k], rel=1e-10, abs=1e-12)
 
-    def test_o2_not_invariant_under_x_rotation(self, standard_random_tensors):
-        R_x = Rotation.from_euler('x', 45, degrees=True).as_matrix()
+    def test_o2_not_invariant_under_x_rotation_or_z_flip(self, standard_random_tensors):
+        """O(2) (C_inf_v) preserves the oriented +z axis: neither x-rotation nor z -> -z
+        leaves all O(2) features invariant."""
         o2_orig = compute_invariants(standard_random_tensors, symmetry='O2')
+
+        R_x = Rotation.from_euler('x', 45, degrees=True).as_matrix()
         o2_rot = compute_invariants(self._transform_tensors(standard_random_tensors, R_x), symmetry='O2')
-        max_diff = max(abs(o2_orig[k] - o2_rot[k]) for k in o2_orig)
-        assert max_diff > 1e-2
+        assert max(abs(o2_orig[k] - o2_rot[k]) for k in o2_orig) > 1e-2
+
+        R_zflip = np.diag([1.0, 1.0, -1.0])
+        o2_zflip = compute_invariants(self._transform_tensors(standard_random_tensors, R_zflip), symmetry='O2')
+        assert o2_zflip['w010_z'] == pytest.approx(-o2_orig['w010_z'])
+        assert abs(o2_orig['w010_z']) > 1e-3
+
+    def test_o2_reconstructs_o3_invariants(self, standard_random_tensors):
+        """Because O(2) ⊂ O(3), every O(3) invariant must be expressible via O(2) invariants."""
+        o3 = compute_invariants(standard_random_tensors, symmetry='O3', max_degree=2,
+                                deduplicate_scalars=False)
+        o2 = compute_invariants(standard_random_tensors, symmetry='O2', max_degree=2,
+                                deduplicate_scalars=False)
+
+        # dot(v, v) = v_z^2 + dot1(v_xy, v_xy)
+        assert o3['dot_w010_w010'] == pytest.approx(
+            o2['w010_z'] ** 2 + o2['dot1_w010_xy_w010_xy']
+        )
+
+        # Pure z-aligned vector must not vanish under O(2)
+        pure_z = compute_invariants({'v': np.array([0.0, 0.0, 3.5])}, symmetry='O2')
+        assert pure_z['v_z'] == pytest.approx(3.5)
+
+        # Frobenius inner product of traceless rank-2 parts
+        tzz_a = o2['w020_zz'] - o2['w020']
+        tzz_b = o2['w120_zz'] - o2['w120']
+        reconstructed = (
+            1.5 * tzz_a * tzz_b
+            + o2['dot2_w020_m2_w120_m2'] / 2.0
+            + 2.0 * o2['dot1_w020_xz_w120_xz']
+        )
+        assert o3['frob_w020_w120'] == pytest.approx(reconstructed)
+
+    def test_o2_custom_tensor_names(self):
+        """Custom tensor names containing '_z', '_xy', '_xz' work cleanly in O(2)."""
+        rng = np.random.default_rng(99)
+        A = rng.normal(size=(3, 3))
+        tensors = {
+            'mass_z': 2.5,
+            'v': rng.normal(size=3),
+            'M_xy': 0.5 * (A + A.T),
+        }
+        o2_orig = compute_invariants(tensors, symmetry='O2')
+        assert o2_orig['mass_z'] == pytest.approx(2.5)
+        assert 'v_z' in o2_orig
+
+        R = np.diag([1.0, -1.0, 1.0]) @ Rotation.from_euler('z', 40, degrees=True).as_matrix()
+        o2_trans = compute_invariants(self._transform_tensors(tensors, R), symmetry='O2')
+        for k in o2_orig:
+            assert o2_trans[k] == pytest.approx(o2_orig[k], rel=1e-10, abs=1e-12)
 
     # ---- options and edge cases ----
 
@@ -2171,9 +2286,9 @@ class TestO2Invariants:
         o2_nodedup = compute_invariants(
             standard_random_tensors, symmetry='O2', max_degree=1, deduplicate_scalars=False
         )
-        assert len(o2_d1) == 14
-        assert len(o2_d2) == 14 + 88
-        assert len(o2_nodedup) == 16  # restores w102 and w202 trace keys
+        assert len(o2_d1) == 18
+        assert len(o2_d2) == 18 + 76
+        assert len(o2_nodedup) == 20  # restores w102 and w202 trace keys
         assert 'w102' in o2_nodedup and 'w202' in o2_nodedup
 
 
@@ -2184,24 +2299,29 @@ class TestO2Invariants:
 class TestO2InvariantsMeshIntegration:
     """End-to-end mesh -> minkowski_tensors -> compute_invariants(symmetry='O2') tests."""
 
-    @staticmethod
-    def _tilted_offset_box():
-        """Asymmetric 3x2x1 box tilted and translated so v_z and M_xz/M_yz are non-zero."""
-        verts, faces = _box_mesh_so2(3.0, 2.0, 1.0)
-        R_tilt = Rotation.from_euler('xy', [25, 17], degrees=True).as_matrix()
-        verts_tilted = verts @ R_tilt.T + np.array([0.4, -0.3, 0.7])
-        return verts_tilted, faces
-
-    def test_mesh_o2_count_and_z_reflection_invariance(self):
-        verts, faces = self._tilted_offset_box()
+    def test_mesh_o2_count_and_invariance(self):
+        verts, faces = _asymmetric_mesh()
         tensors_orig = minkowski_tensors(verts, faces, compute_eigensystems=False)
         o2_orig = compute_invariants(tensors_orig, symmetry='O2')
-        assert len(o2_orig) == 474
+        so2_orig = compute_invariants(tensors_orig, symmetry='SO2')
+        assert len(o2_orig) == 424
 
-        # Reflect across z = 0 (flip face winding to preserve outward normals)
-        R_zref = np.diag([1.0, 1.0, -1.0])
+        for prefix in ('dot1_', 'dot2_', 'tp_re_'):
+            vals = [abs(v) for k, v in o2_orig.items() if k.startswith(prefix)]
+            assert vals and max(vals) > 1e-6, f"Expected non-zero {prefix} invariants"
+        assert max(abs(o2_orig[k]) for k in ('w010_z', 'w110_z', 'w210_z', 'w310_z')) > 1e-6
+
+        # Reflect across xz / yz planes (flip face winding to preserve outward normals)
+        # and rotate about z (no flip)
+        R_yref = np.diag([1.0, -1.0, 1.0])
+        R_xref = np.diag([-1.0, 1.0, 1.0])
         R_zrot = Rotation.from_euler('z', 53, degrees=True).as_matrix()
-        for R, flip_faces in ((R_zref, True), (R_zrot, False), (R_zref @ R_zrot, True)):
+        for R, flip_faces in (
+            (R_yref, True),
+            (R_xref, True),
+            (R_zrot, False),
+            (R_yref @ R_zrot, True),
+        ):
             verts_t = verts @ R.T
             faces_t = faces[:, ::-1] if flip_faces else faces
             tensors_t = minkowski_tensors(verts_t, faces_t, compute_eigensystems=False)
@@ -2211,8 +2331,19 @@ class TestO2InvariantsMeshIntegration:
                     f"Mesh O2 feature '{k}' differed: {o2_orig[k]} vs {o2_t[k]}"
                 )
 
+        # Verify dropped SO(2) pseudo-scalars genuinely flip sign under xy-plane reflection
+        tensors_yref = minkowski_tensors(verts @ R_yref.T, faces[:, ::-1], compute_eigensystems=False)
+        so2_yref = compute_invariants(tensors_yref, symmetry='SO2')
+        dropped = set(so2_orig) - set(o2_orig)
+        assert len(dropped) == 390
+        assert max(abs(so2_orig[k]) for k in dropped) > 1e-6
+        for k in dropped:
+            assert so2_yref[k] == pytest.approx(-so2_orig[k], rel=1e-6, abs=1e-6), (
+                f"Mesh dropped SO2 feature '{k}' did not flip sign: {so2_orig[k]} vs {so2_yref[k]}"
+            )
+
     def test_mesh_o2_eigensystem_keys_dropped_with_warning(self):
-        verts, faces = self._tilted_offset_box()
+        verts, faces = _asymmetric_mesh()
         tensors_full = minkowski_tensors(verts, faces, compute_eigensystems=True)
         tensors_clean = minkowski_tensors(verts, faces, compute_eigensystems=False)
         with pytest.warns(UserWarning, match="ignoring non-tensor eigensystem keys"):
@@ -2249,7 +2380,7 @@ class TestFilterByDegree:
         ('O3',  (8, 31, 116)),
         ('SO3', (8, 31, 180)),
         ('SO2', (18, 136, 660)),
-        ('O2',  (14, 88, 372)),
+        ('O2',  (18, 76, 330)),
     ])
     def test_partition_and_max_degree_consistency(self, sample_tensors, symmetry, expected_counts):
         inv1 = compute_invariants(sample_tensors, max_degree=1, symmetry=symmetry)
@@ -2288,11 +2419,19 @@ class TestFilterByDegree:
         # Empty iterable returns empty dict
         assert filter_by_degree(inv3, []) == {}
 
+    def test_numpy_integer_degrees_accepted(self, sample_tensors):
+        inv3 = compute_invariants(sample_tensors, max_degree=3, symmetry='SO3')
+        assert filter_by_degree(inv3, np.int64(2)) == filter_by_degree(inv3, 2)
+        assert (
+            filter_by_degree(inv3, [np.int64(1), np.int32(3)])
+            == filter_by_degree(inv3, (1, 3))
+        )
+
     def test_empty_input_dict(self):
         assert filter_by_degree({}, 1) == {}
         assert filter_by_degree({}, (1, 2, 3)) == {}
 
-    @pytest.mark.parametrize('bad_degree', [0, 4, -1, (1, 4), [0, 2]])
+    @pytest.mark.parametrize('bad_degree', [0, 4, -1, True, False, (1, 4), [0, 2], (True, 2), [1, False]])
     def test_invalid_degree_raises(self, sample_tensors, bad_degree):
         inv3 = compute_invariants(sample_tensors, max_degree=3, symmetry='SO3')
         with pytest.raises(ValueError, match="degree values must be 1, 2, or 3"):

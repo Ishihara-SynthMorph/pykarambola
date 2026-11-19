@@ -88,7 +88,19 @@ def filter_by_degree(
     dict[str, float]
         Subset of *invs* containing only invariants of the requested degree(s).
     """
-    degrees = {degree} if isinstance(degree, int) else set(degree)
+    if isinstance(degree, bool):
+        raise ValueError(f"degree values must be 1, 2, or 3; got [{degree!r}]")
+    if isinstance(degree, (int, np.integer)):
+        degrees = {int(degree)}
+    else:
+        raw_degrees = list(degree)
+        bad_types = [
+            d for d in raw_degrees
+            if isinstance(d, bool) or not isinstance(d, (int, np.integer))
+        ]
+        if bad_types:
+            raise ValueError(f"degree values must be 1, 2, or 3; got {bad_types}")
+        degrees = {int(d) for d in raw_degrees}
     invalid = degrees - {1, 2, 3}
     if invalid:
         raise ValueError(f"degree values must be 1, 2, or 3; got {sorted(invalid)}")
@@ -108,6 +120,8 @@ def filter_by_degree(
 
 def _drop_non_tensor_keys(
     tensors_dict: dict[str, np.ndarray | float],
+    *,
+    caller: str = "compute_invariants",
 ) -> dict[str, np.ndarray | float]:
     """Drop derived eigensystem keys that are not spherical tensors.
 
@@ -118,6 +132,12 @@ def _drop_non_tensor_keys(
     ``compute_invariants(minkowski_tensors(verts, faces))`` still yields correct
     invariants.
     """
+    if any(not isinstance(name, str) for name in tensors_dict):
+        raise TypeError(
+            "tensors_dict keys must be strings (e.g. 'w000', 'w020'). "
+            "If passing multi-label output from minkowski_tensors(..., labels=...), "
+            f"call {caller}() on each per-label dict individually."
+        )
     kept = {
         name: tensor
         for name, tensor in tensors_dict.items()
@@ -126,7 +146,7 @@ def _drop_non_tensor_keys(
     dropped = [name for name in tensors_dict if name.endswith(_NON_TENSOR_SUFFIXES)]
     if dropped:
         warnings.warn(
-            "compute_invariants: ignoring non-tensor eigensystem keys "
+            f"{caller}: ignoring non-tensor eigensystem keys "
             f"{sorted(dropped)}. These are eigenvalue/eigenvector outputs, not "
             "spherical tensors, and would produce non-invariant features. Pass "
             "compute_eigensystems=False to minkowski_tensors to avoid this warning.",
@@ -141,7 +161,7 @@ def _infer_rank(tensor) -> int:
     Parameters
     ----------
     tensor : scalar, array-like
-        A rank-0 (scalar), rank-1 (3-vector), or rank-2 (3x3 matrix) tensor.
+        A real numeric rank-0 (scalar), rank-1 (3-vector), or rank-2 (3x3 matrix) tensor.
 
     Returns
     -------
@@ -151,11 +171,20 @@ def _infer_rank(tensor) -> int:
     Raises
     ------
     ValueError
-        If the tensor shape is not supported.
+        If the tensor dtype or shape is not supported.
     """
-    if isinstance(tensor, (int, float)):
+    if isinstance(tensor, bool):
+        raise ValueError(
+            "Unsupported tensor type: bool. Expected real numeric scalar, (3,), or (3,3) array."
+        )
+    if isinstance(tensor, (int, float, np.integer, np.floating)):
         return 0
     arr = np.asarray(tensor)
+    if not (np.issubdtype(arr.dtype, np.floating) or np.issubdtype(arr.dtype, np.integer)):
+        raise ValueError(
+            f"Unsupported tensor dtype: {arr.dtype}. "
+            "Expected real numeric scalar, (3,), or (3,3) array."
+        )
     if arr.ndim == 0:
         return 0
     if arr.shape == (3,):
@@ -167,7 +196,7 @@ def _infer_rank(tensor) -> int:
 
 def _trace_rank2(M: np.ndarray) -> float:
     """Compute the 0e (scalar) component of a rank-2 tensor: Tr(M) / 3."""
-    return np.trace(M) / 3.0
+    return float(np.trace(M) / 3.0)
 
 
 def _traceless_rank2(M: np.ndarray) -> np.ndarray:
@@ -188,6 +217,10 @@ def decompose_all(tensors_dict: dict[str, np.ndarray | float]) -> dict[tuple[str
     - Rank 0 (scalar): '0e' (even parity scalar)
     - Rank 1 (vector): '1e' (polar vector, l=1 irrep)
     - Rank 2 (matrix): '0e' (trace/3) + '2e' (traceless symmetric part)
+
+    Derived eigensystem keys (``*_eigvals``, ``*_eigvecs``) from
+    ``minkowski_tensors(..., compute_eigensystems=True)`` are dropped with a
+    warning, since they are not spherical tensors.
 
     Parameters
     ----------
@@ -215,6 +248,7 @@ def decompose_all(tensors_dict: dict[str, np.ndarray | float]) -> dict[tuple[str
            [0., 0., 0.],
            [0., 0., 0.]])
     """
+    tensors_dict = _drop_non_tensor_keys(tensors_dict, caller="decompose_all")
     result = {}
     for name, tensor in tensors_dict.items():
         rank = _infer_rank(tensor)
@@ -488,20 +522,26 @@ def _so2_collect_doublets(
     return sorted(items, key=lambda x: x[0])
 
 
-def _so2_doublet_inner_products(so2_dec: dict[tuple[str, str], object]) -> dict[str, float]:
-    """Compute degree-2 SO(2) invariants: bilinears of same-charge doublets.
+def _so2_doublet_inner_products(
+    so2_dec: dict[tuple[str, str], object],
+    *,
+    include_pseudoscalars: bool = True,
+) -> dict[str, float]:
+    """Compute degree-2 SO(2)/O(2) invariants: bilinears of same-charge doublets.
 
     For two same-charge doublets a, b read as complex numbers, both the real and
-    imaginary parts of ``a · conj(b)`` are SO(2) invariant:
-    - real part  = a·b              (dot product, symmetric in a, b)
-    - imag part  = a_x b_y - a_y b_x (2D wedge, antisymmetric; zero on the diagonal)
+    imaginary parts of ``conj(a) · b`` are SO(2) invariant:
+    - real part  = a·b               (dot product, symmetric in a, b; O(2)-even)
+    - imag part  = a_x b_y - a_y b_x (2D wedge, antisymmetric; zero on the diagonal;
+                                      O(2)-odd pseudo-scalar under xy-plane reflection)
 
     The wedge vanishes for a == b, so only i < j pairs are emitted for it.
+    When ``include_pseudoscalars=False`` (O(2)), wedge terms are omitted.
 
     dot1_{ci}_{cj}: dot product of two |m|=1 doublets (from rank-1 _xy and rank-2 _xz)
-    wed1_{ci}_{cj}: wedge of two distinct |m|=1 doublets
+    wed1_{ci}_{cj}: wedge of two distinct |m|=1 doublets (SO(2) only)
     dot2_{ci}_{cj}: dot product of two |m|=2 doublets (from rank-2 _m2)
-    wed2_{ci}_{cj}: wedge of two distinct |m|=2 doublets
+    wed2_{ci}_{cj}: wedge of two distinct |m|=2 doublets (SO(2) only)
     """
     result = {}
 
@@ -509,9 +549,10 @@ def _so2_doublet_inner_products(so2_dec: dict[tuple[str, str], object]) -> dict[
         for i, (ci, di) in enumerate(doublets):
             for cj, dj in doublets[i:]:
                 result[f"{dot_prefix}_{ci}_{cj}"] = float(np.dot(di, dj))
-        for i, (ci, di) in enumerate(doublets):
-            for cj, dj in doublets[i + 1:]:
-                result[f"{wedge_prefix}_{ci}_{cj}"] = float(di[0] * dj[1] - di[1] * dj[0])
+        if include_pseudoscalars:
+            for i, (ci, di) in enumerate(doublets):
+                for cj, dj in doublets[i + 1:]:
+                    result[f"{wedge_prefix}_{ci}_{cj}"] = float(di[0] * dj[1] - di[1] * dj[0])
 
     # |m|=1 doublets: both 'xy' (rank-1) and 'xz' (rank-2)
     m1_doublets = sorted(
@@ -527,14 +568,19 @@ def _so2_doublet_inner_products(so2_dec: dict[tuple[str, str], object]) -> dict[
     return result
 
 
-def _so2_triple_products(so2_dec: dict[tuple[str, str], object]) -> dict[str, float]:
-    """Compute degree-3 SO(2) invariants: triple couplings of |m|=1, |m|=1, |m|=2.
+def _so2_triple_products(
+    so2_dec: dict[tuple[str, str], object],
+    *,
+    include_pseudoscalars: bool = True,
+) -> dict[str, float]:
+    """Compute degree-3 SO(2)/O(2) invariants: triple couplings of |m|=1, |m|=1, |m|=2.
 
     For doublets a (|m|=1), b (|m|=1) with ca <= cb, and c (|m|=2):
-        Re = (ax*bx - ay*by)*cx + (ax*by + ay*bx)*cy  = Re[conj(c) * (a*b)]
-        Im = (ax*by + ay*bx)*cx - (ax*bx - ay*by)*cy  = Im[conj(c) * (a*b)]
+        Re = (ax*bx - ay*by)*cx + (ax*by + ay*bx)*cy  = Re[conj(c) * (a*b)]  (O(2)-even)
+        Im = (ax*by + ay*bx)*cx - (ax*bx - ay*by)*cy  = Im[conj(c) * (a*b)]  (O(2)-odd)
 
     where a*b denotes complex multiplication: a = ax+i*ay, b = bx+i*by, c = cx+i*cy.
+    When ``include_pseudoscalars=False`` (O(2)), ``tp_im_`` terms are omitted.
 
     These are genuinely new invariants not expressible as products of lower-degree terms.
     """
@@ -555,34 +601,12 @@ def _so2_triple_products(so2_dec: dict[tuple[str, str], object]) -> dict[str, fl
             im_ab = a[0] * b[1] + a[1] * b[0]  # Im(a*b)
             for cc, c in m2_doublets:
                 re_val = re_ab * c[0] + im_ab * c[1]   # Re[conj(c) * (a*b)]
-                im_val = im_ab * c[0] - re_ab * c[1]   # Im[conj(c) * (a*b)]
                 result[f"tp_re_{ca}_{cb}_{cc}"] = float(re_val)
-                result[f"tp_im_{ca}_{cb}_{cc}"] = float(im_val)
+                if include_pseudoscalars:
+                    im_val = im_ab * c[0] - re_ab * c[1]   # Im[conj(c) * (a*b)]
+                    result[f"tp_im_{ca}_{cb}_{cc}"] = float(im_val)
 
     return result
-
-
-def _is_o2_parity_odd(key: str) -> bool:
-    """Return True if an SO(2) invariant key is parity-odd under z → −z.
-
-    Odd features:
-    - Degree-1 '{name}_z': rank-1 v_z components (z-reflection flips sign).
-    - Degree-2 'dot1_{ci}_{cj}'/'wed1_{ci}_{cj}': mixed-parity |m|=1 bilinears (one
-      '_xy', one '_xz'). The dot product and the wedge share the same parity.
-    - Degree-3 'tp_re_...' / 'tp_im_...': triple products where the two |m|=1
-      factors have different parity (one '_xy', one '_xz').
-
-    The rule relies on tensor names not containing the substrings '_xy' or '_xz',
-    which holds for all standard pykarambola tensor names (w000, w010, ...).
-    """
-    # Degree-1: v_z components end with '_z' but not '_zz' (which are M_zz)
-    if key.endswith('_z') and not key.endswith('_zz'):
-        return True
-    # Degree-2/3: mixed parity iff exactly one '_xy' and one '_xz' in key
-    if (key.startswith('dot1_') or key.startswith('wed1_')
-            or key.startswith('tp_re_') or key.startswith('tp_im_')):
-        return key.count('_xy') == 1 and key.count('_xz') == 1
-    return False
 
 
 def compute_invariants(
@@ -615,7 +639,7 @@ def compute_invariants(
         - shape (3, 3) -> rank 2 (matrix)
 
     max_degree : int, default=3
-        Maximum polynomial degree of invariants to compute:
+        Maximum polynomial degree of invariants to compute (must be 1, 2, or 3):
         - 1: Only degree-1 (scalars and traces)
         - 2: Add degree-2 (dot products, Frobenius inner products)
         - 3: Add degree-3 (quadratic forms, triple traces, pseudo-scalars)
@@ -624,12 +648,14 @@ def compute_invariants(
         Symmetry group for invariants:
         - 'O3': Only true scalars (invariant under rotations AND reflections)
         - 'SO3': Include pseudo-scalars (flip sign under reflections)
-        - 'SO2': Invariants under rotations about the z-axis only.
+        - 'SO2': Invariants under proper rotations about the z-axis only.
           Provides more invariants than SO(3) by treating z-components
           independently. Useful for objects near a wall or with a preferred axis.
-        - 'O2': SO(2) invariants further restricted to be even under z-reflection
-          (z → −z). Drops v_z degree-1 features, mixed-parity dot1_/wed1_
-          bilinears, and mixed-parity tp_re_/tp_im_ triple products.
+        - 'O2': Invariants under rotations about the z-axis AND reflections
+          across vertical planes containing the z-axis (xy-plane reflections,
+          Schoenflies C_inf_v, preserving the oriented +z direction). Omits
+          the 2D pseudo-scalars (wed1_, wed2_, tp_im_) that flip sign under
+          xy-plane reflection, in direct parallel to O3 vs SO3.
 
     deduplicate_scalars : bool, default=True
         If True, remove degree-1 scalars that are linearly dependent on others.
@@ -669,11 +695,12 @@ def compute_invariants(
     - Degree 3: 'qf_{v1}_{T}_{v2}', 'tr3_{T1}_{T2}_{T3}',
                 'det_{v1}_{v2}_{v3}', 'cpsc_{T1}_{T2}_{v}'
 
-    For symmetry='SO2', invariant labels follow these patterns:
+    For symmetry='SO2'/'O2', invariant labels follow these patterns:
     - Degree 1: '{name}' (scalars/traces), '{name}_z' (v_z), '{name}_zz' (M_zz)
     - Degree 2: 'dot1_{ci}_{cj}'/'wed1_{ci}_{cj}' (|m|=1 dot/wedge),
                 'dot2_{ci}_{cj}'/'wed2_{ci}_{cj}' (|m|=2 dot/wedge)
     - Degree 3: 'tp_re_{ca}_{cb}_{cc}', 'tp_im_{ca}_{cb}_{cc}'
+    (For symmetry='O2', the 2D pseudo-scalars 'wed1_', 'wed2_', and 'tp_im_' are omitted.)
 
     Examples
     --------
@@ -694,39 +721,44 @@ def compute_invariants(
     >>> 'w020_zz' in inv_so2
     True
     """
-    if not tensors_dict:
-        return {}
-
     _VALID_SYMMETRIES = {'O3', 'SO3', 'SO2', 'O2'}
     if symmetry not in _VALID_SYMMETRIES:
         raise ValueError(
             f"Invalid symmetry '{symmetry}'. Must be one of {sorted(_VALID_SYMMETRIES)}."
         )
 
-    # Drop derived eigensystem keys (eigvals/eigvecs) that are not spherical
-    # tensors; otherwise their (3,) / (3,3) shapes would be misread as a vector /
-    # rank-2 tensor and silently produce non-invariant features.
-    tensors_dict = _drop_non_tensor_keys(tensors_dict)
+    if (
+        isinstance(max_degree, bool)
+        or not isinstance(max_degree, (int, np.integer))
+        or int(max_degree) not in (1, 2, 3)
+    ):
+        raise ValueError(f"max_degree must be 1, 2, or 3; got {max_degree!r}")
+    max_degree = int(max_degree)
+
     if not tensors_dict:
         return {}
 
-    # O(2): compute SO(2) then filter out parity-odd features under z → −z
-    if symmetry == 'O2':
-        so2_result = compute_invariants(
-            tensors_dict, max_degree=max_degree, symmetry='SO2',
-            deduplicate_scalars=deduplicate_scalars,
-        )
-        return {k: v for k, v in so2_result.items() if not _is_o2_parity_odd(k)}
+    # Drop derived eigensystem keys (eigvals/eigvecs) that are not spherical
+    # tensors; otherwise their (3,) / (3,3) shapes would be misread as a vector /
+    # rank-2 tensor and silently produce non-invariant features.
+    tensors_dict = _drop_non_tensor_keys(tensors_dict, caller="compute_invariants")
+    if not tensors_dict:
+        return {}
 
-    # SO(2): entirely separate decomposition and invariant pipeline
-    if symmetry == 'SO2':
+    # SO(2) / O(2): independent decomposition and invariant pipeline
+    if symmetry in ('SO2', 'O2'):
+        include_ps = (symmetry == 'SO2')
         so2_dec = _decompose_so2(tensors_dict)
         result = {}
         result.update(_so2_degree1_scalars(so2_dec, deduplicate=deduplicate_scalars))
         if max_degree >= 2:
-            result.update(_so2_doublet_inner_products(so2_dec))
+            result.update(
+                _so2_doublet_inner_products(so2_dec, include_pseudoscalars=include_ps)
+            )
         if max_degree >= 3:
-            result.update(_so2_triple_products(so2_dec))
+            result.update(
+                _so2_triple_products(so2_dec, include_pseudoscalars=include_ps)
+            )
         return result
 
     # Decompose all tensors into SO(3) irreps

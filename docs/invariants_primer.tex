@@ -507,8 +507,9 @@ invariants.
 Eigenvalue-based analysis of individual tensors recovers the degree-1, 2, and~3
 polynomial invariants of each tensor in isolation, but as algebraic rather than
 polynomial quantities.
-The CG framework adds all cross-tensor invariants and provides a completeness
-guarantee: every polynomial invariant up to the chosen degree is included.
+The CG framework adds all cross-tensor invariants systematically,
+yielding a rich generating set of polynomial contractions up to the chosen
+degree (though formal completeness and algebraic minimality are not enforced).
 
 % ---------------------------------------------------------------------------
 \section{Extending to SO(2): axis-aware invariants}
@@ -563,9 +564,12 @@ SO(2)-invariant contractions work by charge conservation:
 
 For the standard 14-tensor set the total SO(2) feature count is $18 + 136 + 660 = \mathbf{814}$,
 verified by \texttt{TestSO2Invariants.test\_so2\_invariant\_count\_14\_tensors}.
-O(2) is obtained by filtering out features that are odd under $z \to -z$
-(the $v_z$ degree-1 components, mixed-parity $|m|=1$ bilinears, and
-mixed-parity triple products).
+O(2) adds reflections across vertical planes containing the $z$-axis
+($xy$-plane reflections, Schoenflies $C_{\infty v}$, preserving the oriented $+z$ axis).
+Under such reflections every complex doublet conjugates ($\mathbf{a} \mapsto \bar{\mathbf{a}}$),
+so the 2-D pseudo-scalars \texttt{wed1\_}, \texttt{wed2\_}, and \texttt{tp\_im\_} flip sign
+and are omitted directly — giving $18 + 76 + 330 = \mathbf{424}$ O(2) features in exact
+parallel to O(3) versus SO(3).
 
 % ---------------------------------------------------------------------------
 \section{Parallel: Spherical Harmonic Invariants}
@@ -778,9 +782,9 @@ For practical guidance in current workflows:
         Higher-degree contractions exist but grow combinatorially.
 
   \item \textbf{Generating set, not a minimal basis.}
-        The output of \texttt{compute\_invariants()} contains all polynomial invariants
-        up to the chosen degree but may include algebraic dependencies; a minimal
-        integrity basis is not computed.
+        The output of \texttt{compute\_invariants()} enumerates the standard
+        contraction patterns up to the chosen degree and may include algebraic
+        dependencies; neither algebraic minimality nor formal completeness is enforced.
         See Section~\ref{sec:existing} for how this output relates to the traces,
         eigenvalues, and ratios that pykarambola currently reports.
 
