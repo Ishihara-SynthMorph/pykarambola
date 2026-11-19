@@ -3,8 +3,8 @@
 # This file is part of pykarambola, a Python port of karambola.
 # See LICENSE for the full license text.
 """
-pykarambola - Python implementation of the Karambola package for computing
-Minkowski tensors on 3D triangulated surfaces.
+pykarambola - Python implementation of Karambola (3D Minkowski tensors)
+and Papaya2 (2D Irreducible Minkowski Tensors).
 """
 
 from importlib.metadata import version, PackageNotFoundError
@@ -32,3 +32,10 @@ from .eigensystem import calculate_eigensystem
 from .results import CalcOptions, SurfaceStatistics
 from .surface import check_surface
 from .api import minkowski_tensors, minkowski_tensors_from_label_image, combine_label_meshes
+from .imt2d import (
+    imt_polygon,
+    imt_image,
+    imt_label_image,
+    minkowski_map,
+    imt_pointpattern,
+)
