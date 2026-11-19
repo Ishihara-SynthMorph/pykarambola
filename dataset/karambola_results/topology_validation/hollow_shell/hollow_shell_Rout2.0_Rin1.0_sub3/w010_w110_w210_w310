@@ -1,0 +1,19 @@
+# input_file = /Users/yk/Desktop/karambola_mac/bash_scripts/../data/input_files/topology_validation/hollow_shell/hollow_shell_Rout2.0_Rin1.0_sub3.off
+#
+# keyword explanations: (not all keywords have to show up)
+# closed = the labeled surface is closed
+# shared = the labeled surface has edges whose neighbours are surfaces with other labels
+# open   = the labeled surface is open, there are no neighbours to some of the edges
+# calculation_forced = stubbornly applied the formulae even though the surface is shared or open
+# cant_be_calculated = can't be calculated because surface is shared or open
+# reference_origin   = the tensors are calculated with respect to the origin
+# reference_centroid = the tensors are calculated with respect to the minkowski-vectors
+#
+# calculated with karambola 2.0
+# contact: karambola@physik.uni-erlangen.de
+#
+#           #1 label             #2 v[x]             #3 v[y]             #4 v[z]             #5 name         #6 Keywords
+                 ALL   -2.6142282783e-15   6.41878179298e-16  -1.93331137554e-15                w010              closed     reference_origin 
+                 ALL   2.41256667421e-15  -8.93360906085e-15   2.79669950393e-15                w110              closed     reference_origin 
+                 ALL   4.78631891065e-15  -9.07921741261e-15   3.36293764103e-15                w210              closed     reference_origin 
+                 ALL  -2.14238349283e-15   -8.2236734783e-16   5.74627151417e-16                w310              closed     reference_origin 

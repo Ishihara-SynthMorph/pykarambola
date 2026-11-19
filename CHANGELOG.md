@@ -18,6 +18,43 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.7.0] - 2026-10-19
+
+### Added
+- `minkowski_tensors_from_label_image(..., return_meshes=True)` returns the
+  per-label meshes already produced internally by `marching_cubes`,
+  avoiding a duplicate marching-cubes pass for downstream visualization.
+  New helper `combine_label_meshes()` concatenates per-label meshes into a
+  single mesh suitable for `napari.Viewer.add_surface`. (#175)
+
+### Performance
+- `minkowski_tensors_from_label_image(..., autolabel=True)` now crops the
+  binary mask to the global bounding box of all non-zero voxels (padded by
+  1 voxel) before calling `marching_cubes`, instead of operating on the
+  full padded image. (#173)
+  The `autolabel=False` path is unaffected by this change: it has cropped
+  each label to its own per-label bounding box since #156.
+
+---
+
+## [0.6.1] - 2026-09-17
+
+### Documentation
+- Citation updated to the published journal article — Khurana & Ishihara, *Bioinformatics Advances*, vbag273 (2026), doi:10.1093/bioadv/vbag273 — replacing the bioRxiv preprint reference in `CITATION.cff` and `README.md`. The M2 (bioRxiv submission) and M3 (journal submission) milestones are now closed.
+
+---
+
+## [0.6.0] - 2026-08-01
+
+### Added
+- `msm_max_l` parameter on `minkowski_tensors` and `minkowski_tensors_from_label_image` (default 8, matching C++ karambola) to control the maximum spherical harmonic order for MSM. Output arrays `msm_ql`/`msm_wl` have shape `(msm_max_l + 1,)`. The `--msm-max-l` flag exposes this option on the CLI.
+
+### Performance
+- `minkowski_tensors_from_label_image` now pre-computes per-label bounding boxes via `skimage.measure.regionprops` (one O(image_size) pass) and crops the image to each object's bounding box before calling `marching_cubes`. This eliminates the previous O(N_labels × image_size) cost and yields a ~13× wall-time speedup on a representative 77×576×576 image with 4334 labels (from ~10 min to ~0.7 min). (#156)
+- `_get_open_and_nonmanifold` (called once per `minkowski_tensors` invocation) now uses a vectorized NumPy fan-traversal: the per-vertex loop replaces ~5 Python method calls per edge step with a pre-built `entry_succ` array and a local dict lookup, eliminating generator overhead. This reduces the non-manifold check from ~2.7 ms/label to sub-millisecond on typical nuclei. (#158)
+
+---
+
 ## [0.5.1] - 2026-06-14
 
 ### Changed
@@ -114,7 +151,9 @@ Initial Python port of [karambola](https://github.com/morphometry/karambola).
 
 ---
 
-[Unreleased]: https://github.com/Ishihara-SynthMorph/pykarambola/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/Ishihara-SynthMorph/pykarambola/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/Ishihara-SynthMorph/pykarambola/compare/v0.6.0...v0.6.1
+[0.6.0]: https://github.com/Ishihara-SynthMorph/pykarambola/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/Ishihara-SynthMorph/pykarambola/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/Ishihara-SynthMorph/pykarambola/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Ishihara-SynthMorph/pykarambola/compare/v0.3.0...v0.4.0

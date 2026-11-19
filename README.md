@@ -16,6 +16,8 @@ pykarambola is a Python implementation of [karambola](https://github.com/morphom
 Minkowski tensors are widely applicable to analyzing 3D structures in biomedical imaging, astrophysics, and materials science.
 For background, see [Schroder-Turk et al. (2013)](https://doi.org/10.1088/1367-2630/15/8/083028), [Mickel et al. (2013)](https://doi.org/10.1063/1.4774084), and [morphometry.org](https://morphometry.org/).
 
+For interactive use on segmented 3D images, see [napari-pykarambola](https://github.com/Ishihara-SynthMorph/napari-pykarambola), a napari widget built on top of this package.
+
 ### End-to-end pipeline: confocal nuclei → segmentation → shape clustering
 
 <table align="center">
@@ -282,8 +284,8 @@ If you use pykarambola in your work, please cite pykarambola and Schröder-Turk 
 
 > Khurana, Y., & Ishihara, K.
 > *pykarambola: Minkowski tensor morphometry of 3D structures.*
-> bioRxiv (2026).
-> https://doi.org/10.64898/2026.06.16.730752
+> *Bioinformatics Advances*, vbag273 (2026).
+> https://doi.org/10.1093/bioadv/vbag273
 
 > Schröder-Turk, G. E., Mickel, W., Kapfer, S. C., Schaller, F. M., Breidenbach, B., Hug, D., & Mecke, K.
 > *Minkowski tensors of anisotropic spatial structure.*

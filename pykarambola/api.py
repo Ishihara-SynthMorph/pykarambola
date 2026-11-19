@@ -174,37 +174,76 @@ def _get_open_and_nonmanifold(surface):
         else set()
     )
 
-    # Non-manifold detection via vertex fan traversal
+    # Non-manifold detection via fan traversal.
+    #
+    # Precompute in one O(F) NumPy pass: for every CSR entry (vertex v,
+    # triangle t), the "fan-next" triangle obtained by crossing the edge of t
+    # that starts at v (i.e. nb[t, slot_of_v_in_t]).  The per-vertex loop then
+    # uses a tiny dict (d ≤ ~12 entries) instead of Python method calls and a
+    # generator expression, eliminating ~5 Python function calls per fan step.
+    V = surface.n_vertices()
+    F = surface.n_triangles()
+    if V == 0 or F == 0:
+        return open_labels, False
+
+    faces_arr = surface._faces  # (F, 3) int64
+
+    if surface._vt_offsets is not None:
+        vt_off = surface._vt_offsets    # (V+1,) int64
+        vt_idx = surface._vt_indices    # (3F,)  int64
+        # vertex that owns each CSR entry
+        deg = np.diff(vt_off).astype(np.int64)
+        entry_vert = np.repeat(np.arange(V, dtype=np.int64), deg)   # (3F,)
+        # slot of that vertex in the corresponding triangle
+        _match = faces_arr[vt_idx] == entry_vert[:, None]           # (3F, 3)
+        if not np.all(np.any(_match, axis=1)):
+            raise AssertionError("CSR integrity error: vertex not found in its own triangle.")
+        entry_slot = np.argmax(_match, axis=1)                      # (3F,)
+        # fan-next triangle for each CSR entry
+        entry_succ = nb[vt_idx, entry_slot]                          # (3F,)
+        use_csr = True
+    else:
+        vt_off = vt_idx = entry_succ = None
+        use_csr = False
+
     is_non_manifold = False
-    for i in range(surface.n_vertices()):
-        tris = list(surface.get_triangles_of_vertex(i))
-        if len(tris) <= 1:
-            continue
+    for i in range(V):
+        if use_csr:
+            s = int(vt_off[i])
+            e = int(vt_off[i + 1])
+            d = e - s
+            if d <= 1:
+                continue
+            tris_i = vt_idx[s:e]       # (d,) triangle indices
+            succs_i = entry_succ[s:e]  # (d,) fan-next triangles
+        else:
+            tris_list = surface._vertex_triangles[i]
+            d = len(tris_list)
+            if d <= 1:
+                continue
+            tris_i = np.asarray(tris_list, dtype=np.int64)
+            slots_i = np.argmax(faces_arr[tris_i] == i, axis=1)
+            succs_i = nb[tris_i, slots_i]
+
+        # Build triangle-id → local-index map (d ≤ ~12, so dict overhead is negligible)
+        local = {int(tris_i[j]): j for j in range(d)}
+
+        start_t = int(tris_i[0])
+        cur_t = start_t
         sum_tris = 1
-        start = tris[0]
-        cur_t = tris[0]
         neigh_un = False
-        for _ in range(len(tris)):
-            vid = next(
-                (k for k in range(3) if surface.ith_vertex_of_triangle(cur_t, k) == i),
-                -1,
-            )
-            # vid == -1 is a data-integrity error: vertex i was not found in a
-            # triangle reported to contain it. Should never occur in a valid
-            # Triangulation; treat conservatively as an open boundary.
-            assert vid != -1, f"Vertex {i} not found in any slot of triangle {cur_t}"
-            # NEIGHBOUR_UNASSIGNED signals a normal open (boundary) edge.
-            if surface.ith_neighbour_of_triangle(cur_t, vid) == NEIGHBOUR_UNASSIGNED:
+
+        for _ in range(d):
+            nxt = int(succs_i[local[cur_t]])
+            if nxt == NEIGHBOUR_UNASSIGNED:
                 neigh_un = True
                 break
-            nxt = surface.ith_neighbour_of_triangle(cur_t, vid)
-            if nxt == start:
+            if nxt == start_t:
                 break
             sum_tris += 1
             cur_t = nxt
-        if is_non_manifold:
-            break
-        if not neigh_un and len(tris) != sum_tris:
+
+        if not neigh_un and d != sum_tris:
             is_non_manifold = True
             break
 
@@ -212,7 +251,7 @@ def _get_open_and_nonmanifold(surface):
 
 
 def minkowski_tensors(verts: Union[np.ndarray, Triangulation], faces=None, labels=None, center=None, center_per_label=True,
-                      compute='standard', compute_eigensystems=True, return_count=False):
+                      compute='standard', compute_eigensystems=True, return_count=False, msm_max_l=8):
     """Compute Minkowski tensors on a triangulated surface.
 
     Parameters
@@ -282,6 +321,10 @@ def minkowski_tensors(verts: Union[np.ndarray, Triangulation], faces=None, label
         If True, return a ``(results, n_objects)`` tuple where ``n_objects``
         is the total number of connected components across all labels,
         determined by vertex-adjacency graph traversal. Default is False.
+    msm_max_l : int, optional
+        Maximum spherical harmonic order for spherical Minkowski tensors
+        (``msm``). Default is 8, matching C++ karambola. Output arrays
+        ``msm_ql`` and ``msm_wl`` have shape ``(msm_max_l + 1,)``.
 
     Returns
     -------
@@ -351,6 +394,9 @@ def minkowski_tensors(verts: Union[np.ndarray, Triangulation], faces=None, label
                 f"Valid names: {sorted(_ALL)}"
             )
 
+    if msm_max_l < 0:
+        raise ValueError(f"msm_max_l must be >= 0, got {msm_max_l}")
+
     # Guard: beta quantities require eigensystems
     beta_keys = {name for name in wanted if name.endswith('_beta')}
     if beta_keys and not compute_eigensystems:
@@ -400,7 +446,7 @@ def minkowski_tensors(verts: Union[np.ndarray, Triangulation], faces=None, label
             per_label_out[lab] = minkowski_tensors(
                 shifted_verts, sub_faces, labels=None, center=None,
                 compute=compute, compute_eigensystems=compute_eigensystems,
-                return_count=False,
+                return_count=False, msm_max_l=msm_max_l,
             )
         if return_count:
             return per_label_out, n_objects
@@ -529,7 +575,7 @@ def minkowski_tensors(verts: Union[np.ndarray, Triangulation], faces=None, label
     # --- Optional higher-order ---
     raw_w103 = calculate_w103(surface) if 'w103' in wanted else {}
     raw_w104 = calculate_w104(surface) if 'w104' in wanted else {}
-    raw_msm = calculate_sphmink(surface) if 'msm' in wanted else {}
+    raw_msm = calculate_sphmink(surface, max_l=msm_max_l) if 'msm' in wanted else {}
 
     # Map names to raw results
     all_raw = {
@@ -662,7 +708,7 @@ def minkowski_tensors_from_label_image(
     label_image, level=None, spacing=(1.0, 1.0, 1.0),
     center='centroid_mesh', center_per_label=True,
     compute='standard', compute_eigensystems=True, return_count=False,
-    autolabel=False, pad=True,
+    autolabel=False, pad=True, msm_max_l=8, return_meshes=False,
 ):
     """Compute Minkowski tensors for each label in a 3D label image.
 
@@ -735,25 +781,44 @@ def minkowski_tensors_from_label_image(
         the output is in the original image coordinate system. Set ``pad=False``
         only if the image has already been padded, or if open surfaces at
         the boundary are intentional.
+    msm_max_l : int, optional
+        Maximum spherical harmonic order for spherical Minkowski tensors.
+        Default is 8. See ``minkowski_tensors`` for details.
+    return_meshes : bool, optional
+        If True, also return a ``meshes`` dict mapping each result key
+        (same keys as the results dict) to the ``(verts, faces)`` mesh
+        already produced internally by ``marching_cubes`` for that label.
+        Reuses the mesh computed for the Minkowski tensors — no extra
+        ``marching_cubes`` call is made. Pass the result to
+        ``combine_label_meshes`` to build a single mesh for visualization
+        (e.g. ``napari.Viewer.add_surface``). Default is False.
 
     Returns
     -------
     dict[int, dict]
-        When ``autolabel=False``: mapping from label value (int) to a dict
-        of Minkowski functionals.
-        When ``autolabel=True``: mapping from component index (int, 1-based)
-        to a dict of Minkowski functionals.
+        When ``return_count=False`` and ``return_meshes=False``: mapping
+        from label value (int), or component index (int, 1-based) when
+        ``autolabel=True``, to a dict of Minkowski functionals.
 
-    tuple (dict, int)
-        When ``return_count=True``: ``(results, n_objects)`` where the dict
-        has the same structure as above.
+    tuple
+        When ``return_count`` and/or ``return_meshes`` is True, the results
+        dict above is augmented, in this order:
+
+        ``(results, n_objects)`` when only ``return_count=True``.
+
+        ``(results, meshes)`` when only ``return_meshes=True``.
+
+        ``(results, n_objects, meshes)`` when both are True.
+
+        ``meshes`` is a ``dict[int, (verts, faces)]`` with the same keys as
+        ``results``.
 
     Notes
     -----
     Requires *scikit-image*.
     """
     try:
-        from skimage.measure import marching_cubes, label as sk_label
+        from skimage.measure import marching_cubes, label as sk_label, regionprops
     except ImportError:
         raise ImportError(
             "scikit-image is required for minkowski_tensors_from_label_image. "
@@ -782,35 +847,105 @@ def minkowski_tensors_from_label_image(
     unique_labels = np.unique(label_image)
     unique_labels = unique_labels[unique_labels != 0]
 
+    # Pre-compute per-label bounding boxes in one pass so the per-label loop
+    # can crop the image before calling marching_cubes instead of operating on
+    # the full image each time.  This is O(image_size) once rather than
+    # O(N_labels × image_size).  (#156)
+    _shape = label_image.shape
+    _sp = np.array(spacing, dtype=np.float64)
+    if len(unique_labels) > 0:
+        _label_bboxes = {p.label: p.bbox for p in regionprops(label_image)}
+    else:
+        _label_bboxes = {}
+
+    def _crop_label(lab_int):
+        """Return (cropped_float64_mask, crop_origin_physical).
+
+        crop_origin_physical is added to marching_cubes vertices (which are in
+        crop-local space) to restore full-image coordinates before subtracting
+        _pad_offset.
+        """
+        if lab_int in _label_bboxes:
+            z0, y0, x0, z1, y1, x1 = _label_bboxes[lab_int]
+            z0 = max(0, z0 - 1); y0 = max(0, y0 - 1); x0 = max(0, x0 - 1)
+            z1 = min(_shape[0], z1 + 1)
+            y1 = min(_shape[1], y1 + 1)
+            x1 = min(_shape[2], x1 + 1)
+        else:
+            warnings.warn(
+                f"Label {lab_int} not found in regionprops bounding-box cache; "
+                "falling back to full-image crop (performance may degrade). "
+                "This is unexpected - please file a bug report.",
+                RuntimeWarning,
+                stacklevel=3,
+            )
+            z0, y0, x0 = 0, 0, 0
+            z1, y1, x1 = _shape
+        crop = label_image[z0:z1, y0:y1, x0:x1]
+        return (crop == lab_int).astype(np.float64), np.array([z0, y0, x0], dtype=np.float64) * _sp
+
     # --- autolabel=True: treat image as binary, delegate to minkowski_tensors ---
     if autolabel:
-        binary = (label_image != 0).astype(np.float64)
+        # Crop to the global bounding box of all non-zero voxels (#173) so
+        # marching_cubes doesn't run over empty padding/border regions.
+        # Reuses the per-label bboxes already computed above (#156) instead
+        # of a second full-image np.argwhere scan.
+        if _label_bboxes:
+            starts = np.array([b[:3] for b in _label_bboxes.values()])
+            stops = np.array([b[3:] for b in _label_bboxes.values()])
+            z0, y0, x0 = np.maximum(starts.min(axis=0) - 1, 0)
+            z1, y1, x1 = np.minimum(stops.max(axis=0) + 1, _shape)
+            crop = label_image[z0:z1, y0:y1, x0:x1]
+            crop_origin = np.array([z0, y0, x0], dtype=np.float64) * _sp
+        else:
+            crop = label_image
+            crop_origin = np.zeros(3, dtype=np.float64)
+
+        binary = (crop != 0).astype(np.float64)
         try:
             verts, faces, _, _ = marching_cubes(binary, level=level, spacing=spacing,
                                                 gradient_direction='ascent')
         except Exception as exc:
             raise RuntimeError(f"marching_cubes failed on binary mask: {exc}") from exc
-        verts = verts - _pad_offset
+        verts = verts + crop_origin - _pad_offset
         faces = _ensure_outward_normals(verts, faces)
         # centroid_voxel is not supported by minkowski_tensors; pre-compute it here.
         if isinstance(center, str) and center == 'centroid_voxel':
             nz_coords = np.argwhere(binary > 0)
-            mt_center = (nz_coords.mean(axis=0) * np.array(spacing) - _pad_offset
+            mt_center = (nz_coords.mean(axis=0) * np.array(spacing) + crop_origin - _pad_offset
                          if len(nz_coords) else np.zeros(3))
         else:
             mt_center = center
-        return minkowski_tensors(
+        autolabel_result = minkowski_tensors(
             verts, faces, labels='auto',
             center=mt_center, center_per_label=center_per_label,
             compute=compute, compute_eigensystems=compute_eigensystems,
-            return_count=return_count,
+            return_count=return_count, msm_max_l=msm_max_l,
         )
+        if not return_meshes:
+            return autolabel_result
+        if return_count:
+            results, n_objects_total = autolabel_result
+        else:
+            results = autolabel_result
+        meshes = {}
+        face_labels_arr = _label_mesh_components(faces)
+        for comp in np.unique(face_labels_arr):
+            comp_faces_global = faces[face_labels_arr == comp]
+            used_idx = np.unique(comp_faces_global)
+            remap = np.full(len(verts), -1, dtype=np.int64)
+            remap[used_idx] = np.arange(len(used_idx), dtype=np.int64)
+            meshes[int(comp)] = (verts[used_idx], remap[comp_faces_global])
+        if return_count:
+            return results, n_objects_total, meshes
+        return results, meshes
 
     # --- Count connected components upfront if requested ---
     n_objects_total = 0
     if return_count:
         for lab in unique_labels:
-            _, n = sk_label((label_image == int(lab)), return_num=True)
+            crop_mask, _ = _crop_label(int(lab))
+            _, n = sk_label(crop_mask, return_num=True)
             n_objects_total += n
 
     # --- Compute global center upfront for center_scope='global' ---
@@ -828,11 +963,11 @@ def minkowski_tensors_from_label_image(
             all_verts_list, all_faces_list, vert_offset = [], [], 0
             for lab in unique_labels:
                 lab_int = int(lab)
-                mask = (label_image == lab_int).astype(np.float64)
+                mask, crop_origin = _crop_label(lab_int)
                 try:
                     v, f, _, _ = marching_cubes(mask, level=level, spacing=spacing,
                                                 gradient_direction='ascent')
-                    v = v - _pad_offset
+                    v = v + crop_origin - _pad_offset
                     f = _ensure_outward_normals(v, f)
                     label_meshes[lab_int] = (v, f)
                     all_verts_list.append(v)
@@ -858,6 +993,10 @@ def minkowski_tensors_from_label_image(
             else:
                 global_center = np.zeros(3)
 
+    meshes_out = None
+    if return_meshes:
+        meshes_out = dict(label_meshes) if label_meshes is not None else {}
+
     results = {}
     for lab in unique_labels:
         lab = int(lab)
@@ -867,14 +1006,18 @@ def minkowski_tensors_from_label_image(
             cached = label_meshes[lab]
         else:
             cached = None
-        items = [(lab, (label_image == lab).astype(np.float64), cached)]
 
-        for result_key, mask, cached_mesh in items:
+        if cached is None:
+            crop_mask, crop_origin = _crop_label(lab)
+        else:
+            crop_mask = crop_origin = None
+
+        for result_key, cached_mesh in [(lab, cached)]:
             if cached_mesh is not None:
                 verts, faces = cached_mesh
             else:
                 try:
-                    verts, faces, _, _ = marching_cubes(mask, level=level, spacing=spacing,
+                    verts, faces, _, _ = marching_cubes(crop_mask, level=level, spacing=spacing,
                                                         gradient_direction='ascent')
                 except Exception as exc:
                     warnings.warn(
@@ -882,7 +1025,7 @@ def minkowski_tensors_from_label_image(
                         stacklevel=2,
                     )
                     continue
-                verts = verts - _pad_offset
+                verts = verts + crop_origin - _pad_offset
                 faces = _ensure_outward_normals(verts, faces)
 
             # Determine center for this entry
@@ -902,8 +1045,14 @@ def minkowski_tensors_from_label_image(
                 else:
                     label_center = centroid
             elif isinstance(center, str) and center == 'centroid_voxel':
-                voxel_coords = np.argwhere(mask > 0)  # (N, 3)
-                label_center = voxel_coords.mean(axis=0) * np.array(spacing) - _pad_offset
+                if cached_mesh is not None:
+                    # Recompute from the full image when using a cached mesh
+                    # (crop_mask is not available in this branch).
+                    voxel_coords = np.argwhere(label_image == lab)
+                    label_center = voxel_coords.mean(axis=0) * _sp - _pad_offset
+                else:
+                    voxel_coords = np.argwhere(crop_mask > 0)  # (N, 3)
+                    label_center = voxel_coords.mean(axis=0) * _sp + crop_origin - _pad_offset
             elif isinstance(center, str) and center == 'reference_centroid':
                 label_center = 'reference_centroid'
             else:
@@ -911,9 +1060,73 @@ def minkowski_tensors_from_label_image(
 
             results[result_key] = minkowski_tensors(
                 verts, faces, center=label_center, compute=compute,
-                compute_eigensystems=compute_eigensystems,
+                compute_eigensystems=compute_eigensystems, msm_max_l=msm_max_l,
             )
+            if meshes_out is not None and result_key not in meshes_out:
+                meshes_out[result_key] = (verts, faces)
 
+    if return_count and return_meshes:
+        return results, n_objects_total, meshes_out
     if return_count:
         return results, n_objects_total
+    if return_meshes:
+        return results, meshes_out
     return results
+
+
+def combine_label_meshes(label_meshes, color_by=None):
+    """Concatenate per-label meshes into a single mesh for visualization.
+
+    Parameters
+    ----------
+    label_meshes : dict[int, (verts, faces)]
+        E.g. from ``minkowski_tensors_from_label_image(..., return_meshes=True)``.
+    color_by : None or dict[int, float], optional
+        ``None`` (default): vertex values are the label id (discrete
+        per-object coloring).
+        ``dict``: label -> scalar (e.g. ``{lbl: r['w220_beta'] for lbl, r in
+        results.items()}``), broadcast across that label's vertices.
+
+    Returns
+    -------
+    verts : (N, 3) float64 array
+    faces : (M, 3) int64 array
+    values : (N,) float64 array
+        Ready to unpack into ``viewer.add_surface((verts, faces, values))``.
+    vertex_labels : (N,) int64 array
+        Label id owning each vertex (for picking/debugging/QA; not part of
+        the ``add_surface`` tuple).
+    """
+    labels_sorted = sorted(label_meshes.keys())
+    all_verts, all_faces, all_values, all_vertex_labels = [], [], [], []
+    vert_offset = 0
+    for lab in labels_sorted:
+        v, f = label_meshes[lab]
+        v = np.asarray(v, dtype=np.float64)
+        f = np.asarray(f, dtype=np.int64)
+        all_verts.append(v)
+        all_faces.append(f + vert_offset)
+        if color_by is None:
+            val = float(lab)
+        else:
+            try:
+                val = float(color_by[lab])
+            except KeyError:
+                raise KeyError(
+                    f"color_by is missing a value for label {lab}; "
+                    f"it must have an entry for every key in label_meshes."
+                ) from None
+        all_values.append(np.full(len(v), val, dtype=np.float64))
+        all_vertex_labels.append(np.full(len(v), lab, dtype=np.int64))
+        vert_offset += len(v)
+    if all_verts:
+        verts = np.vstack(all_verts)
+        faces = np.vstack(all_faces)
+        values = np.concatenate(all_values)
+        vertex_labels = np.concatenate(all_vertex_labels)
+    else:
+        verts = np.empty((0, 3), dtype=np.float64)
+        faces = np.empty((0, 3), dtype=np.int64)
+        values = np.empty((0,), dtype=np.float64)
+        vertex_labels = np.empty((0,), dtype=np.int64)
+    return verts, faces, values, vertex_labels
