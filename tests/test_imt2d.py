@@ -511,8 +511,30 @@ class TestImtImage:
             imt_image(img, boundary=np.nan)
         with pytest.raises(ValueError, match="finite"):
             imt_image(img, boundary=np.inf)
+        with pytest.raises(ValueError):
+            imt_image(img, spacing=True)
+        with pytest.raises(ValueError):
+            imt_image(img, spacing=(True, False))
 
-    def test_empty_multi_threshold(self):
+        bad_nan = img.copy()
+        bad_nan[1, 1] = np.nan
+        with pytest.raises(ValueError, match="finite"):
+            imt_image(bad_nan)
+
+        bad_inf = img.copy()
+        bad_inf[1, 1] = -np.inf
+        with pytest.raises(ValueError, match="finite"):
+            imt_image(bad_inf)
+
+    def test_empty_image_and_empty_multi_threshold(self):
+        # Empty 0-pixel 2D image must yield zero area/perimeter for all boundary modes
+        empty_img = np.zeros((0, 5), dtype=np.float64)
+        for boundary in (None, 0.0, "periodic"):
+            res_empty = imt_image(empty_img, threshold=-1.0, boundary=boundary)
+            assert res_empty["area"] == 0.0
+            assert res_empty["perimeter"] == 0.0
+            assert np.all(res_empty["psi"] == 0.0)
+
         img = np.zeros((4, 5))
         res = imt_image(img, threshold=[], max_s=6)
         assert res["area"].shape == (0,)
@@ -763,6 +785,8 @@ class TestImtLabelImage:
             imt_label_image(np.zeros((4, 4, 4), dtype=np.int32))
         with pytest.raises(ValueError):
             imt_label_image(np.ones((4, 4), dtype=np.int32), autolabel=True, connectivity=3)
+        with pytest.raises(ValueError):
+            imt_label_image(np.ones((4, 4), dtype=np.int32), autolabel=True, connectivity=True)
         with pytest.raises(ValueError, match="finite"):
             imt_label_image(np.ones((4, 4), dtype=np.int32), level=np.nan)
         with pytest.raises(ValueError, match="finite"):
@@ -882,6 +906,10 @@ class TestImtPointPattern:
             imt_pointpattern([[0.5, 0.5]], box=(1.0, -1.0))
         with pytest.raises(ValueError):
             imt_pointpattern([[0.5, 0.5]], box=True)
+        with pytest.raises(ValueError):
+            imt_pointpattern([[0.5, 0.5]], box=(True, True))
+        with pytest.raises(ValueError):
+            imt_pointpattern(np.empty((0, 2)), box=-1.0)
         with pytest.raises(ValueError):
             imt_pointpattern([[0.5, 0.5]], box=[1.0, 2.0, 3.0])
         with pytest.raises(ValueError):

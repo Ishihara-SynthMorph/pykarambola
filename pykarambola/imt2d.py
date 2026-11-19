@@ -37,9 +37,8 @@
 2D Irreducible Minkowski Tensors (IMTs), vectorized 2D marching squares,
 Minkowski maps, Voronoi point-pattern morphometry, and 2D label-image analysis.
 
-Ported from Papaya2 (Schaller, Kapfer, Hilton, Cleary, Mecke, De Michele,
-Schilling, Saadatfar, Schröter, Delaney, & Schröder-Türk, *JOSS* 2020 /
-Kapfer et al., *morphometry/papaya2*).
+Ported from Papaya2 (Schaller, Wagner, & Kapfer, *Journal of Open Source
+Software*, 5(54), 2538, 2020; https://github.com/morphometry/papaya2).
 
 Mathematical definitions
 ------------------------
@@ -218,10 +217,15 @@ def _validate_s_order(s):
 
 def _parse_spacing(spacing, xy_order):
     """Return physical pixel sizes (dx, dy) in internal Cartesian (x, y) order."""
+    if isinstance(spacing, bool):
+        raise ValueError(f"spacing values must be positive finite numbers, got {spacing!r}")
     if np.ndim(spacing) == 0:
         s0 = s1 = float(spacing)
     else:
-        sp = np.asarray(spacing, dtype=np.float64)
+        sp_raw = np.asarray(spacing)
+        if sp_raw.dtype == np.bool_:
+            raise ValueError(f"spacing values must be positive finite numbers, got {spacing!r}")
+        sp = np.asarray(sp_raw, dtype=np.float64)
         if sp.ndim != 1 or sp.size != 2:
             raise ValueError(
                 f"spacing must be a scalar or 2-element sequence, got shape {sp.shape}"
@@ -269,6 +273,8 @@ def _prepare_image_xy(image, boundary, xy_order):
     arr = np.asarray(image, dtype=np.float64)
     if arr.ndim != 2:
         raise ValueError(f"image must be 2D, got {arr.ndim}D array with shape {arr.shape}")
+    if arr.size > 0 and not np.all(np.isfinite(arr)):
+        raise ValueError("image must contain only finite values")
 
     # Convert to internal Cartesian (x, y) array ordering
     arr_xy = arr if xy_order else arr.T
@@ -280,7 +286,7 @@ def _prepare_image_xy(image, boundary, xy_order):
             raise ValueError(
                 f"boundary must be a float, 'periodic', or None; got {boundary!r}"
             )
-        if arr_xy.shape[0] == 0 or arr_xy.shape[1] == 0:
+        if arr_xy.size == 0:
             return arr_xy
         # Append 1 wrapped column/row on the high side -> exactly W x H unique 2x2 cells,
         # matching papaya2's periodic Minkowski map indexing without seam double-counting.
@@ -304,6 +310,8 @@ def _prepare_image_xy(image, boundary, xy_order):
         pad_val = float(pad_arr)
     if not np.isfinite(pad_val):
         raise ValueError(f"constant boundary must be finite, got {pad_val!r}")
+    if arr_xy.size == 0:
+        return arr_xy
     return np.pad(arr_xy, ((1, 1), (1, 1)), mode='constant', constant_values=pad_val)
 
 
@@ -928,12 +936,12 @@ def imt_label_image(
 
     n_autolabeled = None
     if autolabel:
+        if isinstance(connectivity, bool) or connectivity not in (1, 2):
+            raise ValueError(f"connectivity must be 1 or 2, got {connectivity!r}")
         if connectivity == 1:
             structure = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]], dtype=np.int8)
-        elif connectivity == 2:
-            structure = np.ones((3, 3), dtype=np.int8)
         else:
-            raise ValueError(f"connectivity must be 1 or 2, got {connectivity!r}")
+            structure = np.ones((3, 3), dtype=np.int8)
         lbl, n_autolabeled = _ndimage_label(lbl != 0, structure=structure)
 
     # Work internally in (x, y) order so _marching_squares_imt runs directly
@@ -1056,6 +1064,26 @@ def imt_pointpattern(seeds, *, box=None, max_s=12):
         'q': qs,
     }
 
+    if box is not None:
+        if isinstance(box, bool):
+            raise ValueError(f"box must be a positive finite number or 2-tuple, got {box!r}")
+        box_raw = np.asarray(box)
+        if box_raw.dtype == np.bool_:
+            raise ValueError(f"box must be a positive finite number or 2-tuple, got {box!r}")
+        box_arr = np.asarray(box_raw, dtype=np.float64)
+        if box_arr.ndim == 0:
+            lx = ly = float(box_arr)
+        elif box_arr.ndim == 1 and box_arr.size == 1:
+            lx = ly = float(box_arr[0])
+        elif box_arr.ndim == 1 and box_arr.size == 2:
+            lx, ly = float(box_arr[0]), float(box_arr[1])
+        else:
+            raise ValueError(
+                f"box must be a scalar or 1D array of length 1 or 2, got shape {box_arr.shape}"
+            )
+        if not (np.isfinite(lx) and np.isfinite(ly) and lx > 0.0 and ly > 0.0):
+            raise ValueError(f"box lengths must be positive finite numbers, got {(lx, ly)}")
+
     if n == 0:
         return result
 
@@ -1074,22 +1102,6 @@ def imt_pointpattern(seeds, *, box=None, max_s=12):
                 return result
             raise
     else:
-        if isinstance(box, bool):
-            raise ValueError(f"box must be a positive finite number or 2-tuple, got {box!r}")
-        box_arr = np.asarray(box, dtype=np.float64)
-        if box_arr.ndim == 0:
-            lx = ly = float(box_arr)
-        elif box_arr.ndim == 1 and box_arr.size == 1:
-            lx = ly = float(box_arr[0])
-        elif box_arr.ndim == 1 and box_arr.size == 2:
-            lx, ly = float(box_arr[0]), float(box_arr[1])
-        else:
-            raise ValueError(
-                f"box must be a scalar or 1D array of length 1 or 2, got shape {box_arr.shape}"
-            )
-        if not (np.isfinite(lx) and np.isfinite(ly) and lx > 0.0 and ly > 0.0):
-            raise ValueError(f"box lengths must be positive finite numbers, got {(lx, ly)}")
-
         in_box = (
             (pts[:, 0] >= 0.0) & (pts[:, 0] < lx)
             & (pts[:, 1] >= 0.0) & (pts[:, 1] < ly)
