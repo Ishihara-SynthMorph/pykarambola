@@ -133,7 +133,9 @@ def _label_mesh_components(faces):
     data = np.ones(len(edges), dtype=np.int8)
     graph = csr_matrix((data, (edges[:, 0], edges[:, 1])), shape=(n, n))
     _, vertex_labels = _sp_connected_components(graph, directed=False)
-    return vertex_labels[faces[:, 0]].astype(np.intp) + 1
+    raw = vertex_labels[faces[:, 0]]
+    _, contiguous = np.unique(raw, return_inverse=True)
+    return contiguous.astype(np.intp) + 1
 
 
 def _count_mesh_components(faces):
@@ -1100,8 +1102,9 @@ def minkowski_tensors_from_scalar_field(
     Parameters
     ----------
     field : (Z, Y, X) array_like
-        3D numeric scalar field. Non-float arrays are converted to ``float64``.
-        All values must be finite.
+        3D real-valued numeric scalar field. Non-float arrays are converted
+        to ``float64`` on the extracted bounding crop. All values must be
+        finite. When ``pad=False``, every axis must have length at least 2.
     level : float
         Isosurface level at which the surface is extracted (required). For
         example, ``0.5`` for a ``[0, 1]`` probability map or ``0.0`` for a
@@ -1159,7 +1162,10 @@ def minkowski_tensors_from_scalar_field(
         body and return a flat dict matching ``minkowski_tensors(..., labels=None)``.
         If True, detect connected mesh components automatically (equivalent to
         ``minkowski_tensors(..., labels='auto')``) and return a nested dict
-        keyed by 1-based component index (``1``, ``2``, ...).
+        keyed by 1-based component index (``1``, ``2``, ...). Note that
+        grouping is by connected *surface* component rather than 3D solid
+        region, so an internal cavity of a hollow object is separated as its
+        own component with inward-facing normals (negative ``w000``).
     pad : bool, optional
         If True (default), apply a 1-voxel exterior border on all six faces of
         ``field`` before calling ``marching_cubes`` so objects touching the
@@ -1172,7 +1178,11 @@ def minkowski_tensors_from_scalar_field(
         when ``pad=False``. When ``None`` (default), automatically selects
         ``field.min()`` if it is strictly below ``level`` (else ``level - 1.0``)
         for ``interior='above'``, or ``field.max()`` if it is strictly above
-        ``level`` (else ``level + 1.0``) for ``interior='below'``.
+        ``level`` (else ``level + 1.0``) for ``interior='below'``. For
+        boundary-touching objects, linear interpolation across the padded
+        border depends on ``pad_value``; for unbounded SDFs or intensity
+        volumes whose global extrema vary with volume extent, pass an explicit
+        ``pad_value`` for consistent boundary-cap placement.
     msm_max_l : int, optional
         Maximum spherical harmonic order for spherical Minkowski tensors.
         Default is 8. See ``minkowski_tensors`` for details.
@@ -1207,9 +1217,10 @@ def minkowski_tensors_from_scalar_field(
     Raises
     ------
     ValueError
-        If ``field`` is not a non-empty 3D finite array, ``level`` or
-        ``pad_value`` is non-finite, ``interior`` is invalid, ``spacing`` does
-        not have length 3, ``center='centroid_voxel'``, or (when
+        If ``field`` is complex, not a non-empty 3D finite array, or has an
+        axis shorter than 2 when ``pad=False``; if ``level`` or ``pad_value``
+        is non-finite, ``interior`` is invalid, ``spacing`` is not a 3-tuple of
+        positive finite floats, ``center='centroid_voxel'``, or (when
         ``autolabel=False``) no isosurface exists at ``level``.
 
     Notes
@@ -1251,12 +1262,22 @@ def minkowski_tensors_from_scalar_field(
             "use 'centroid_mesh', 'reference_centroid', a (3,) coordinate array, or None."
         )
 
-    field = np.asarray(field, dtype=np.float64)
-    if field.ndim != 3:
-        raise ValueError(f"field must be a 3D array, got shape {field.shape}")
-    if field.size == 0:
+    field_arr = np.asarray(field)
+    if np.iscomplexobj(field_arr):
+        raise ValueError(
+            f"field must be real-valued, got complex dtype {field_arr.dtype}"
+        )
+    if not (np.issubdtype(field_arr.dtype, np.number) or field_arr.dtype == np.bool_):
+        field_arr = np.asarray(field_arr, dtype=np.float64)
+    if field_arr.ndim != 3:
+        raise ValueError(f"field must be a 3D array, got shape {field_arr.shape}")
+    if field_arr.size == 0:
         raise ValueError("field must not be empty")
-    if not np.all(np.isfinite(field)):
+    if not pad and any(s < 2 for s in field_arr.shape):
+        raise ValueError(
+            f"field must have shape >= (2, 2, 2) when pad=False, got shape {field_arr.shape}"
+        )
+    if np.issubdtype(field_arr.dtype, np.floating) and not np.all(np.isfinite(field_arr)):
         raise ValueError("field must contain only finite values (no NaN or Inf)")
 
     level = float(level)
@@ -1269,8 +1290,8 @@ def minkowski_tensors_from_scalar_field(
             f"spacing must be a 3-tuple of positive finite floats, got {spacing}"
         )
 
-    raw_min = float(field.min())
-    raw_max = float(field.max())
+    raw_min = float(field_arr.min())
+    raw_max = float(field_arr.max())
 
     def _empty_return():
         if not autolabel:
@@ -1286,7 +1307,9 @@ def minkowski_tensors_from_scalar_field(
             return {}, {}
         return {}
 
-    # Optional 1-voxel exterior padding to close boundary-touching surfaces
+    # Determine optional 1-voxel exterior padding value
+    pad_val = None
+    pad_strictly_interior = False
     if pad:
         if pad_value is not None:
             pad_val = float(pad_value)
@@ -1302,48 +1325,87 @@ def minkowski_tensors_from_scalar_field(
                     UserWarning,
                     stacklevel=2,
                 )
+                pad_strictly_interior = (
+                    (interior == 'above' and pad_val > level)
+                    or (interior == 'below' and pad_val < level)
+                )
         elif interior == 'above':
             pad_val = raw_min if raw_min < level else level - 1.0
         else:
             pad_val = raw_max if raw_max > level else level + 1.0
-        work = np.pad(field, pad_width=1, mode='constant', constant_values=pad_val)
-        _pad_offset = np.array(spacing, dtype=np.float64)
+
+    # Derive padded bounds in O(1) and check crossing in canonical (interior > work_level) coords
+    padded_min = min(raw_min, pad_val) if pad else raw_min
+    padded_max = max(raw_max, pad_val) if pad else raw_max
+    if interior == 'below':
+        work_min = -padded_max
+        work_max = -padded_min
+        work_level = -level
     else:
-        work = field
-        _pad_offset = np.zeros(3, dtype=np.float64)
+        work_min = padded_min
+        work_max = padded_max
+        work_level = level
+
+    if not (work_min <= work_level < work_max):
+        return _empty_return()
+
+    sp_arr = np.array(spacing, dtype=np.float64)
+
+    # Crop to the 1-voxel-dilated bounding box of interior voxels BEFORE
+    # float64 conversion, padding, and negation to avoid full-volume copies.
+    if not pad_strictly_interior:
+        interior_mask = (field_arr > level) if interior == 'above' else (field_arr < level)
+        z_idx = np.flatnonzero(interior_mask.any(axis=(1, 2)))
+        y_idx = np.flatnonzero(interior_mask.any(axis=(0, 2)))
+        x_idx = np.flatnonzero(interior_mask.any(axis=(0, 1)))
+        if len(z_idx) == 0 or len(y_idx) == 0 or len(x_idx) == 0:
+            return _empty_return()
+
+        zb0, zb1 = int(z_idx[0]), int(z_idx[-1])
+        yb0, yb1 = int(y_idx[0]), int(y_idx[-1])
+        xb0, xb1 = int(x_idx[0]), int(x_idx[-1])
+
+        fz0 = max(0, zb0 - 1)
+        fy0 = max(0, yb0 - 1)
+        fx0 = max(0, xb0 - 1)
+        fz1 = min(field_arr.shape[0], zb1 + 2)
+        fy1 = min(field_arr.shape[1], yb1 + 2)
+        fx1 = min(field_arr.shape[2], xb1 + 2)
+
+        crop = np.asarray(field_arr[fz0:fz1, fy0:fy1, fx0:fx1], dtype=np.float64)
+        if pad:
+            pad_z = (1 if zb0 == 0 else 0, 1 if zb1 == field_arr.shape[0] - 1 else 0)
+            pad_y = (1 if yb0 == 0 else 0, 1 if yb1 == field_arr.shape[1] - 1 else 0)
+            pad_x = (1 if xb0 == 0 else 0, 1 if xb1 == field_arr.shape[2] - 1 else 0)
+            if any(pad_z) or any(pad_y) or any(pad_x):
+                crop = np.pad(
+                    crop,
+                    pad_width=(pad_z, pad_y, pad_x),
+                    mode='constant',
+                    constant_values=pad_val,
+                )
+            crop_origin = np.array(
+                [fz0 - pad_z[0], fy0 - pad_y[0], fx0 - pad_x[0]], dtype=np.float64
+            ) * sp_arr
+        else:
+            crop_origin = np.array([fz0, fy0, fx0], dtype=np.float64) * sp_arr
+    else:
+        # Rare warned path: explicit pad_value lies strictly on the interior side,
+        # so the 1-voxel border itself is interior and cannot be cropped out.
+        crop = np.pad(
+            np.asarray(field_arr, dtype=np.float64),
+            pad_width=1,
+            mode='constant',
+            constant_values=pad_val,
+        )
+        crop_origin = -sp_arr
 
     # Canonicalize so the solid interior is always strictly > work_level.
     # This makes interior='above' and interior='below' exact mathematical duals
     # and ensures marching_cubes(..., gradient_direction='ascent') always emits
     # outward-facing right-hand-rule normals (even for open surfaces and shells).
     if interior == 'below':
-        work = -work
-        work_level = -level
-    else:
-        work_level = level
-
-    work_min = float(work.min())
-    work_max = float(work.max())
-    if not (work_min <= work_level < work_max):
-        return _empty_return()
-
-    # Crop to the 1-voxel-dilated bounding box of interior voxels (work > work_level)
-    # to avoid running marching_cubes over empty exterior regions.
-    interior_mask = work > work_level
-    z_idx = np.flatnonzero(interior_mask.any(axis=(1, 2)))
-    y_idx = np.flatnonzero(interior_mask.any(axis=(0, 2)))
-    x_idx = np.flatnonzero(interior_mask.any(axis=(0, 1)))
-    if len(z_idx) == 0 or len(y_idx) == 0 or len(x_idx) == 0:
-        return _empty_return()
-
-    z0 = max(0, int(z_idx[0]) - 1)
-    y0 = max(0, int(y_idx[0]) - 1)
-    x0 = max(0, int(x_idx[0]) - 1)
-    z1 = min(work.shape[0], int(z_idx[-1]) + 2)
-    y1 = min(work.shape[1], int(y_idx[-1]) + 2)
-    x1 = min(work.shape[2], int(x_idx[-1]) + 2)
-    crop = work[z0:z1, y0:y1, x0:x1]
-    crop_origin = np.array([z0, y0, x0], dtype=np.float64) * np.array(spacing, dtype=np.float64)
+        crop = -crop
 
     try:
         verts, faces, _, _ = marching_cubes(
@@ -1359,14 +1421,24 @@ def minkowski_tensors_from_scalar_field(
     if len(faces) == 0:
         return _empty_return()
 
-    verts = np.asarray(verts, dtype=np.float64) + crop_origin - _pad_offset
+    verts = np.asarray(verts, dtype=np.float64) + crop_origin
     faces = np.asarray(faces, dtype=np.int64)
 
-    mt_labels = 'auto' if autolabel else None
+    # marching_cubes(..., allow_degenerate=False) may drop degenerate faces
+    # without pruning newly unreferenced vertices; compact to prevent orphan
+    # vertices from emitting spurious curvature warnings or gapped meshes.
+    used_verts = np.unique(faces)
+    if len(used_verts) < len(verts):
+        remap = np.full(len(verts), -1, dtype=np.int64)
+        remap[used_verts] = np.arange(len(used_verts), dtype=np.int64)
+        verts = verts[used_verts]
+        faces = remap[faces]
+
+    face_labels_arr = _label_mesh_components(faces) if autolabel else None
     mt_result = minkowski_tensors(
         verts,
         faces,
-        labels=mt_labels,
+        labels=face_labels_arr,
         center=center,
         center_per_label=center_per_label,
         compute=compute,
@@ -1385,7 +1457,6 @@ def minkowski_tensors_from_scalar_field(
 
     if autolabel:
         meshes = {}
-        face_labels_arr = _label_mesh_components(faces)
         for comp in np.unique(face_labels_arr):
             comp_faces_global = faces[face_labels_arr == comp]
             used_idx = np.unique(comp_faces_global)

@@ -825,6 +825,20 @@ class TestLabelMeshComponents:
         labels = _label_mesh_components(faces)
         assert len(labels) == 0
 
+    def test_unused_vertex_indices_return_contiguous_labels(self):
+        """Orphan/gapped vertex indices still yield contiguous 1-based labels."""
+        vA, fA = _box_mesh(1.0, 1.0, 1.0)
+        _, fB = _box_mesh(1.0, 1.0, 1.0)
+        # Leave vertex 0 unused and insert a gap of 5 unused indices between boxes
+        fA_shifted = fA + 2
+        fB_shifted = fB + len(vA) + 7
+        faces = np.vstack([fA_shifted, fB_shifted])
+        labels = _label_mesh_components(faces)
+        assert sorted(set(labels.tolist())) == [1, 2]
+        assert (labels[:12] == labels[0]).all()
+        assert (labels[12:] == labels[12]).all()
+        assert labels[0] != labels[12]
+
 
 class TestAutoLabels:
     """Tests for labels='auto' in minkowski_tensors()."""
@@ -1475,3 +1489,87 @@ class TestScalarField:
         with pytest.raises(ValueError, match='pad_value must be finite'):
             minkowski_tensors_from_scalar_field(prob, level=0.5, pad_value=float('inf'))
 
+        complex_field = prob.astype(np.complex128) + 1j
+        with pytest.raises(ValueError, match='real-valued'):
+            minkowski_tensors_from_scalar_field(complex_field, level=0.5)
+
+    def test_singleton_axis_pad_false_raises_and_pad_true_works(self):
+        """A <2 axis raises ValueError when pad=False, and extracts a closed slab when pad=True."""
+        thin = np.zeros((1, 10, 10), dtype=np.float64)
+        thin[0, 3:7, 3:7] = 1.0
+
+        with pytest.raises(ValueError, match=r'shape >= \(2, 2, 2\)'):
+            minkowski_tensors_from_scalar_field(thin, level=0.5, pad=False)
+        with pytest.raises(ValueError, match=r'shape >= \(2, 2, 2\)'):
+            minkowski_tensors_from_scalar_field(thin, level=0.5, pad=False, autolabel=True)
+
+        res = minkowski_tensors_from_scalar_field(thin, level=0.5, pad=True)
+        assert np.isfinite(res['w000']) and res['w000'] > 0
+
+    def test_orphan_vertices_from_degenerate_removal_compacted(self):
+        """Orphan vertices left by allow_degenerate=False are compacted so keys are 1..K and no orphan warnings fire."""
+        import warnings
+        from skimage.measure import marching_cubes
+
+        rng = np.random.default_rng(42)
+        arr = None
+        for _ in range(50):
+            cand = rng.choice([-1.0, 0.0, 1.0], size=(8, 8, 8))
+            v_raw, f_raw, _, _ = marching_cubes(
+                cand, level=0.0, gradient_direction='ascent', allow_degenerate=False,
+            )
+            if len(np.unique(f_raw)) < len(v_raw):
+                arr = cand
+                break
+        assert arr is not None
+
+        with warnings.catch_warnings(record=True) as w_single:
+            warnings.simplefilter('always')
+            _, (verts, faces) = minkowski_tensors_from_scalar_field(
+                arr, level=0.0, pad=False, return_meshes=True,
+            )
+        assert len(np.unique(faces)) == len(verts)
+        assert not any('zero or negative angle sum' in str(w.message) for w in w_single)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            results, n_obj, meshes = minkowski_tensors_from_scalar_field(
+                arr, level=0.0, pad=False, autolabel=True,
+                return_count=True, return_meshes=True,
+            )
+        assert sorted(results.keys()) == list(range(1, n_obj + 1))
+        assert sorted(meshes.keys()) == list(range(1, n_obj + 1))
+
+    def test_crop_first_matches_full_padded_on_high_and_low_boundaries(self):
+        """Crop-first selective boundary padding matches full-volume marching_cubes on both low and high faces."""
+        from skimage.measure import marching_cubes
+
+        spacing = (1.5, 1.0, 0.5)
+        # Touching high boundary z=15 and low boundary x=0, as float32
+        prob = self._sphere_prob(
+            shape=(16, 20, 18), center=(15.0, 10.0, 0.0), radius=5.0,
+        ).astype(np.float32)
+
+        for interior, field_in, lvl in [
+            ('above', prob, 0.5),
+            ('below', -prob, -0.5),
+        ]:
+            _, (verts, faces) = minkowski_tensors_from_scalar_field(
+                field_in, level=lvl, spacing=spacing, interior=interior,
+                pad=True, return_meshes=True,
+            )
+            full_f64 = np.asarray(field_in, dtype=np.float64)
+            pad_val = float(full_f64.min()) if interior == 'above' else float(full_f64.max())
+            full_padded = np.pad(full_f64, pad_width=1, mode='constant', constant_values=pad_val)
+            if interior == 'below':
+                full_padded = -full_padded
+                work_lvl = -lvl
+            else:
+                work_lvl = lvl
+            exp_v, exp_f, _, _ = marching_cubes(
+                full_padded, level=work_lvl, spacing=spacing,
+                gradient_direction='ascent', allow_degenerate=False,
+            )
+            exp_v = np.asarray(exp_v, dtype=np.float64) - np.array(spacing, dtype=np.float64)
+            np.testing.assert_allclose(verts, exp_v, atol=1e-12)
+            np.testing.assert_array_equal(faces, exp_f)
