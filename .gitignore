@@ -21,9 +21,21 @@ paper/*.fls
 paper/*.fdb_latexmk
 paper/*.synctex.gz
 paper/*.pdf
+paper/*.toc
 paper/*.xwm
 paper/*.loc
 paper/*.soc
+docs/*.aux
+docs/*.log
+docs/*.out
+docs/*.bbl
+docs/*.blg
+docs/*.fls
+docs/*.fdb_latexmk
+docs/*.synctex.gz
+docs/*.pdf
+docs/*.toc
+docs/*.xwm
 *.bak
 
 # Generated datasets and benchmark outputs (large, not tracked)
